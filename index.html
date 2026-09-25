@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Buku Kas — Catatan Keuangan</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F2EA;
+    --paper-2:#ECE5D3;
+    --ink:#20241F;
+    --ink-soft:#6B6E5C;
+    --forest:#2F5233;
+    --forest-soft:#DCE7DA;
+    --brick:#A6432D;
+    --brick-soft:#F3DCD4;
+    --gold:#B98A2E;
+    --gold-soft:#F1E3C3;
+    --line:#DCD3BE;
+    --card:#FFFDF8;
+    --radius-s:8px;
+    --radius-m:16px;
+    --radius-pill:999px;
+    --font-serif:'Lora',Georgia,serif;
+    --font-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-sans);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    padding-bottom:96px;
+  }
+  a{color:inherit;}
+  button{font-family:inherit;cursor:pointer;}
+  input,select,textarea{font-family:inherit;}
+  :focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+  .hidden{display:none !important;}
+
+  .app-shell{max-width:640px;margin:0 auto;padding:0 18px;}
+
+  /* Topbar */
+  .topbar{
+    position:sticky;top:0;z-index:20;
+    background:var(--paper);
+    border-bottom:1px solid var(--line);
+  }
+  .topbar-inner{
+    max-width:640px;margin:0 auto;padding:16px 18px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .brand{display:flex;flex-direction:column;line-height:1.1;}
+  .brand-name{font-family:var(--font-serif);font-size:20px;font-weight:600;}
+  .brand-tag{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .icon-btn{
+    width:38px;height:38px;border-radius:var(--radius-pill);
+    border:1px solid var(--line);background:var(--card);
+    display:flex;align-items:center;justify-content:center;
+    font-size:17px;color:var(--ink);
+  }
+  .icon-btn:active{transform:scale(0.94);}
+
+  /* Hero */
+  .hero{padding:28px 0 8px;}
+  .hero-label{font-size:13px;color:var(--ink-soft);}
+  .hero-number{
+    font-family:var(--font-serif);font-weight:700;
+    font-size:42px;letter-spacing:-0.5px;margin-top:4px;
+    word-break:break-word;
+  }
+  .hero-number.negative{color:var(--brick);}
+  .hero-meta{display:flex;gap:16px;margin-top:14px;flex-wrap:wrap;}
+  .hero-meta-item{padding-left:14px;border-left:1px solid var(--line);}
+  .hero-meta-item:first-child{padding-left:0;border-left:none;}
+  .hero-meta-label{font-size:11.5px;color:var(--ink-soft);}
+  .hero-meta-value{font-family:var(--font-serif);font-size:16px;font-weight:600;margin-top:2px;}
+  .hero-meta-value button{background:none;border:none;font:inherit;color:inherit;padding:0;text-decoration:underline dotted;text-underline-offset:3px;}
+
+  /* Summary strip */
+  .summary-strip{
+    display:flex;gap:10px;overflow-x:auto;padding:18px 0 4px;
+    scroll-snap-type:x proximity;
+  }
+  .summary-strip::-webkit-scrollbar{display:none;}
+  .stat-card{
+    scroll-snap-align:start;
+    flex:0 0 auto;min-width:150px;
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius-m);
+    padding:12px 14px;
+  }
+  .stat-card .k{font-size:12px;color:var(--ink-soft);}
+  .stat-card .v{font-family:var(--font-serif);font-size:19px;font-weight:600;margin-top:4px;}
+  .stat-card.income .v{color:var(--forest);}
+  .stat-card.expense .v{color:var(--brick);}
+  .stat-card.unalloc .v{color:var(--gold);}
+
+  /* Section */
+  .section{margin-top:30px;}
+  .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .section-title{font-family:var(--font-serif);font-size:19px;font-weight:600;}
+  .link-btn{background:none;border:none;color:var(--ink);font-size:13.5px;font-weight:600;padding:6px 0;display:flex;align-items:center;gap:4px;}
+  .link-btn:active{opacity:.6;}
+
+  .empty-box{
+    border:1px dashed var(--line);border-radius:var(--radius-m);
+    padding:22px 16px;text-align:center;color:var(--ink-soft);font-size:14px;
+  }
+  .empty-box .link-btn{margin-top:8px;color:var(--forest);}
+
+  /* Category rows */
+  .cat-list{border-top:1px solid var(--line);}
+  .cat-row{padding:14px 0;border-bottom:1px solid var(--line);}
+  .cat-row-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
+  .cat-name{font-weight:600;font-size:15px;}
+  .cat-alloc{font-family:var(--font-serif);font-size:14px;color:var(--ink-soft);white-space:nowrap;}
+  .cat-bar-track{height:6px;border-radius:var(--radius-pill);background:var(--paper-2);margin-top:9px;overflow:hidden;}
+  .cat-bar-fill{height:100%;border-radius:var(--radius-pill);background:var(--forest);}
+  .cat-bar-fill.over{background:var(--brick);}
+  .cat-row-bottom{display:flex;justify-content:space-between;margin-top:7px;font-size:12.5px;color:var(--ink-soft);}
+  .cat-row-actions{display:flex;justify-content:flex-end;margin-top:6px;}
+  .tiny-btn{background:none;border:none;color:var(--ink-soft);font-size:12px;padding:2px 6px;}
+  .tiny-btn:hover{color:var(--brick);}
+
+  /* Transactions */
+  .tx-filter{display:flex;gap:8px;margin-bottom:12px;}
+  .chip{
+    border:1px solid var(--line);background:var(--card);border-radius:var(--radius-pill);
+    padding:6px 14px;font-size:13px;color:var(--ink-soft);
+  }
+  .chip.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .tx-date-header{font-size:12px;color:var(--ink-soft);margin:16px 0 4px;}
+  .tx-date-header:first-child{margin-top:0;}
+  .tx-list{border-top:1px solid var(--line);}
+  .tx-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);gap:10px;}
+  .tx-left{min-width:0;}
+  .tx-cat{font-weight:600;font-size:14px;}
+  .tx-note{font-size:12.5px;color:var(--ink-soft);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .tx-right{text-align:right;flex:0 0 auto;}
+  .tx-amount{font-family:var(--font-serif);font-size:16px;font-weight:600;}
+  .tx-amount.income{color:var(--forest);}
+  .tx-amount.expense{color:var(--brick);}
+  .tx-del{background:none;border:none;color:var(--ink-soft);font-size:11.5px;margin-top:3px;padding:2px;}
+  .tx-del:hover{color:var(--brick);}
+
+  /* FAB */
+  .fab{
+    position:fixed;right:20px;bottom:24px;z-index:30;
+    width:58px;height:58px;border-radius:50%;
+    background:var(--ink);color:var(--paper);border:none;
+    font-size:28px;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 6px 18px rgba(32,36,31,0.28);
+  }
+  .fab:active{transform:scale(0.95);}
+
+  /* Modal */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(32,36,31,0.45);
+    display:flex;align-items:flex-end;justify-content:center;z-index:50;
+    padding:0;
+  }
+  .modal-sheet{
+    background:var(--paper);width:100%;max-width:520px;
+    border-radius:20px 20px 0 0;padding:22px 20px calc(24px + env(safe-area-inset-bottom));
+    max-height:88vh;overflow-y:auto;
+  }
+  @media (min-width:680px){
+    .modal-overlay{align-items:center;}
+    .modal-sheet{border-radius:var(--radius-m);max-height:80vh;}
+  }
+  .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+  .modal-title{font-family:var(--font-serif);font-size:20px;font-weight:600;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:6px;}
+  .field input, .field select, .field textarea{
+    width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:var(--radius-s);
+    background:var(--card);font-size:15px;color:var(--ink);
+  }
+  .field textarea{resize:vertical;min-height:70px;font-family:var(--font-sans);}
+  .field-hint{font-size:11.5px;color:var(--ink-soft);margin-top:5px;}
+  .field-hint.warn{color:var(--brick);}
+
+  .segmented{display:flex;border:1px solid var(--line);border-radius:var(--radius-pill);overflow:hidden;margin-bottom:16px;}
+  .segmented button{flex:1;border:none;background:transparent;padding:11px 0;font-size:14.5px;font-weight:600;color:var(--ink-soft);}
+  .segmented button.active-income{background:var(--forest-soft);color:var(--forest);}
+  .segmented button.active-expense{background:var(--brick-soft);color:var(--brick);}
+
+  .btn{
+    width:100%;padding:13px;border-radius:var(--radius-pill);border:none;
+    font-size:15px;font-weight:600;
+  }
+  .btn-primary{background:var(--ink);color:var(--paper);}
+  .btn-primary:active{opacity:.85;}
+  .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--ink);}
+  .btn-danger{background:var(--brick-soft);color:var(--brick);}
+  .btn-row{display:flex;gap:10px;}
+  .btn-row .btn{flex:1;}
+
+  .settings-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+  .settings-tab{border:1px solid var(--line);background:var(--card);border-radius:var(--radius-pill);padding:7px 13px;font-size:13px;color:var(--ink-soft);}
+  .settings-tab.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .settings-pane{display:none;}
+  .settings-pane.active{display:block;}
+
+  .divider-note{border-top:1px solid var(--line);margin:18px 0;padding-top:14px;font-size:12.5px;color:var(--ink-soft);}
+
+  .toast{
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
+    background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:var(--radius-pill);
+    font-size:13.5px;z-index:80;opacity:0;transition:opacity .25s ease;pointer-events:none;
+  }
+  .toast.show{opacity:1;}
+
+  .onboard-wrap{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+  }
+  .onboard-card{
+    max-width:460px;width:100%;background:var(--card);border:1px solid var(--line);
+    border-radius:var(--radius-m);padding:26px 22px;
+  }
+  .onboard-card h1{font-family:var(--font-serif);font-size:24px;margin:0 0 8px;}
+  .onboard-card p{font-size:14px;color:var(--ink-soft);line-height:1.55;margin:0 0 18px;}
+  .status-line{font-size:12.5px;margin-top:10px;}
+  .status-line.ok{color:var(--forest);}
+  .status-line.err{color:var(--brick);}
+  .loading-dot{font-size:14px;color:var(--ink-soft);text-align:center;padding:60px 0;}
+</style>
+</head>
+<body>
+
+<div id="onboard" class="onboard-wrap hidden">
+  <div class="onboard-card">
+    <h1>Buku Kas</h1>
+    <p>Catat pemasukan &amp; pengeluaran per kategori, dengan riwayat tersimpan di Firebase milikmu dan notifikasi otomatis ke Telegram. Tempelkan konfigurasi Firebase Web App untuk mulai.</p>
+    <div class="field">
+      <label>Konfigurasi Firebase (salin objek firebaseConfig dari Firebase Console)</label>
+      <textarea id="fbConfigInput" placeholder='{
+  "apiKey": "...",
+  "authDomain": "...",
+  "projectId": "...",
+  "storageBucket": "...",
+  "messagingSenderId": "...",
+  "appId": "..."
+}'></textarea>
+    </div>
+    <button class="btn btn-primary" id="btnConnectFirebase">Hubungkan &amp; Mulai</button>
+    <div id="onboardStatus" class="status-line"></div>
+  </div>
+</div>
+
+<div id="appRoot" class="hidden">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-name">Buku Kas</span>
+        <span class="brand-tag">Catatan keuangan pribadi</span>
+      </div>
+      <button class="icon-btn" id="btnSettings" aria-label="Pengaturan">⚙</button>
+    </div>
+  </div>
+
+  <div class="app-shell">
+    <div class="hero">
+      <div class="hero-label">Total dana tersisa</div>
+      <div class="hero-number" id="heroTotal">Rp0</div>
+      <div class="hero-meta">
+        <div class="hero-meta-item">
+          <div class="hero-meta-label">Dana awal</div>
+          <div class="hero-meta-value"><button id="btnEditDanaAwal">—</button></div>
+        </div>
+        <div class="hero-meta-item">
+          <div class="hero-meta-label">Belum dialokasikan</div>
+          <div class="hero-meta-value" id="heroUnalloc">Rp0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="summary-strip">
+      <div class="stat-card income"><div class="k">Total pemasukan</div><div class="v" id="statIncome">Rp0</div></div>
+      <div class="stat-card expense"><div class="k">Total pengeluaran</div><div class="v" id="statExpense">Rp0</div></div>
+      <div class="stat-card unalloc"><div class="k">Jumlah kategori</div><div class="v" id="statCatCount">0</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Kategori</div>
+        <button class="link-btn" id="btnAddCategory">+ Kategori</button>
+      </div>
+      <div id="categoryArea"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Riwayat transaksi</div>
+      </div>
+      <div class="tx-filter">
+        <button class="chip active" data-filter="all">Semua</button>
+        <button class="chip" data-filter="income">Pemasukan</button>
+        <button class="chip" data-filter="expense">Pengeluaran</button>
+      </div>
+      <div id="txArea"></div>
+    </div>
+  </div>
+
+  <button class="fab" id="btnFab" aria-label="Tambah transaksi">+</button>
+</div>
+
+<div id="globalLoading" class="loading-dot hidden">Memuat…</div>
+
+<!-- Modal: Transaction -->
+<div class="modal-overlay hidden" id="modalTx">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <div class="modal-title">Tambah transaksi</div>
+      <button class="icon-btn" data-close="modalTx">✕</button>
+    </div>
+    <div class="segmented" id="txTypeSeg">
+      <button type="button" data-type="income">Pemasukan</button>
+      <button type="button" data-type="expense">Pengeluaran</button>
+    </div>
+    <div class="field">
+      <label>Kategori</label>
+      <select id="txCategory"></select>
+    </div>
+    <div class="field">
+      <label>Jumlah (Rp)</label>
+      <input type="number" id="txAmount" min="0" step="1" placeholder="0">
+    </div>
+    <div class="field">
+      <label>Catatan (opsional)</label>
+      <input type="text" id="txNote" placeholder="mis. Beli bensin, Gaji bulanan">
+    </div>
+    <div class="field">
+      <label>Tanggal</label>
+      <input type="date" id="txDate">
+    </div>
+    <button class="btn btn-primary" id="btnSaveTx">Simpan transaksi</button>
+  </div>
+</div>
+
+<!-- Modal: Category -->
+<div class="modal-overlay hidden" id="modalCategory">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <div class="modal-title">Kategori baru</div>
+      <button class="icon-btn" data-close="modalCategory">✕</button>
+    </div>
+    <div class="field">
+      <label>Nama kategori</label>
+      <input type="text" id="catName" placeholder="mis. Makan, Transport, Tabungan">
+    </div>
+    <div class="field">
+      <label>Alokasi dana (Rp)</label>
+      <input type="number" id="catAlloc" min="0" step="1" placeholder="0">
+      <div class="field-hint" id="catAllocHint"></div>
+    </div>
+    <button class="btn btn-primary" id="btnSaveCategory">Simpan kategori</button>
+  </div>
+</div>
+
+<!-- Modal: Settings -->
+<div class="modal-overlay hidden" id="modalSettings">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <div class="modal-title">Pengaturan</div>
+      <button class="icon-btn" data-close="modalSettings">✕</button>
+    </div>
+    <div class="settings-tabs">
+      <button class="settings-tab active" data-pane="paneTelegram">Telegram</button>
+      <button class="settings-tab" data-pane="paneDana">Dana awal</button>
+      <button class="settings-tab" data-pane="paneFirebase">Firebase</button>
+    </div>
+
+    <div class="settings-pane active" id="paneTelegram">
+      <div class="field">
+        <label>Token Bot Telegram</label>
+        <input type="text" id="tgToken" placeholder="123456:ABC-DEF...">
+      </div>
+      <div class="field">
+        <label>Chat ID</label>
+        <input type="text" id="tgChatId" placeholder="mis. 123456789">
+      </div>
+      <div class="field-hint">Buat bot lewat @BotFather di Telegram, lalu kirim satu pesan ke bot dan buka https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates untuk menemukan Chat ID kamu.</div>
+      <button class="btn btn-primary" id="btnSaveTelegram" style="margin-top:14px;">Simpan Telegram</button>
+    </div>
+
+    <div class="settings-pane" id="paneDana">
+      <div class="field">
+        <label>Dana awal saat ini (Rp)</label>
+        <input type="number" id="danaAwalInput" min="0" step="1">
+        <div class="field-hint">Mengubah dana awal akan langsung memengaruhi total dana tersisa.</div>
+      </div>
+      <button class="btn btn-primary" id="btnSaveDanaAwal">Simpan dana awal</button>
+    </div>
+
+    <div class="settings-pane" id="paneFirebase">
+      <div class="field-hint" style="margin-bottom:12px;">Proyek Firebase yang tersambung sekarang: <strong id="fbProjectLabel">-</strong></div>
+      <button class="btn btn-ghost" id="btnDisconnectFb">Putuskan &amp; ganti proyek Firebase</button>
+      <div class="divider-note">Memutuskan tidak akan menghapus data di Firebase, hanya melepas koneksi di perangkat ini.</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import {
+  getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, updateDoc,
+  collection, onSnapshot, query, orderBy, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+
+// ---------- State ----------
+let firebaseConfig = safeParseJSON(localStorage.getItem('bk_firebase_config'));
+let telegramConfig = safeParseJSON(localStorage.getItem('bk_telegram_config')) || { token:'', chatId:'' };
+let app, db, auth, uid = null;
+let meta = { danaAwal: 0 };
+let categories = [];
+let transactions = [];
+let txFilter = 'all';
+let selectedTxType = 'expense';
+
+function safeParseJSON(s){ try{ return s ? JSON.parse(s) : null; }catch(e){ return null; } }
+
+// ---------- Helpers ----------
+function formatRupiah(n){
+  const num = Math.round(Number(n)||0);
+  const sign = num < 0 ? '-' : '';
+  return sign + 'Rp' + Math.abs(num).toLocaleString('id-ID');
+}
+function formatDateHuman(iso){
+  if(!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
+}
+function todayISO(){
+  const d = new Date();
+  const off = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - off*60000);
+  return local.toISOString().slice(0,10);
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._tm);
+  showToast._tm = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+function openModal(id){ document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id){ document.getElementById(id).classList.add('hidden'); }
+
+// ---------- Firebase bootstrap ----------
+async function startApp(){
+  document.getElementById('onboard').classList.add('hidden');
+  document.getElementById('appRoot').classList.remove('hidden');
+  document.getElementById('globalLoading').classList.remove('hidden');
+  try{
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    auth = getAuth(app);
+    onAuthStateChanged(auth, (user)=>{
+      if(user){
+        uid = user.uid;
+        document.getElementById('fbProjectLabel').textContent = firebaseConfig.projectId || '-';
+        attachListeners();
+        document.getElementById('globalLoading').classList.add('hidden');
+      }
+    });
+    await signInAnonymously(auth);
+  }catch(e){
+    console.error(e);
+    document.getElementById('globalLoading').classList.add('hidden');
+    showToast('Gagal terhubung ke Firebase. Periksa konfigurasi.');
+    document.getElementById('appRoot').classList.add('hidden');
+    document.getElementById('onboard').classList.remove('hidden');
+    document.getElementById('onboardStatus').textContent = 'Gagal terhubung: ' + (e.message||e);
+    document.getElementById('onboardStatus').className = 'status-line err';
+  }
+}
+
+function userDocRef(){ return doc(db, 'bukukas_users', uid); }
+function categoriesColRef(){ return collection(db, 'bukukas_users', uid, 'categories'); }
+function txColRef(){ return collection(db, 'bukukas_users', uid, 'transactions'); }
+
+function attachListeners(){
+  onSnapshot(userDocRef(), (snap)=>{
+    meta = snap.exists() ? snap.data() : { danaAwal: 0 };
+    render();
+  });
+  onSnapshot(categoriesColRef(), (snap)=>{
+    categories = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    render();
+  });
+  onSnapshot(query(txColRef(), orderBy('createdAt','desc')), (snap)=>{
+    transactions = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    render();
+  });
+}
+
+// ---------- Computation ----------
+function totalIncome(){ return transactions.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0); }
+function totalExpense(){ return transactions.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0); }
+function totalAllocated(){ return categories.reduce((s,c)=>s+Number(c.allocated||0),0); }
+function categoryStats(catId){
+  const rel = transactions.filter(t=>t.categoryId===catId);
+  const income = rel.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
+  const expense = rel.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0);
+  const cat = categories.find(c=>c.id===catId);
+  const allocated = Number(cat?.allocated||0);
+  return { income, expense, allocated, remaining: allocated + income - expense };
+}
+
+// ---------- Render ----------
+function render(){
+  const danaAwal = Number(meta.danaAwal||0);
+  const tIncome = totalIncome();
+  const tExpense = totalExpense();
+  const totalRemaining = danaAwal + tIncome - tExpense;
+  const unalloc = danaAwal - totalAllocated();
+
+  const heroEl = document.getElementById('heroTotal');
+  heroEl.textContent = formatRupiah(totalRemaining);
+  heroEl.classList.toggle('negative', totalRemaining < 0);
+
+  document.querySelector('#btnEditDanaAwal').textContent = formatRupiah(danaAwal);
+  document.getElementById('heroUnalloc').textContent = formatRupiah(unalloc);
+  document.getElementById('statIncome').textContent = formatRupiah(tIncome);
+  document.getElementById('statExpense').textContent = formatRupiah(tExpense);
+  document.getElementById('statCatCount').textContent = categories.length;
+
+  renderCategories();
+  renderTransactions();
+  renderCategorySelect();
+}
+
+function renderCategories(){
+  const area = document.getElementById('categoryArea');
+  if(categories.length === 0){
+    area.innerHTML = `<div class="empty-box">Belum ada kategori. Buat kategori untuk membagi dana awal, mis. Makan, Transport, Tabungan.<br><button class="link-btn" id="emptyAddCat">+ Buat kategori pertama</button></div>`;
+    document.getElementById('emptyAddCat').addEventListener('click', ()=>openModal('modalCategory'));
+    return;
+  }
+  let html = '<div class="cat-list">';
+  categories.forEach(cat=>{
+    const s = categoryStats(cat.id);
+    const pct = s.allocated > 0 ? Math.min(100, (s.expense / s.allocated) * 100) : (s.expense>0?100:0);
+    const over = s.remaining < 0;
+    html += `
+      <div class="cat-row">
+        <div class="cat-row-top">
+          <div class="cat-name">${escapeHtml(cat.name)}</div>
+          <div class="cat-alloc">${formatRupiah(s.allocated)}</div>
+        </div>
+        <div class="cat-bar-track"><div class="cat-bar-fill ${over?'over':''}" style="width:${pct}%"></div></div>
+        <div class="cat-row-bottom">
+          <span>Terpakai ${formatRupiah(s.expense)}</span>
+          <span>Sisa ${formatRupiah(s.remaining)}</span>
+        </div>
+        <div class="cat-row-actions">
+          <button class="tiny-btn" data-del-cat="${cat.id}">Hapus kategori</button>
+        </div>
+      </div>`;
+  });
+  html += '</div>';
+  area.innerHTML = html;
+  area.querySelectorAll('[data-del-cat]').forEach(btn=>{
+    btn.addEventListener('click', ()=>deleteCategory(btn.dataset.delCat));
+  });
+}
+
+function renderTransactions(){
+  const area = document.getElementById('txArea');
+  let list = transactions;
+  if(txFilter !== 'all') list = list.filter(t=>t.type===txFilter);
+  if(list.length === 0){
+    area.innerHTML = `<div class="empty-box">Belum ada transaksi tercatat.</div>`;
+    return;
+  }
+  let html = '';
+  let lastDate = null;
+  list.forEach(t=>{
+    if(t.date !== lastDate){
+      html += `<div class="tx-date-header">${formatDateHuman(t.date)}</div>`;
+      lastDate = t.date;
+    }
+    html += `
+      <div class="tx-row">
+        <div class="tx-left">
+          <div class="tx-cat">${escapeHtml(t.categoryName || 'Tanpa kategori')}</div>
+          ${t.note ? `<div class="tx-note">${escapeHtml(t.note)}</div>` : ''}
+        </div>
+        <div class="tx-right">
+          <div class="tx-amount ${t.type}">${t.type==='income'?'+':'-'}${formatRupiah(t.amount)}</div>
+          <button class="tx-del" data-del-tx="${t.id}">Hapus</button>
+        </div>
+      </div>`;
+  });
+  area.innerHTML = `<div class="tx-list">${html}</div>`;
+  area.querySelectorAll('[data-del-tx]').forEach(btn=>{
+    btn.addEventListener('click', ()=>deleteTransaction(btn.dataset.delTx));
+  });
+}
+
+function renderCategorySelect(){
+  const sel = document.getElementById('txCategory');
+  const current = sel.value;
+  sel.innerHTML = categories.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+  if(categories.length === 0){
+    sel.innerHTML = `<option value="">Tanpa kategori</option>`;
+  }
+  if(current) sel.value = current;
+}
+
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+// ---------- Actions ----------
+async function saveDanaAwal(value){
+  await setDoc(userDocRef(), { danaAwal: Number(value)||0 }, { merge:true });
+  showToast('Dana awal disimpan');
+}
+
+async function saveCategory(name, allocated){
+  await addDoc(categoriesColRef(), { name, allocated: Number(allocated)||0, createdAt: serverTimestamp() });
+  showToast('Kategori ditambahkan');
+}
+
+async function deleteCategory(id){
+  if(!confirm('Hapus kategori ini? Riwayat transaksi lama tetap tersimpan.')) return;
+  await deleteDoc(doc(categoriesColRef(), id));
+  showToast('Kategori dihapus');
+}
+
+async function saveTransaction(data){
+  await addDoc(txColRef(), { ...data, createdAt: serverTimestamp() });
+  showToast('Transaksi disimpan');
+  sendTelegramNotification(data);
+}
+
+async function deleteTransaction(id){
+  if(!confirm('Hapus transaksi ini?')) return;
+  await deleteDoc(doc(txColRef(), id));
+  showToast('Transaksi dihapus');
+}
+
+async function sendTelegramNotification(tx){
+  if(!telegramConfig.token || !telegramConfig.chatId) return;
+  const danaAwal = Number(meta.danaAwal||0);
+  const sisa = danaAwal + totalIncome() - totalExpense();
+  const emoji = tx.type === 'income' ? '🟢' : '🔴';
+  const label = tx.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
+  const text = [
+    `${emoji} <b>${label} baru</b>`,
+    `Kategori: ${tx.categoryName || 'Tanpa kategori'}`,
+    `Jumlah: ${formatRupiah(tx.amount)}`,
+    tx.note ? `Catatan: ${tx.note}` : null,
+    `Tanggal: ${formatDateHuman(tx.date)}`,
+    ``,
+    `Sisa dana: ${formatRupiah(sisa)}`
+  ].filter(Boolean).join('\n');
+  try{
+    await fetch(`https://api.telegram.org/bot${telegramConfig.token}/sendMessage`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ chat_id: telegramConfig.chatId, text, parse_mode:'HTML' })
+    });
+  }catch(e){
+    console.warn('Gagal mengirim ke Telegram', e);
+  }
+}
+
+// ---------- Event wiring ----------
+document.getElementById('btnConnectFirebase').addEventListener('click', ()=>{
+  const raw = document.getElementById('fbConfigInput').value.trim();
+  const statusEl = document.getElementById('onboardStatus');
+  let cfg = null;
+  try{
+    let cleaned = raw.replace(/^(const|var|let)\s+\w+\s*=\s*/,'').replace(/;\s*$/,'');
+    cfg = (new Function('return ' + cleaned))();
+  }catch(e){ cfg = null; }
+  if(!cfg || !cfg.apiKey || !cfg.projectId){
+    statusEl.textContent = 'Konfigurasi tidak valid. Pastikan berisi apiKey, projectId, dll.';
+    statusEl.className = 'status-line err';
+    return;
+  }
+  firebaseConfig = cfg;
+  localStorage.setItem('bk_firebase_config', JSON.stringify(cfg));
+  statusEl.textContent = 'Terhubung, memuat aplikasi…';
+  statusEl.className = 'status-line ok';
+  startApp();
+});
+
+document.getElementById('btnSettings').addEventListener('click', ()=>{
+  document.getElementById('tgToken').value = telegramConfig.token || '';
+  document.getElementById('tgChatId').value = telegramConfig.chatId || '';
+  document.getElementById('danaAwalInput').value = Number(meta.danaAwal||0);
+  document.getElementById('fbProjectLabel').textContent = firebaseConfig?.projectId || '-';
+  openModal('modalSettings');
+});
+
+document.querySelectorAll('[data-close]').forEach(btn=>{
+  btn.addEventListener('click', ()=>closeModal(btn.dataset.close));
+});
+document.querySelectorAll('.modal-overlay').forEach(ov=>{
+  ov.addEventListener('click', (e)=>{ if(e.target === ov) ov.classList.add('hidden'); });
+});
+
+document.getElementById('btnFab').addEventListener('click', ()=>{
+  document.getElementById('txDate').value = todayISO();
+  document.getElementById('txAmount').value = '';
+  document.getElementById('txNote').value = '';
+  setTxType('expense');
+  renderCategorySelect();
+  openModal('modalTx');
+});
+
+document.getElementById('btnAddCategory').addEventListener('click', ()=>{
+  document.getElementById('catName').value = '';
+  document.getElementById('catAlloc').value = '';
+  const unalloc = Number(meta.danaAwal||0) - totalAllocated();
+  document.getElementById('catAllocHint').textContent = `Belum dialokasikan: ${formatRupiah(unalloc)}`;
+  document.getElementById('catAllocHint').className = 'field-hint';
+  openModal('modalCategory');
+});
+
+document.getElementById('btnSaveCategory').addEventListener('click', async ()=>{
+  const name = document.getElementById('catName').value.trim();
+  const alloc = Number(document.getElementById('catAlloc').value || 0);
+  if(!name){ showToast('Nama kategori wajib diisi'); return; }
+  await saveCategory(name, alloc);
+  closeModal('modalCategory');
+});
+
+function setTxType(type){
+  selectedTxType = type;
+  document.querySelectorAll('#txTypeSeg button').forEach(b=>{
+    b.classList.remove('active-income','active-expense');
+    if(b.dataset.type === type) b.classList.add(type === 'income' ? 'active-income' : 'active-expense');
+  });
+}
+document.querySelectorAll('#txTypeSeg button').forEach(b=>{
+  b.addEventListener('click', ()=>setTxType(b.dataset.type));
+});
+
+document.getElementById('btnSaveTx').addEventListener('click', async ()=>{
+  const amount = Number(document.getElementById('txAmount').value || 0);
+  const categorySel = document.getElementById('txCategory');
+  const categoryId = categorySel.value || null;
+  const categoryName = categorySel.options[categorySel.selectedIndex]?.text || 'Tanpa kategori';
+  const note = document.getElementById('txNote').value.trim();
+  const date = document.getElementById('txDate').value || todayISO();
+  if(!amount || amount <= 0){ showToast('Jumlah harus lebih dari 0'); return; }
+  await saveTransaction({ type: selectedTxType, categoryId, categoryName, amount, note, date });
+  closeModal('modalTx');
+});
+
+document.querySelectorAll('.tx-filter .chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('.tx-filter .chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    txFilter = chip.dataset.filter;
+    renderTransactions();
+  });
+});
+
+document.getElementById('btnEditDanaAwal').addEventListener('click', ()=>{
+  document.getElementById('danaAwalInput').value = Number(meta.danaAwal||0);
+  document.querySelectorAll('.settings-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector('[data-pane="paneDana"]').classList.add('active');
+  document.querySelectorAll('.settings-pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('paneDana').classList.add('active');
+  openModal('modalSettings');
+});
+
+document.querySelectorAll('.settings-tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.settings-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.settings-pane').forEach(p=>p.classList.remove('active'));
+    document.getElementById(tab.dataset.pane).classList.add('active');
+  });
+});
+
+document.getElementById('btnSaveTelegram').addEventListener('click', ()=>{
+  telegramConfig = {
+    token: document.getElementById('tgToken').value.trim(),
+    chatId: document.getElementById('tgChatId').value.trim()
+  };
+  localStorage.setItem('bk_telegram_config', JSON.stringify(telegramConfig));
+  showToast('Pengaturan Telegram disimpan');
+});
+
+document.getElementById('btnSaveDanaAwal').addEventListener('click', async ()=>{
+  const val = Number(document.getElementById('danaAwalInput').value || 0);
+  await saveDanaAwal(val);
+  closeModal('modalSettings');
+});
+
+document.getElementById('btnDisconnectFb').addEventListener('click', ()=>{
+  if(!confirm('Putuskan koneksi Firebase di perangkat ini?')) return;
+  localStorage.removeItem('bk_firebase_config');
+  location.reload();
+});
+
+// ---------- Init ----------
+(function init(){
+  document.getElementById('txDate').value = todayISO();
+  if(firebaseConfig){
+    startApp();
+  }else{
+    document.getElementById('onboard').classList.remove('hidden');
+  }
+})();
+</script>
+</body>
+</html>
