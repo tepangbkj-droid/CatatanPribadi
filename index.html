@@ -3,84 +3,149 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Buku Kas — Catatan Keuangan</title>
+<title>Buku Kas — Catatan Keuangan &amp; Tabungan Emas</title>
 <link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper:#F6F2EA;
-    --paper-2:#ECE5D3;
-    --ink:#20241F;
-    --ink-soft:#6B6E5C;
-    --forest:#2F5233;
-    --forest-soft:#DCE7DA;
-    --brick:#A6432D;
-    --brick-soft:#F3DCD4;
-    --gold:#B98A2E;
-    --gold-soft:#F1E3C3;
-    --line:#DCD3BE;
-    --card:#FFFDF8;
-    --radius-s:8px;
-    --radius-m:16px;
+    --bg-1:#F5F2FF;
+    --bg-2:#EAF3FF;
+    --ink:#221A3D;
+    --ink-soft:#726C93;
+    --card:#FFFFFF;
+    --line:#E8E3F7;
+
+    --violet:#6D4AFF;
+    --violet-dark:#4B2FD9;
+    --violet-soft:#ECE6FF;
+    --blue:#2E8BFF;
+    --blue-soft:#DFF0FF;
+    --emerald:#0FAE73;
+    --emerald-soft:#D9F7EA;
+    --rose:#F0355A;
+    --rose-soft:#FFE2E9;
+    --amber:#F5A324;
+    --amber-dark:#E08600;
+    --amber-soft:#FFF0D6;
+    --pink:#EC4899;
+    --pink-soft:#FCE4F1;
+    --teal:#14B8A6;
+    --teal-soft:#D6F6F1;
+
+    --radius-s:10px;
+    --radius-m:18px;
+    --radius-l:24px;
     --radius-pill:999px;
-    --font-serif:'Lora',Georgia,serif;
+    --font-head:'Poppins',sans-serif;
     --font-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
-    background:var(--paper);
+    background:
+      radial-gradient(600px 420px at 108% -6%, rgba(109,74,255,0.18), transparent 60%),
+      radial-gradient(560px 420px at -8% 6%, rgba(46,139,255,0.16), transparent 55%),
+      radial-gradient(500px 380px at 90% 60%, rgba(236,72,153,0.10), transparent 60%),
+      linear-gradient(180deg, var(--bg-1), var(--bg-2));
+    background-attachment:fixed;
     color:var(--ink);
     font-family:var(--font-sans);
     -webkit-font-smoothing:antialiased;
     min-height:100vh;
-    padding-bottom:96px;
+    padding-bottom:118px;
   }
   a{color:inherit;}
-  button{font-family:inherit;cursor:pointer;}
-  input,select,textarea{font-family:inherit;}
-  :focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+  button{font-family:inherit;cursor:pointer;transition:transform .15s ease, opacity .15s ease, background-color .15s ease, box-shadow .15s ease;}
+  input,select,textarea{font-family:inherit;transition:border-color .15s ease, box-shadow .15s ease;}
+  input:focus,select:focus,textarea:focus{border-color:var(--violet);box-shadow:0 0 0 3px var(--violet-soft);}
+  :focus-visible{outline:2px solid var(--violet);outline-offset:2px;}
   .hidden{display:none !important;}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes sheetUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes popIn{from{opacity:0;transform:scale(.94);}to{opacity:1;transform:scale(1);}}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .fade-up{animation:fadeUp .45s ease both;}
 
   .app-shell{max-width:640px;margin:0 auto;padding:0 18px;}
 
   /* Topbar */
   .topbar{
     position:sticky;top:0;z-index:20;
-    background:var(--paper);
+    background:rgba(245,242,255,0.86);backdrop-filter:blur(8px);
     border-bottom:1px solid var(--line);
   }
   .topbar-inner{
     max-width:640px;margin:0 auto;padding:16px 18px;
     display:flex;align-items:center;justify-content:space-between;
   }
-  .brand{display:flex;flex-direction:column;line-height:1.1;}
-  .brand-name{font-family:var(--font-serif);font-size:20px;font-weight:600;}
-  .brand-tag{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .brand{display:flex;align-items:center;gap:10px;line-height:1.1;}
+  .brand-mark{
+    width:36px;height:36px;border-radius:12px;flex:0 0 auto;
+    background:linear-gradient(150deg,#8B6BFF,var(--violet) 55%,var(--blue));
+    display:flex;align-items:center;justify-content:center;font-size:17px;
+    box-shadow:0 6px 14px -6px rgba(109,74,255,0.6);
+  }
+  .brand-text{display:flex;flex-direction:column;}
+  .brand-name{font-family:var(--font-head);font-size:19px;font-weight:700;}
+  .brand-tag{font-size:12px;color:var(--ink-soft);margin-top:1px;}
   .icon-btn{
-    width:38px;height:38px;border-radius:var(--radius-pill);
+    width:40px;height:40px;border-radius:var(--radius-pill);
     border:1px solid var(--line);background:var(--card);
     display:flex;align-items:center;justify-content:center;
     font-size:17px;color:var(--ink);
   }
   .icon-btn:active{transform:scale(0.94);}
+  .icon-btn:hover{border-color:var(--violet);color:var(--violet);}
+
+  /* View toggling */
+  .view-pane{display:none;}
+  .view-pane.active{display:block;}
 
   /* Hero */
-  .hero{padding:28px 0 8px;}
-  .hero-label{font-size:13px;color:var(--ink-soft);}
-  .hero-number{
-    font-family:var(--font-serif);font-weight:700;
-    font-size:42px;letter-spacing:-0.5px;margin-top:4px;
-    word-break:break-word;
+  .hero{
+    margin-top:18px;padding:26px 22px;border-radius:var(--radius-l);
+    color:#fff;position:relative;overflow:hidden;
   }
-  .hero-number.negative{color:var(--brick);}
-  .hero-meta{display:flex;gap:16px;margin-top:14px;flex-wrap:wrap;}
-  .hero-meta-item{padding-left:14px;border-left:1px solid var(--line);}
+  .hero.hero-kas{
+    background:linear-gradient(150deg,#5B34F2 0%,#6D4AFF 45%,#2E8BFF 100%);
+    box-shadow:0 16px 34px -14px rgba(76,52,222,0.6);
+  }
+  .hero.hero-emas{
+    background:linear-gradient(150deg,#E08600 0%,#F5A324 45%,#EC4899 100%);
+    box-shadow:0 16px 34px -14px rgba(224,134,0,0.55);
+  }
+  .hero::before{
+    content:'';position:absolute;inset:0;
+    background:radial-gradient(240px 240px at 90% -14%, rgba(255,255,255,0.28), transparent 65%);
+    pointer-events:none;
+  }
+  .hero::after{
+    content:'';position:absolute;width:180px;height:180px;border-radius:50%;
+    background:rgba(255,255,255,0.08);right:-60px;bottom:-70px;pointer-events:none;
+  }
+  .hero-label{font-size:13px;color:rgba(255,255,255,0.78);position:relative;display:flex;align-items:center;gap:6px;}
+  .hero-number{
+    font-family:var(--font-head);font-weight:700;
+    font-size:40px;letter-spacing:-0.5px;margin-top:4px;
+    word-break:break-word;position:relative;color:#fff;
+  }
+  .hero-number.negative{color:#FFD3DD;}
+  .hero-sub{font-size:13px;color:rgba(255,255,255,0.85);margin-top:6px;position:relative;}
+  .hero-meta{display:flex;gap:16px;margin-top:16px;flex-wrap:wrap;position:relative;}
+  .hero-meta-item{padding-left:14px;border-left:1px solid rgba(255,255,255,0.28);}
   .hero-meta-item:first-child{padding-left:0;border-left:none;}
-  .hero-meta-label{font-size:11.5px;color:var(--ink-soft);}
-  .hero-meta-value{font-family:var(--font-serif);font-size:16px;font-weight:600;margin-top:2px;}
+  .hero-meta-label{font-size:11.5px;color:rgba(255,255,255,0.75);}
+  .hero-meta-value{font-family:var(--font-head);font-size:16px;font-weight:600;margin-top:2px;color:#fff;}
   .hero-meta-value button{background:none;border:none;font:inherit;color:inherit;padding:0;text-decoration:underline dotted;text-underline-offset:3px;}
+  .hero-badge{
+    display:inline-flex;align-items:center;gap:5px;margin-top:12px;position:relative;
+    background:rgba(255,255,255,0.18);padding:6px 12px;border-radius:var(--radius-pill);
+    font-size:12.5px;font-weight:600;
+  }
+  .hero-badge.profit{background:rgba(16,185,129,0.28);}
+  .hero-badge.loss{background:rgba(240,53,90,0.3);}
 
   /* Summary strip */
   .summary-strip{
@@ -90,145 +155,269 @@
   .summary-strip::-webkit-scrollbar{display:none;}
   .stat-card{
     scroll-snap-align:start;
-    flex:0 0 auto;min-width:150px;
+    flex:0 0 auto;min-width:152px;
     background:var(--card);border:1px solid var(--line);border-radius:var(--radius-m);
-    padding:12px 14px;
+    padding:14px 14px 13px;position:relative;overflow:hidden;
+    box-shadow:0 8px 20px -14px rgba(34,26,61,0.35);
   }
+  .stat-card .ic{font-size:16px;display:inline-flex;align-items:center;justify-content:center;
+    width:28px;height:28px;border-radius:9px;margin-bottom:6px;}
+  .stat-card.income .ic{background:var(--emerald-soft);}
+  .stat-card.expense .ic{background:var(--rose-soft);}
+  .stat-card.unalloc .ic{background:var(--violet-soft);}
+  .stat-card.gold .ic{background:var(--amber-soft);}
   .stat-card .k{font-size:12px;color:var(--ink-soft);}
-  .stat-card .v{font-family:var(--font-serif);font-size:19px;font-weight:600;margin-top:4px;}
-  .stat-card.income .v{color:var(--forest);}
-  .stat-card.expense .v{color:var(--brick);}
-  .stat-card.unalloc .v{color:var(--gold);}
+  .stat-card .v{font-family:var(--font-head);font-size:19px;font-weight:700;margin-top:4px;}
+  .stat-card.income .v{color:var(--emerald);}
+  .stat-card.expense .v{color:var(--rose);}
+  .stat-card.unalloc .v{color:var(--violet);}
+  .stat-card.gold .v{color:var(--amber-dark);}
 
   /* Section */
-  .section{margin-top:30px;}
-  .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-  .section-title{font-family:var(--font-serif);font-size:19px;font-weight:600;}
-  .link-btn{background:none;border:none;color:var(--ink);font-size:13.5px;font-weight:600;padding:6px 0;display:flex;align-items:center;gap:4px;}
-  .link-btn:active{opacity:.6;}
+  .section{margin-top:28px;}
+  .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px;}
+  .section-title{font-family:var(--font-head);font-size:18px;font-weight:700;display:flex;align-items:center;gap:7px;}
+  .link-btn{
+    background:var(--violet-soft);border:1px solid transparent;color:var(--violet-dark);
+    font-size:13.5px;font-weight:700;padding:8px 14px;border-radius:var(--radius-pill);
+    display:flex;align-items:center;gap:4px;white-space:nowrap;
+  }
+  .link-btn:active{transform:scale(.95);opacity:.85;}
+  .link-btn:hover{background:var(--violet);color:#fff;}
+  .link-btn.amber{background:var(--amber-soft);color:var(--amber-dark);}
+  .link-btn.amber:hover{background:var(--amber);color:#fff;}
 
   .empty-box{
-    border:1px dashed var(--line);border-radius:var(--radius-m);
-    padding:22px 16px;text-align:center;color:var(--ink-soft);font-size:14px;
+    border:1.5px dashed var(--line);border-radius:var(--radius-m);
+    padding:32px 16px;text-align:center;color:var(--ink-soft);font-size:14px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.25));
   }
-  .empty-box .link-btn{margin-top:8px;color:var(--forest);}
+  .empty-box .emoji{font-size:28px;display:block;margin-bottom:8px;}
+  .empty-box .link-btn{margin-top:12px;display:inline-flex;background:var(--emerald-soft);color:#0A8C5A;}
+  .empty-box .link-btn:hover{background:var(--emerald);color:#fff;}
 
   /* Category rows */
-  .cat-list{border-top:1px solid var(--line);}
-  .cat-row{padding:14px 0;border-bottom:1px solid var(--line);}
-  .cat-row-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
-  .cat-name{font-weight:600;font-size:15px;}
-  .cat-alloc{font-family:var(--font-serif);font-size:14px;color:var(--ink-soft);white-space:nowrap;}
-  .cat-bar-track{height:6px;border-radius:var(--radius-pill);background:var(--paper-2);margin-top:9px;overflow:hidden;}
-  .cat-bar-fill{height:100%;border-radius:var(--radius-pill);background:var(--forest);}
-  .cat-bar-fill.over{background:var(--brick);}
-  .cat-row-bottom{display:flex;justify-content:space-between;margin-top:7px;font-size:12.5px;color:var(--ink-soft);}
-  .cat-row-actions{display:flex;justify-content:flex-end;margin-top:6px;}
+  .cat-list{display:flex;flex-direction:column;gap:10px;}
+  .cat-row{
+    padding:14px 14px 12px;border:1px solid var(--line);border-radius:var(--radius-m);
+    background:var(--card);box-shadow:0 8px 18px -14px rgba(34,26,61,0.4);
+    border-left:5px solid var(--cat-color, var(--violet));
+  }
+  .cat-row-top{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .cat-name-wrap{display:flex;align-items:center;gap:9px;min-width:0;}
+  .cat-icon{
+    width:34px;height:34px;border-radius:11px;flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;font-size:16px;
+    background:var(--cat-color-soft, var(--violet-soft));
+  }
+  .cat-name{font-weight:700;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cat-alloc{font-family:var(--font-head);font-size:14px;color:var(--ink-soft);white-space:nowrap;font-weight:600;}
+  .cat-bar-track{height:8px;border-radius:var(--radius-pill);background:#F1EEFC;margin-top:11px;overflow:hidden;}
+  .cat-bar-fill{height:100%;border-radius:var(--radius-pill);background:var(--cat-color, var(--violet));transition:width .5s ease;}
+  .cat-bar-fill.over{background:var(--rose);}
+  .cat-row-bottom{display:flex;justify-content:space-between;margin-top:8px;font-size:12.5px;color:var(--ink-soft);}
+  .cat-row-actions{display:flex;justify-content:flex-end;margin-top:4px;}
   .tiny-btn{background:none;border:none;color:var(--ink-soft);font-size:12px;padding:2px 6px;}
-  .tiny-btn:hover{color:var(--brick);}
+  .tiny-btn:hover{color:var(--rose);}
 
   /* Transactions */
-  .tx-filter{display:flex;gap:8px;margin-bottom:12px;}
+  .tx-filter{display:flex;gap:8px;margin-bottom:14px;}
   .chip{
     border:1px solid var(--line);background:var(--card);border-radius:var(--radius-pill);
-    padding:6px 14px;font-size:13px;color:var(--ink-soft);
+    padding:8px 16px;font-size:13px;font-weight:600;color:var(--ink-soft);
   }
-  .chip.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
-  .tx-date-header{font-size:12px;color:var(--ink-soft);margin:16px 0 4px;}
+  .chip.active{background:linear-gradient(135deg,var(--violet),var(--blue));color:#fff;border-color:transparent;box-shadow:0 6px 14px -6px rgba(109,74,255,0.6);}
+  .tx-date-header{font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-soft);margin:18px 0 6px;}
   .tx-date-header:first-child{margin-top:0;}
-  .tx-list{border-top:1px solid var(--line);}
-  .tx-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);gap:10px;}
-  .tx-left{min-width:0;}
-  .tx-cat{font-weight:600;font-size:14px;}
+  .tx-list{display:flex;flex-direction:column;gap:8px;}
+  .tx-row{
+    display:flex;justify-content:space-between;align-items:center;padding:12px 13px;gap:10px;
+    background:var(--card);border:1px solid var(--line);border-radius:16px;
+    box-shadow:0 6px 16px -14px rgba(34,26,61,0.5);
+  }
+  .tx-left{min-width:0;display:flex;align-items:center;gap:10px;}
+  .tx-icon{
+    width:36px;height:36px;border-radius:11px;flex:0 0 auto;font-size:15px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .tx-icon.income{background:var(--emerald-soft);}
+  .tx-icon.expense{background:var(--rose-soft);}
+  .tx-body{min-width:0;}
+  .tx-cat{font-weight:700;font-size:14px;}
   .tx-note{font-size:12.5px;color:var(--ink-soft);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .tx-right{text-align:right;flex:0 0 auto;}
-  .tx-amount{font-family:var(--font-serif);font-size:16px;font-weight:600;}
-  .tx-amount.income{color:var(--forest);}
-  .tx-amount.expense{color:var(--brick);}
+  .tx-amount{font-family:var(--font-head);font-size:16px;font-weight:700;}
+  .tx-amount.income{color:var(--emerald);}
+  .tx-amount.expense{color:var(--rose);}
   .tx-del{background:none;border:none;color:var(--ink-soft);font-size:11.5px;margin-top:3px;padding:2px;}
-  .tx-del:hover{color:var(--brick);}
+  .tx-del:hover{color:var(--rose);}
+
+  /* Gold cards */
+  .gold-list{display:flex;flex-direction:column;gap:10px;}
+  .gold-row{
+    padding:16px;border:1px solid var(--line);border-radius:var(--radius-m);
+    background:var(--card);box-shadow:0 8px 18px -14px rgba(34,26,61,0.4);
+    border-left:5px solid var(--amber);
+  }
+  .gold-row-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .gold-name-wrap{display:flex;align-items:center;gap:10px;min-width:0;}
+  .gold-icon{
+    width:38px;height:38px;border-radius:12px;flex:0 0 auto;font-size:18px;
+    display:flex;align-items:center;justify-content:center;background:var(--amber-soft);
+  }
+  .gold-name{font-weight:700;font-size:15px;}
+  .gold-sub{font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+  .gold-row-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+  .gold-metric{background:#FAF8FF;border-radius:12px;padding:9px 11px;}
+  .gold-metric .k{font-size:11px;color:var(--ink-soft);}
+  .gold-metric .v{font-family:var(--font-head);font-size:14.5px;font-weight:700;margin-top:2px;}
+  .gold-pl{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);}
+  .gold-pl-label{font-size:12.5px;color:var(--ink-soft);}
+  .gold-pl-value{font-family:var(--font-head);font-weight:700;font-size:15px;display:flex;align-items:center;gap:5px;}
+  .gold-pl-value.profit{color:var(--emerald);}
+  .gold-pl-value.loss{color:var(--rose);}
+  .gold-row-actions{display:flex;justify-content:flex-end;margin-top:6px;}
+
+  .gold-hero-grid{display:flex;gap:14px;margin-top:16px;position:relative;flex-wrap:wrap;}
+  .gold-hero-item{flex:1;min-width:120px;}
+  .gold-hero-label{font-size:11.5px;color:rgba(255,255,255,0.78);}
+  .gold-hero-value{font-family:var(--font-head);font-size:17px;font-weight:700;margin-top:2px;color:#fff;}
 
   /* FAB */
   .fab{
-    position:fixed;right:20px;bottom:24px;z-index:30;
-    width:58px;height:58px;border-radius:50%;
-    background:var(--ink);color:var(--paper);border:none;
+    position:fixed;right:20px;bottom:96px;z-index:30;
+    width:60px;height:60px;border-radius:50%;
+    color:#fff;border:none;
     font-size:28px;line-height:1;
     display:flex;align-items:center;justify-content:center;
-    box-shadow:0 6px 18px rgba(32,36,31,0.28);
   }
-  .fab:active{transform:scale(0.95);}
+  .fab.mode-kas{background:linear-gradient(150deg,#8B6BFF,var(--violet) 55%,var(--blue));box-shadow:0 12px 26px -8px rgba(109,74,255,0.65);}
+  .fab.mode-emas{background:linear-gradient(150deg,#F5A324,var(--amber-dark) 60%,#EC4899);box-shadow:0 12px 26px -8px rgba(224,134,0,0.6);}
+  .fab:active{transform:scale(0.93);}
+
+  /* Bottom tab nav */
+  .tabbar{
+    position:fixed;left:0;right:0;bottom:0;z-index:30;
+    background:rgba(255,255,255,0.92);backdrop-filter:blur(10px);
+    border-top:1px solid var(--line);
+    padding:8px 18px calc(8px + env(safe-area-inset-bottom));
+    display:flex;justify-content:center;
+  }
+  .tabbar-inner{max-width:640px;width:100%;display:flex;gap:8px;}
+  .tab-btn{
+    flex:1;border:none;background:transparent;border-radius:14px;
+    display:flex;flex-direction:column;align-items:center;gap:2px;
+    padding:7px 0 5px;font-size:11.5px;font-weight:600;color:var(--ink-soft);
+  }
+  .tab-btn .tab-ic{font-size:20px;}
+  .tab-btn.active{color:var(--violet-dark);background:var(--violet-soft);}
+  .tab-btn.active.tab-emas{color:var(--amber-dark);background:var(--amber-soft);}
 
   /* Modal */
   .modal-overlay{
-    position:fixed;inset:0;background:rgba(32,36,31,0.45);
+    position:fixed;inset:0;background:rgba(34,26,61,0.45);backdrop-filter:blur(2px);
     display:flex;align-items:flex-end;justify-content:center;z-index:50;
-    padding:0;
+    padding:0;animation:fadeUp .2s ease both;
   }
   .modal-sheet{
-    background:var(--paper);width:100%;max-width:520px;
-    border-radius:20px 20px 0 0;padding:22px 20px calc(24px + env(safe-area-inset-bottom));
+    background:var(--bg-1);width:100%;max-width:520px;
+    border-radius:24px 24px 0 0;padding:22px 20px calc(24px + env(safe-area-inset-bottom));
     max-height:88vh;overflow-y:auto;
+    animation:sheetUp .28s cubic-bezier(.2,.8,.3,1) both;
+    box-shadow:0 -16px 34px -12px rgba(34,26,61,0.35);
   }
   @media (min-width:680px){
     .modal-overlay{align-items:center;}
-    .modal-sheet{border-radius:var(--radius-m);max-height:80vh;}
+    .modal-sheet{border-radius:var(--radius-m);max-height:80vh;animation:popIn .22s ease both;}
   }
   .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
-  .modal-title{font-family:var(--font-serif);font-size:20px;font-weight:600;}
+  .modal-title{font-family:var(--font-head);font-size:19px;font-weight:700;}
   .field{margin-bottom:14px;}
-  .field label{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:6px;}
+  .field label{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:6px;font-weight:500;}
   .field input, .field select, .field textarea{
-    width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:var(--radius-s);
+    width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:var(--radius-s);
     background:var(--card);font-size:15px;color:var(--ink);
   }
   .field textarea{resize:vertical;min-height:70px;font-family:var(--font-sans);}
   .field-hint{font-size:11.5px;color:var(--ink-soft);margin-top:5px;}
-  .field-hint.warn{color:var(--brick);}
+  .field-hint.warn{color:var(--rose);}
+  .field-row{display:flex;gap:10px;}
+  .field-row .field{flex:1;}
 
-  .segmented{display:flex;border:1px solid var(--line);border-radius:var(--radius-pill);overflow:hidden;margin-bottom:16px;}
+  .icon-grid{display:flex;flex-wrap:wrap;gap:8px;}
+  .icon-opt{
+    width:40px;height:40px;border-radius:11px;border:2px solid transparent;background:#F1EEFC;
+    display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--ink);
+  }
+  .icon-opt.selected{border-color:var(--violet);background:var(--violet-soft);}
+  .color-grid{display:flex;flex-wrap:wrap;gap:9px;}
+  .color-opt{
+    width:28px;height:28px;border-radius:50%;border:2px solid transparent;
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,0.6);
+  }
+  .color-opt.selected{border-color:var(--ink);transform:scale(1.14);}
+
+  .segmented{display:flex;border:1px solid var(--line);border-radius:var(--radius-pill);overflow:hidden;margin-bottom:16px;background:var(--card);}
   .segmented button{flex:1;border:none;background:transparent;padding:11px 0;font-size:14.5px;font-weight:600;color:var(--ink-soft);}
-  .segmented button.active-income{background:var(--forest-soft);color:var(--forest);}
-  .segmented button.active-expense{background:var(--brick-soft);color:var(--brick);}
+  .segmented button.active-income{background:var(--emerald-soft);color:#0A8C5A;}
+  .segmented button.active-expense{background:var(--rose-soft);color:var(--rose);}
 
   .btn{
-    width:100%;padding:13px;border-radius:var(--radius-pill);border:none;
-    font-size:15px;font-weight:600;
+    width:100%;padding:14px;border-radius:var(--radius-pill);border:none;
+    font-size:15px;font-weight:700;
   }
-  .btn-primary{background:var(--ink);color:var(--paper);}
-  .btn-primary:active{opacity:.85;}
+  .btn-primary{background:linear-gradient(135deg,var(--violet),var(--blue));color:#fff;box-shadow:0 10px 22px -10px rgba(109,74,255,0.7);}
+  .btn-primary:active{opacity:.9;transform:scale(.99);}
+  .btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+  .btn-amber{background:linear-gradient(135deg,var(--amber),var(--pink));color:#fff;box-shadow:0 10px 22px -10px rgba(224,134,0,0.65);}
+  .btn-amber:active{opacity:.9;transform:scale(.99);}
+  .btn-amber:disabled{opacity:.6;cursor:not-allowed;transform:none;}
   .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--ink);}
-  .btn-danger{background:var(--brick-soft);color:var(--brick);}
+  .btn-ghost:hover{background:var(--violet-soft);}
+  .btn-danger{background:var(--rose-soft);color:var(--rose);}
   .btn-row{display:flex;gap:10px;}
   .btn-row .btn{flex:1;}
 
   .settings-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
   .settings-tab{border:1px solid var(--line);background:var(--card);border-radius:var(--radius-pill);padding:7px 13px;font-size:13px;color:var(--ink-soft);}
-  .settings-tab.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .settings-tab.active{background:var(--ink);color:#fff;border-color:var(--ink);}
   .settings-pane{display:none;}
-  .settings-pane.active{display:block;}
+  .settings-pane.active{display:block;animation:fadeUp .25s ease both;}
 
   .divider-note{border-top:1px solid var(--line);margin:18px 0;padding-top:14px;font-size:12.5px;color:var(--ink-soft);}
 
-  .toast{
-    position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
-    background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:var(--radius-pill);
-    font-size:13.5px;z-index:80;opacity:0;transition:opacity .25s ease;pointer-events:none;
+  .price-card{
+    background:linear-gradient(150deg,#FFF6E5,#FFEFEF);border:1px solid #F5DFAF;border-radius:var(--radius-m);
+    padding:14px;margin-bottom:14px;
   }
-  .toast.show{opacity:1;}
+  .price-card .k{font-size:12px;color:#8A6412;}
+  .price-card .v{font-family:var(--font-head);font-size:20px;font-weight:700;color:var(--amber-dark);margin-top:2px;}
+  .price-card .upd{font-size:11.5px;color:#8A6412;margin-top:4px;}
+
+  .toast{
+    position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(8px);
+    background:var(--ink);color:#fff;padding:12px 20px;border-radius:var(--radius-pill);
+    font-size:13.5px;font-weight:500;z-index:80;opacity:0;
+    transition:opacity .25s ease, transform .25s ease;pointer-events:none;
+    box-shadow:0 12px 26px -10px rgba(34,26,61,0.6);
+    display:flex;align-items:center;gap:8px;max-width:88vw;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .toast.err{background:var(--rose);}
 
   .onboard-wrap{
     min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
   }
   .onboard-card{
     max-width:460px;width:100%;background:var(--card);border:1px solid var(--line);
-    border-radius:var(--radius-m);padding:26px 22px;
+    border-radius:var(--radius-l);padding:28px 24px;box-shadow:0 20px 40px -20px rgba(34,26,61,0.4);
   }
-  .onboard-card h1{font-family:var(--font-serif);font-size:24px;margin:0 0 8px;}
+  .onboard-card h1{font-family:var(--font-head);font-size:25px;margin:0 0 8px;
+    background:linear-gradient(135deg,var(--violet),var(--blue));-webkit-background-clip:text;background-clip:text;color:transparent;}
   .onboard-card p{font-size:14px;color:var(--ink-soft);line-height:1.55;margin:0 0 18px;}
   .status-line{font-size:12.5px;margin-top:10px;}
-  .status-line.ok{color:var(--forest);}
-  .status-line.err{color:var(--brick);}
+  .status-line.ok{color:var(--emerald);}
+  .status-line.err{color:var(--rose);}
   .loading-dot{font-size:14px;color:var(--ink-soft);text-align:center;padding:60px 0;}
 </style>
 </head>
@@ -236,8 +425,8 @@
 
 <div id="onboard" class="onboard-wrap hidden">
   <div class="onboard-card">
-    <h1>Buku Kas</h1>
-    <p>Catat pemasukan &amp; pengeluaran per kategori, dengan riwayat tersimpan di Firebase milikmu dan notifikasi otomatis ke Telegram. Tempelkan konfigurasi Firebase Web App untuk mulai.</p>
+    <h1>Buku Kas &amp; Tabungan Emas</h1>
+    <p>Catat pemasukan &amp; pengeluaran per kategori, pantau tabungan emasmu, dengan riwayat tersimpan di Firebase milikmu dan notifikasi otomatis ke Telegram. Tempelkan konfigurasi Firebase Web App untuk mulai.</p>
     <div class="field">
       <label>Konfigurasi Firebase (salin objek firebaseConfig dari Firebase Console)</label>
       <textarea id="fbConfigInput" placeholder='{
@@ -258,57 +447,100 @@
   <div class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <span class="brand-name">Buku Kas</span>
-        <span class="brand-tag">Catatan keuangan pribadi</span>
+        <div class="brand-mark">💰</div>
+        <div class="brand-text">
+          <span class="brand-name">Buku Kas</span>
+          <span class="brand-tag" id="topbarTag">Catatan keuangan pribadi</span>
+        </div>
       </div>
       <button class="icon-btn" id="btnSettings" aria-label="Pengaturan">⚙</button>
     </div>
   </div>
 
   <div class="app-shell">
-    <div class="hero">
-      <div class="hero-label">Total dana tersisa</div>
-      <div class="hero-number" id="heroTotal">Rp0</div>
-      <div class="hero-meta">
-        <div class="hero-meta-item">
-          <div class="hero-meta-label">Dana awal</div>
-          <div class="hero-meta-value"><button id="btnEditDanaAwal">—</button></div>
+
+    <!-- ===== VIEW: KAS ===== -->
+    <div id="viewKas" class="view-pane active">
+      <div class="hero hero-kas fade-up">
+        <div class="hero-label">💜 Total dana tersisa</div>
+        <div class="hero-number" id="heroTotal">Rp0</div>
+        <div class="hero-meta">
+          <div class="hero-meta-item">
+            <div class="hero-meta-label">Dana awal</div>
+            <div class="hero-meta-value"><button id="btnEditDanaAwal">—</button></div>
+          </div>
+          <div class="hero-meta-item">
+            <div class="hero-meta-label">Belum dialokasikan</div>
+            <div class="hero-meta-value" id="heroUnalloc">Rp0</div>
+          </div>
         </div>
-        <div class="hero-meta-item">
-          <div class="hero-meta-label">Belum dialokasikan</div>
-          <div class="hero-meta-value" id="heroUnalloc">Rp0</div>
+      </div>
+
+      <div class="summary-strip">
+        <div class="stat-card income"><div class="ic">📈</div><div class="k">Total pemasukan</div><div class="v" id="statIncome">Rp0</div></div>
+        <div class="stat-card expense"><div class="ic">📉</div><div class="k">Total pengeluaran</div><div class="v" id="statExpense">Rp0</div></div>
+        <div class="stat-card unalloc"><div class="ic">🗂️</div><div class="k">Jumlah kategori</div><div class="v" id="statCatCount">0</div></div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <div class="section-title">Kategori</div>
+          <button class="link-btn" id="btnAddCategory">+ Kategori</button>
         </div>
+        <div id="categoryArea"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <div class="section-title">Riwayat transaksi</div>
+        </div>
+        <div class="tx-filter">
+          <button class="chip active" data-filter="all">Semua</button>
+          <button class="chip" data-filter="income">Pemasukan</button>
+          <button class="chip" data-filter="expense">Pengeluaran</button>
+        </div>
+        <div id="txArea"></div>
       </div>
     </div>
 
-    <div class="summary-strip">
-      <div class="stat-card income"><div class="k">Total pemasukan</div><div class="v" id="statIncome">Rp0</div></div>
-      <div class="stat-card expense"><div class="k">Total pengeluaran</div><div class="v" id="statExpense">Rp0</div></div>
-      <div class="stat-card unalloc"><div class="k">Jumlah kategori</div><div class="v" id="statCatCount">0</div></div>
+    <!-- ===== VIEW: EMAS ===== -->
+    <div id="viewEmas" class="view-pane">
+      <div class="hero hero-emas fade-up">
+        <div class="hero-label">🪙 Total tabungan emas</div>
+        <div class="hero-number" id="goldTotalGrams">0 gr</div>
+        <div class="hero-sub" id="goldRefPriceLine">Harga acuan belum diatur</div>
+        <div class="gold-hero-grid">
+          <div class="gold-hero-item">
+            <div class="gold-hero-label">Estimasi nilai saat ini</div>
+            <div class="gold-hero-value" id="goldTotalValue">Rp0</div>
+          </div>
+          <div class="gold-hero-item">
+            <div class="gold-hero-label">Total modal dibeli</div>
+            <div class="gold-hero-value" id="goldTotalBuy">Rp0</div>
+          </div>
+        </div>
+        <div class="hero-badge" id="goldTotalPlBadge">Untung/rugi: Rp0</div>
+      </div>
+
+      <div class="section" style="margin-top:22px;">
+        <div class="section-head">
+          <div class="section-title">🪙 Koleksi emas</div>
+          <button class="link-btn amber" id="btnAddGold">+ Emas</button>
+        </div>
+        <div id="goldArea"></div>
+      </div>
     </div>
 
-    <div class="section">
-      <div class="section-head">
-        <div class="section-title">Kategori</div>
-        <button class="link-btn" id="btnAddCategory">+ Kategori</button>
-      </div>
-      <div id="categoryArea"></div>
-    </div>
-
-    <div class="section">
-      <div class="section-head">
-        <div class="section-title">Riwayat transaksi</div>
-      </div>
-      <div class="tx-filter">
-        <button class="chip active" data-filter="all">Semua</button>
-        <button class="chip" data-filter="income">Pemasukan</button>
-        <button class="chip" data-filter="expense">Pengeluaran</button>
-      </div>
-      <div id="txArea"></div>
-    </div>
   </div>
 
-  <button class="fab" id="btnFab" aria-label="Tambah transaksi">+</button>
+  <button class="fab mode-kas" id="btnFab" aria-label="Tambah">+</button>
+
+  <div class="tabbar">
+    <div class="tabbar-inner">
+      <button class="tab-btn active" id="btnTabKas" data-tab="kas"><span class="tab-ic">💰</span>Kas</button>
+      <button class="tab-btn" id="btnTabEmas" data-tab="emas"><span class="tab-ic">🪙</span>Tabungan Emas</button>
+    </div>
+  </div>
 </div>
 
 <div id="globalLoading" class="loading-dot hidden">Memuat…</div>
@@ -330,7 +562,7 @@
     </div>
     <div class="field">
       <label>Jumlah (Rp)</label>
-      <input type="number" id="txAmount" min="0" step="1" placeholder="0">
+      <input type="text" inputmode="numeric" id="txAmount" data-money placeholder="0">
     </div>
     <div class="field">
       <label>Catatan (opsional)</label>
@@ -356,11 +588,53 @@
       <input type="text" id="catName" placeholder="mis. Makan, Transport, Tabungan">
     </div>
     <div class="field">
+      <label>Ikon</label>
+      <div class="icon-grid" id="catIconGrid"></div>
+    </div>
+    <div class="field">
+      <label>Warna</label>
+      <div class="color-grid" id="catColorGrid"></div>
+    </div>
+    <div class="field">
       <label>Alokasi dana (Rp)</label>
-      <input type="number" id="catAlloc" min="0" step="1" placeholder="0">
+      <input type="text" inputmode="numeric" id="catAlloc" data-money placeholder="0">
       <div class="field-hint" id="catAllocHint"></div>
     </div>
     <button class="btn btn-primary" id="btnSaveCategory">Simpan kategori</button>
+  </div>
+</div>
+
+<!-- Modal: Gold -->
+<div class="modal-overlay hidden" id="modalGold">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <div class="modal-title">🪙 Tambah emas</div>
+      <button class="icon-btn" data-close="modalGold">✕</button>
+    </div>
+    <div class="field">
+      <label>Jenis / nama emas</label>
+      <input type="text" id="goldName" placeholder="mis. Antam 5gr, Perhiasan kalung, UBS">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Berat (gram)</label>
+        <input type="number" id="goldGrams" min="0" step="0.001" placeholder="mis. 5">
+      </div>
+      <div class="field">
+        <label>Kadar emas (%)</label>
+        <input type="number" id="goldPurity" min="0" max="100" step="0.01" placeholder="mis. 99.99">
+      </div>
+    </div>
+    <div class="field-hint" style="margin-top:-8px;margin-bottom:14px;">Contoh kadar umum: 24K ≈ 99,99% · 22K ≈ 91,6% · 18K ≈ 75%</div>
+    <div class="field">
+      <label>Harga saat dibeli (Rp, total)</label>
+      <input type="text" inputmode="numeric" id="goldBuyPrice" data-money placeholder="0">
+    </div>
+    <div class="field">
+      <label>Tanggal beli</label>
+      <input type="date" id="goldBuyDate">
+    </div>
+    <button class="btn btn-amber" id="btnSaveGold">Simpan emas</button>
   </div>
 </div>
 
@@ -374,6 +648,7 @@
     <div class="settings-tabs">
       <button class="settings-tab active" data-pane="paneTelegram">Telegram</button>
       <button class="settings-tab" data-pane="paneDana">Dana awal</button>
+      <button class="settings-tab" data-pane="paneGoldPrice">Harga Emas</button>
       <button class="settings-tab" data-pane="paneFirebase">Firebase</button>
     </div>
 
@@ -393,10 +668,28 @@
     <div class="settings-pane" id="paneDana">
       <div class="field">
         <label>Dana awal saat ini (Rp)</label>
-        <input type="number" id="danaAwalInput" min="0" step="1">
+        <input type="text" inputmode="numeric" id="danaAwalInput" data-money>
         <div class="field-hint">Mengubah dana awal akan langsung memengaruhi total dana tersisa.</div>
       </div>
       <button class="btn btn-primary" id="btnSaveDanaAwal">Simpan dana awal</button>
+    </div>
+
+    <div class="settings-pane" id="paneGoldPrice">
+      <div class="price-card">
+        <div class="k">Harga emas Antam acuan saat ini (per gram, 24K)</div>
+        <div class="v" id="paneGoldPriceCurrent">Belum diatur</div>
+        <div class="upd" id="paneGoldPriceUpdated">—</div>
+      </div>
+      <div class="field">
+        <label>Harga emas Antam per gram (Rp)</label>
+        <input type="text" inputmode="numeric" id="goldPriceInput" data-money placeholder="0">
+        <div class="field-hint">Harga ini dipakai untuk menghitung estimasi jual seluruh emasmu: harga acuan × kadar (%) × berat (gram).</div>
+      </div>
+      <div class="btn-row" style="margin-bottom:10px;">
+        <button class="btn btn-ghost" id="btnFetchGoldPrice">🔄 Ambil otomatis</button>
+        <button class="btn btn-amber" id="btnSaveGoldPrice">Simpan harga</button>
+      </div>
+      <div class="field-hint" id="goldPriceFetchHint">Pengambilan otomatis memakai data publik logam-mulia-api (sumber: logammulia.com). Jika gagal (mis. karena koneksi), isi harga secara manual — cek di app Logam Mulia Antam atau logammulia.com.</div>
     </div>
 
     <div class="settings-pane" id="paneFirebase">
@@ -421,13 +714,34 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 let firebaseConfig = safeParseJSON(localStorage.getItem('bk_firebase_config'));
 let telegramConfig = safeParseJSON(localStorage.getItem('bk_telegram_config')) || { token:'', chatId:'' };
 let app, db, auth, uid = null;
-let meta = { danaAwal: 0 };
+let meta = { danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null };
 let categories = [];
 let transactions = [];
+let goldItems = [];
 let txFilter = 'all';
 let selectedTxType = 'expense';
+let activeTab = 'kas';
+
+const CATEGORY_ICONS = ['🍽️','🚗','🏠','🛒','💊','🎓','🎁','🧾','📱','💡','🐾','✈️','🎉','🧴','🏦','💼','🐷','☕'];
+const CATEGORY_COLORS = [
+  { solid:'#6D4AFF', soft:'#ECE6FF' }, // violet
+  { solid:'#F0355A', soft:'#FFE2E9' }, // rose
+  { solid:'#F5A324', soft:'#FFF0D6' }, // amber
+  { solid:'#2E8BFF', soft:'#DFF0FF' }, // blue
+  { solid:'#0FAE73', soft:'#D9F7EA' }, // emerald
+  { solid:'#EC4899', soft:'#FCE4F1' }, // pink
+  { solid:'#14B8A6', soft:'#D6F6F1' }, // teal
+  { solid:'#8B5CF6', soft:'#EDE6FE' }  // purple
+];
+let selectedCatIcon = CATEGORY_ICONS[0];
+let selectedCatColorIdx = 0;
 
 function safeParseJSON(s){ try{ return s ? JSON.parse(s) : null; }catch(e){ return null; } }
+function catColor(cat, fallbackIdx){
+  const idx = (typeof cat?.colorIdx === 'number') ? cat.colorIdx : (fallbackIdx % CATEGORY_COLORS.length);
+  return CATEGORY_COLORS[idx] || CATEGORY_COLORS[0];
+}
+function catIcon(cat){ return cat?.icon || '🗂️'; }
 
 // ---------- Helpers ----------
 function formatRupiah(n){
@@ -435,10 +749,20 @@ function formatRupiah(n){
   const sign = num < 0 ? '-' : '';
   return sign + 'Rp' + Math.abs(num).toLocaleString('id-ID');
 }
+function formatGram(n){
+  const num = Number(n)||0;
+  return num.toLocaleString('id-ID', { maximumFractionDigits:3 }) + ' gr';
+}
 function formatDateHuman(iso){
   if(!iso) return '';
   const d = new Date(iso + 'T00:00:00');
   return d.toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
+}
+function formatDateTimeHuman(iso){
+  if(!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' }) + ', ' +
+    d.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
 }
 function todayISO(){
   const d = new Date();
@@ -446,15 +770,38 @@ function todayISO(){
   const local = new Date(d.getTime() - off*60000);
   return local.toISOString().slice(0,10);
 }
-function showToast(msg){
+function showToast(msg, isError){
   const t = document.getElementById('toast');
-  t.textContent = msg;
+  t.textContent = (isError ? '⚠️ ' : '') + msg;
+  t.classList.toggle('err', !!isError);
   t.classList.add('show');
   clearTimeout(showToast._tm);
-  showToast._tm = setTimeout(()=>t.classList.remove('show'), 2600);
+  showToast._tm = setTimeout(()=>t.classList.remove('show'), isError ? 3600 : 2600);
+}
+function errorMessage(e){
+  const code = e?.code || '';
+  if(code.includes('permission-denied')) return 'Ditolak oleh aturan keamanan Firestore. Periksa Firestore Rules proyekmu.';
+  if(code.includes('unavailable')) return 'Tidak ada koneksi ke Firebase. Periksa internet kamu.';
+  return e?.message || 'Terjadi kesalahan tak terduga.';
 }
 function openModal(id){ document.getElementById(id).classList.remove('hidden'); }
 function closeModal(id){ document.getElementById(id).classList.add('hidden'); }
+
+// ---------- Number input formatting (pemisah ribuan) ----------
+function digitsOnly(s){ return String(s||'').replace(/\D/g,''); }
+function moneyValue(el){ return Number(digitsOnly(el.value)) || 0; }
+function setMoneyValue(el, num){
+  const n = Number(num)||0;
+  el.value = n ? n.toLocaleString('id-ID') : '';
+}
+function attachMoneyFormatting(){
+  document.querySelectorAll('[data-money]').forEach(el=>{
+    el.addEventListener('input', ()=>{
+      const raw = digitsOnly(el.value);
+      el.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+    });
+  });
+}
 
 // ---------- Firebase bootstrap ----------
 async function startApp(){
@@ -488,10 +835,11 @@ async function startApp(){
 function userDocRef(){ return doc(db, 'bukukas_users', uid); }
 function categoriesColRef(){ return collection(db, 'bukukas_users', uid, 'categories'); }
 function txColRef(){ return collection(db, 'bukukas_users', uid, 'transactions'); }
+function goldColRef(){ return collection(db, 'bukukas_users', uid, 'gold'); }
 
 function attachListeners(){
   onSnapshot(userDocRef(), (snap)=>{
-    meta = snap.exists() ? snap.data() : { danaAwal: 0 };
+    meta = snap.exists() ? { danaAwal:0, goldRefPrice:0, goldRefPriceUpdatedAt:null, goldRefPriceSource:null, ...snap.data() } : { danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null };
     render();
   });
   onSnapshot(categoriesColRef(), (snap)=>{
@@ -500,6 +848,10 @@ function attachListeners(){
   });
   onSnapshot(query(txColRef(), orderBy('createdAt','desc')), (snap)=>{
     transactions = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    render();
+  });
+  onSnapshot(query(goldColRef(), orderBy('createdAt','desc')), (snap)=>{
+    goldItems = snap.docs.map(d=>({ id:d.id, ...d.data() }));
     render();
   });
 }
@@ -515,6 +867,27 @@ function categoryStats(catId){
   const cat = categories.find(c=>c.id===catId);
   const allocated = Number(cat?.allocated||0);
   return { income, expense, allocated, remaining: allocated + income - expense };
+}
+function goldStats(item){
+  const refPrice = Number(meta.goldRefPrice||0);
+  const grams = Number(item.grams||0);
+  const purity = Number(item.purity||0);
+  const buyPrice = Number(item.buyPrice||0);
+  const estValue = refPrice * (purity/100) * grams;
+  const profit = estValue - buyPrice;
+  const profitPct = buyPrice > 0 ? (profit/buyPrice*100) : 0;
+  return { estValue, profit, profitPct };
+}
+function goldTotals(){
+  const refPrice = Number(meta.goldRefPrice||0);
+  let totalGrams = 0, totalBuy = 0, totalEst = 0;
+  goldItems.forEach(item=>{
+    const s = goldStats(item);
+    totalGrams += Number(item.grams||0);
+    totalBuy += Number(item.buyPrice||0);
+    totalEst += s.estValue;
+  });
+  return { refPrice, totalGrams, totalBuy, totalEst, totalProfit: totalEst - totalBuy };
 }
 
 // ---------- Render ----------
@@ -538,24 +911,29 @@ function render(){
   renderCategories();
   renderTransactions();
   renderCategorySelect();
+  renderGold();
 }
 
 function renderCategories(){
   const area = document.getElementById('categoryArea');
   if(categories.length === 0){
-    area.innerHTML = `<div class="empty-box">Belum ada kategori. Buat kategori untuk membagi dana awal, mis. Makan, Transport, Tabungan.<br><button class="link-btn" id="emptyAddCat">+ Buat kategori pertama</button></div>`;
-    document.getElementById('emptyAddCat').addEventListener('click', ()=>openModal('modalCategory'));
+    area.innerHTML = `<div class="empty-box"><span class="emoji">🗂️</span>Belum ada kategori. Buat kategori untuk membagi dana awal, mis. Makan, Transport, Tabungan.<br><button class="link-btn" id="emptyAddCat">+ Buat kategori pertama</button></div>`;
+    document.getElementById('emptyAddCat').addEventListener('click', openAddCategoryModal);
     return;
   }
   let html = '<div class="cat-list">';
-  categories.forEach(cat=>{
+  categories.forEach((cat,i)=>{
     const s = categoryStats(cat.id);
     const pct = s.allocated > 0 ? Math.min(100, (s.expense / s.allocated) * 100) : (s.expense>0?100:0);
     const over = s.remaining < 0;
+    const color = catColor(cat, i);
     html += `
-      <div class="cat-row">
+      <div class="cat-row fade-up" style="--cat-color:${color.solid};--cat-color-soft:${color.soft};animation-delay:${i*40}ms">
         <div class="cat-row-top">
-          <div class="cat-name">${escapeHtml(cat.name)}</div>
+          <div class="cat-name-wrap">
+            <div class="cat-icon">${catIcon(cat)}</div>
+            <div class="cat-name">${escapeHtml(cat.name)}</div>
+          </div>
           <div class="cat-alloc">${formatRupiah(s.allocated)}</div>
         </div>
         <div class="cat-bar-track"><div class="cat-bar-fill ${over?'over':''}" style="width:${pct}%"></div></div>
@@ -580,7 +958,7 @@ function renderTransactions(){
   let list = transactions;
   if(txFilter !== 'all') list = list.filter(t=>t.type===txFilter);
   if(list.length === 0){
-    area.innerHTML = `<div class="empty-box">Belum ada transaksi tercatat.</div>`;
+    area.innerHTML = `<div class="empty-box"><span class="emoji">🧾</span>Belum ada transaksi tercatat.</div>`;
     return;
   }
   let html = '';
@@ -590,11 +968,16 @@ function renderTransactions(){
       html += `<div class="tx-date-header">${formatDateHuman(t.date)}</div>`;
       lastDate = t.date;
     }
+    const cat = categories.find(c=>c.id===t.categoryId);
+    const icon = cat ? catIcon(cat) : (t.type==='income' ? '⬆️' : '⬇️');
     html += `
       <div class="tx-row">
         <div class="tx-left">
-          <div class="tx-cat">${escapeHtml(t.categoryName || 'Tanpa kategori')}</div>
-          ${t.note ? `<div class="tx-note">${escapeHtml(t.note)}</div>` : ''}
+          <div class="tx-icon ${t.type}">${icon}</div>
+          <div class="tx-body">
+            <div class="tx-cat">${escapeHtml(t.categoryName || 'Tanpa kategori')}</div>
+            ${t.note ? `<div class="tx-note">${escapeHtml(t.note)}</div>` : ''}
+          </div>
         </div>
         <div class="tx-right">
           <div class="tx-amount ${t.type}">${t.type==='income'?'+':'-'}${formatRupiah(t.amount)}</div>
@@ -618,37 +1001,174 @@ function renderCategorySelect(){
   if(current) sel.value = current;
 }
 
+function renderIconGrid(){
+  const grid = document.getElementById('catIconGrid');
+  grid.innerHTML = CATEGORY_ICONS.map(ic=>
+    `<button type="button" class="icon-opt${ic===selectedCatIcon?' selected':''}" data-icon="${ic}">${ic}</button>`
+  ).join('');
+  grid.querySelectorAll('.icon-opt').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      selectedCatIcon = btn.dataset.icon;
+      grid.querySelectorAll('.icon-opt').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+    });
+  });
+}
+function renderColorGrid(){
+  const grid = document.getElementById('catColorGrid');
+  grid.innerHTML = CATEGORY_COLORS.map((c,i)=>
+    `<button type="button" class="color-opt${i===selectedCatColorIdx?' selected':''}" data-idx="${i}" style="background:${c.solid}"></button>`
+  ).join('');
+  grid.querySelectorAll('.color-opt').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      selectedCatColorIdx = Number(btn.dataset.idx);
+      grid.querySelectorAll('.color-opt').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+    });
+  });
+}
+
+function renderGold(){
+  const totals = goldTotals();
+  document.getElementById('goldTotalGrams').textContent = formatGram(totals.totalGrams);
+  document.getElementById('goldTotalValue').textContent = formatRupiah(totals.totalEst);
+  document.getElementById('goldTotalBuy').textContent = formatRupiah(totals.totalBuy);
+
+  const refLine = document.getElementById('goldRefPriceLine');
+  if(totals.refPrice > 0){
+    refLine.textContent = `Harga acuan: ${formatRupiah(totals.refPrice)}/gram (24K)` + (meta.goldRefPriceUpdatedAt ? ` · diperbarui ${formatDateTimeHuman(meta.goldRefPriceUpdatedAt)}` : '');
+  }else{
+    refLine.textContent = 'Harga acuan belum diatur — buka ⚙ Pengaturan → Harga Emas';
+  }
+
+  const plBadge = document.getElementById('goldTotalPlBadge');
+  const pl = totals.totalProfit;
+  const plPct = totals.totalBuy > 0 ? (pl/totals.totalBuy*100) : 0;
+  plBadge.classList.remove('profit','loss');
+  if(totals.totalBuy === 0 && goldItems.length === 0){
+    plBadge.textContent = 'Belum ada data emas';
+  }else{
+    plBadge.classList.add(pl >= 0 ? 'profit' : 'loss');
+    plBadge.textContent = (pl >= 0 ? '📈 Untung ' : '📉 Rugi ') + formatRupiah(Math.abs(pl)) + ` (${pl>=0?'+':'-'}${Math.abs(plPct).toFixed(1)}%)`;
+  }
+
+  // Settings pane preview
+  const pgc = document.getElementById('paneGoldPriceCurrent');
+  const pgu = document.getElementById('paneGoldPriceUpdated');
+  if(Number(meta.goldRefPrice||0) > 0){
+    pgc.textContent = formatRupiah(meta.goldRefPrice) + ' / gram';
+    pgu.textContent = (meta.goldRefPriceUpdatedAt ? 'Diperbarui ' + formatDateTimeHuman(meta.goldRefPriceUpdatedAt) : '') + (meta.goldRefPriceSource ? ' · ' + meta.goldRefPriceSource : '');
+  }else{
+    pgc.textContent = 'Belum diatur';
+    pgu.textContent = '—';
+  }
+
+  const area = document.getElementById('goldArea');
+  if(goldItems.length === 0){
+    area.innerHTML = `<div class="empty-box"><span class="emoji">🪙</span>Belum ada emas tercatat. Tambahkan emas Antam, UBS, atau perhiasanmu untuk memantau nilainya.<br><button class="link-btn amber" id="emptyAddGold">+ Tambah emas pertama</button></div>`;
+    document.getElementById('emptyAddGold').addEventListener('click', openAddGoldModal);
+    return;
+  }
+  let html = '<div class="gold-list">';
+  goldItems.forEach((item,i)=>{
+    const s = goldStats(item);
+    const profit = s.profit;
+    html += `
+      <div class="gold-row fade-up" style="animation-delay:${i*40}ms">
+        <div class="gold-row-top">
+          <div class="gold-name-wrap">
+            <div class="gold-icon">🪙</div>
+            <div>
+              <div class="gold-name">${escapeHtml(item.name || 'Emas')}</div>
+              <div class="gold-sub">${formatGram(item.grams)} · kadar ${Number(item.purity||0).toLocaleString('id-ID')}% · dibeli ${item.buyDate ? formatDateHuman(item.buyDate) : '-'}</div>
+            </div>
+          </div>
+        </div>
+        <div class="gold-row-grid">
+          <div class="gold-metric"><div class="k">Harga saat dibeli</div><div class="v">${formatRupiah(item.buyPrice)}</div></div>
+          <div class="gold-metric"><div class="k">Estimasi harga jual sekarang</div><div class="v">${formatRupiah(s.estValue)}</div></div>
+        </div>
+        <div class="gold-pl">
+          <div class="gold-pl-label">${profit>=0?'Estimasi untung':'Estimasi rugi'} jika dijual</div>
+          <div class="gold-pl-value ${profit>=0?'profit':'loss'}">${profit>=0?'▲':'▼'} ${formatRupiah(Math.abs(profit))}</div>
+        </div>
+        <div class="gold-row-actions">
+          <button class="tiny-btn" data-del-gold="${item.id}">Hapus emas</button>
+        </div>
+      </div>`;
+  });
+  html += '</div>';
+  area.innerHTML = html;
+  area.querySelectorAll('[data-del-gold]').forEach(btn=>{
+    btn.addEventListener('click', ()=>deleteGold(btn.dataset.delGold));
+  });
+}
+
 function escapeHtml(s){
   return String(s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
-// ---------- Actions ----------
+// ---------- Actions: Kas ----------
 async function saveDanaAwal(value){
-  await setDoc(userDocRef(), { danaAwal: Number(value)||0 }, { merge:true });
-  showToast('Dana awal disimpan');
+  try{
+    await setDoc(userDocRef(), { danaAwal: Number(value)||0 }, { merge:true });
+    showToast('Dana awal disimpan');
+  }catch(e){
+    console.error('saveDanaAwal', e);
+    showToast(errorMessage(e), true);
+    throw e;
+  }
 }
 
-async function saveCategory(name, allocated){
-  await addDoc(categoriesColRef(), { name, allocated: Number(allocated)||0, createdAt: serverTimestamp() });
-  showToast('Kategori ditambahkan');
+async function saveCategory(name, allocated, icon, colorIdx){
+  try{
+    await addDoc(categoriesColRef(), {
+      name,
+      allocated: Number(allocated)||0,
+      icon: icon || CATEGORY_ICONS[0],
+      colorIdx: Number.isInteger(colorIdx) ? colorIdx : 0,
+      createdAt: serverTimestamp()
+    });
+    showToast('Kategori ditambahkan');
+  }catch(e){
+    console.error('saveCategory', e);
+    showToast(errorMessage(e), true);
+    throw e;
+  }
 }
 
 async function deleteCategory(id){
   if(!confirm('Hapus kategori ini? Riwayat transaksi lama tetap tersimpan.')) return;
-  await deleteDoc(doc(categoriesColRef(), id));
-  showToast('Kategori dihapus');
+  try{
+    await deleteDoc(doc(categoriesColRef(), id));
+    showToast('Kategori dihapus');
+  }catch(e){
+    console.error('deleteCategory', e);
+    showToast(errorMessage(e), true);
+  }
 }
 
 async function saveTransaction(data){
-  await addDoc(txColRef(), { ...data, createdAt: serverTimestamp() });
-  showToast('Transaksi disimpan');
-  sendTelegramNotification(data);
+  try{
+    await addDoc(txColRef(), { ...data, createdAt: serverTimestamp() });
+    showToast('Transaksi disimpan');
+    sendTelegramNotification(data);
+  }catch(e){
+    console.error('saveTransaction', e);
+    showToast(errorMessage(e), true);
+    throw e;
+  }
 }
 
 async function deleteTransaction(id){
   if(!confirm('Hapus transaksi ini?')) return;
-  await deleteDoc(doc(txColRef(), id));
-  showToast('Transaksi dihapus');
+  try{
+    await deleteDoc(doc(txColRef(), id));
+    showToast('Transaksi dihapus');
+  }catch(e){
+    console.error('deleteTransaction', e);
+    showToast(errorMessage(e), true);
+  }
 }
 
 async function sendTelegramNotification(tx){
@@ -677,6 +1197,67 @@ async function sendTelegramNotification(tx){
   }
 }
 
+// ---------- Actions: Gold ----------
+async function saveGold(data){
+  try{
+    await addDoc(goldColRef(), { ...data, createdAt: serverTimestamp() });
+    showToast('Emas ditambahkan');
+  }catch(e){
+    console.error('saveGold', e);
+    showToast(errorMessage(e), true);
+    throw e;
+  }
+}
+
+async function deleteGold(id){
+  if(!confirm('Hapus data emas ini?')) return;
+  try{
+    await deleteDoc(doc(goldColRef(), id));
+    showToast('Data emas dihapus');
+  }catch(e){
+    console.error('deleteGold', e);
+    showToast(errorMessage(e), true);
+  }
+}
+
+async function saveGoldRefPrice(value, source){
+  try{
+    await setDoc(userDocRef(), {
+      goldRefPrice: Number(value)||0,
+      goldRefPriceUpdatedAt: new Date().toISOString(),
+      goldRefPriceSource: source || 'manual'
+    }, { merge:true });
+    showToast('Harga emas acuan disimpan');
+  }catch(e){
+    console.error('saveGoldRefPrice', e);
+    showToast(errorMessage(e), true);
+    throw e;
+  }
+}
+
+async function fetchAntamPriceOnline(){
+  const btn = document.getElementById('btnFetchGoldPrice');
+  const origText = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Mengambil…';
+  try{
+    const res = await fetch('https://logam-mulia-api.iamutaki.workers.dev/api/prices/logammulia');
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    const list = Array.isArray(json?.data) ? json.data : [];
+    let rec = list.find(r => Number(r.weight) === 1) || list[0];
+    if(!rec) throw new Error('Data harga tidak ditemukan pada respons API');
+    const price = Number(rec.buybackPrice || rec.sellPrice || 0);
+    if(!price) throw new Error('Harga tidak valid pada respons API');
+    setMoneyValue(document.getElementById('goldPriceInput'), price);
+    showToast('Harga terbaru diambil: ' + formatRupiah(price) + '/gram. Klik "Simpan harga" untuk menyimpannya.');
+  }catch(e){
+    console.warn('fetchAntamPriceOnline gagal', e);
+    showToast('Gagal mengambil harga otomatis (kemungkinan koneksi/CORS diblokir browser). Silakan isi harga secara manual.', true);
+  }finally{
+    btn.disabled = false; btn.textContent = origText;
+  }
+}
+
 // ---------- Event wiring ----------
 document.getElementById('btnConnectFirebase').addEventListener('click', ()=>{
   const raw = document.getElementById('fbConfigInput').value.trim();
@@ -701,7 +1282,8 @@ document.getElementById('btnConnectFirebase').addEventListener('click', ()=>{
 document.getElementById('btnSettings').addEventListener('click', ()=>{
   document.getElementById('tgToken').value = telegramConfig.token || '';
   document.getElementById('tgChatId').value = telegramConfig.chatId || '';
-  document.getElementById('danaAwalInput').value = Number(meta.danaAwal||0);
+  setMoneyValue(document.getElementById('danaAwalInput'), Number(meta.danaAwal||0));
+  setMoneyValue(document.getElementById('goldPriceInput'), Number(meta.goldRefPrice||0));
   document.getElementById('fbProjectLabel').textContent = firebaseConfig?.projectId || '-';
   openModal('modalSettings');
 });
@@ -713,30 +1295,64 @@ document.querySelectorAll('.modal-overlay').forEach(ov=>{
   ov.addEventListener('click', (e)=>{ if(e.target === ov) ov.classList.add('hidden'); });
 });
 
+// ---------- Tab navigation ----------
+function setActiveTab(tab){
+  activeTab = tab;
+  document.getElementById('viewKas').classList.toggle('active', tab === 'kas');
+  document.getElementById('viewEmas').classList.toggle('active', tab === 'emas');
+  document.getElementById('btnTabKas').classList.toggle('active', tab === 'kas');
+  document.getElementById('btnTabEmas').classList.toggle('active', tab === 'emas');
+  document.getElementById('btnTabEmas').classList.toggle('tab-emas', tab === 'emas');
+  const fab = document.getElementById('btnFab');
+  fab.classList.toggle('mode-kas', tab === 'kas');
+  fab.classList.toggle('mode-emas', tab === 'emas');
+  document.getElementById('topbarTag').textContent = tab === 'kas' ? 'Catatan keuangan pribadi' : 'Pantau tabungan emasmu';
+}
+document.getElementById('btnTabKas').addEventListener('click', ()=>setActiveTab('kas'));
+document.getElementById('btnTabEmas').addEventListener('click', ()=>setActiveTab('emas'));
+
 document.getElementById('btnFab').addEventListener('click', ()=>{
-  document.getElementById('txDate').value = todayISO();
-  document.getElementById('txAmount').value = '';
-  document.getElementById('txNote').value = '';
-  setTxType('expense');
-  renderCategorySelect();
-  openModal('modalTx');
+  if(activeTab === 'emas'){
+    openAddGoldModal();
+  }else{
+    document.getElementById('txDate').value = todayISO();
+    document.getElementById('txAmount').value = '';
+    document.getElementById('txNote').value = '';
+    setTxType('expense');
+    renderCategorySelect();
+    openModal('modalTx');
+  }
 });
 
-document.getElementById('btnAddCategory').addEventListener('click', ()=>{
+function openAddCategoryModal(){
   document.getElementById('catName').value = '';
   document.getElementById('catAlloc').value = '';
+  selectedCatIcon = CATEGORY_ICONS[0];
+  selectedCatColorIdx = categories.length % CATEGORY_COLORS.length;
+  renderIconGrid();
+  renderColorGrid();
   const unalloc = Number(meta.danaAwal||0) - totalAllocated();
   document.getElementById('catAllocHint').textContent = `Belum dialokasikan: ${formatRupiah(unalloc)}`;
   document.getElementById('catAllocHint').className = 'field-hint';
   openModal('modalCategory');
-});
+}
+document.getElementById('btnAddCategory').addEventListener('click', openAddCategoryModal);
 
 document.getElementById('btnSaveCategory').addEventListener('click', async ()=>{
   const name = document.getElementById('catName').value.trim();
-  const alloc = Number(document.getElementById('catAlloc').value || 0);
-  if(!name){ showToast('Nama kategori wajib diisi'); return; }
-  await saveCategory(name, alloc);
-  closeModal('modalCategory');
+  const alloc = moneyValue(document.getElementById('catAlloc'));
+  if(!name){ showToast('Nama kategori wajib diisi', true); return; }
+  if(!uid){ showToast('Belum terhubung ke Firebase, coba lagi sebentar.', true); return; }
+  const btn = document.getElementById('btnSaveCategory');
+  btn.disabled = true; const origText = btn.textContent; btn.textContent = 'Menyimpan…';
+  try{
+    await saveCategory(name, alloc, selectedCatIcon, selectedCatColorIdx);
+    closeModal('modalCategory');
+  }catch(e){
+    // error toast already shown by saveCategory; keep modal open so user can retry
+  }finally{
+    btn.disabled = false; btn.textContent = origText;
+  }
 });
 
 function setTxType(type){
@@ -751,15 +1367,24 @@ document.querySelectorAll('#txTypeSeg button').forEach(b=>{
 });
 
 document.getElementById('btnSaveTx').addEventListener('click', async ()=>{
-  const amount = Number(document.getElementById('txAmount').value || 0);
+  const amount = moneyValue(document.getElementById('txAmount'));
   const categorySel = document.getElementById('txCategory');
   const categoryId = categorySel.value || null;
   const categoryName = categorySel.options[categorySel.selectedIndex]?.text || 'Tanpa kategori';
   const note = document.getElementById('txNote').value.trim();
   const date = document.getElementById('txDate').value || todayISO();
-  if(!amount || amount <= 0){ showToast('Jumlah harus lebih dari 0'); return; }
-  await saveTransaction({ type: selectedTxType, categoryId, categoryName, amount, note, date });
-  closeModal('modalTx');
+  if(!amount || amount <= 0){ showToast('Jumlah harus lebih dari 0', true); return; }
+  if(!uid){ showToast('Belum terhubung ke Firebase, coba lagi sebentar.', true); return; }
+  const btn = document.getElementById('btnSaveTx');
+  btn.disabled = true; const origText = btn.textContent; btn.textContent = 'Menyimpan…';
+  try{
+    await saveTransaction({ type: selectedTxType, categoryId, categoryName, amount, note, date });
+    closeModal('modalTx');
+  }catch(e){
+    // error toast already shown by saveTransaction
+  }finally{
+    btn.disabled = false; btn.textContent = origText;
+  }
 });
 
 document.querySelectorAll('.tx-filter .chip').forEach(chip=>{
@@ -772,7 +1397,7 @@ document.querySelectorAll('.tx-filter .chip').forEach(chip=>{
 });
 
 document.getElementById('btnEditDanaAwal').addEventListener('click', ()=>{
-  document.getElementById('danaAwalInput').value = Number(meta.danaAwal||0);
+  setMoneyValue(document.getElementById('danaAwalInput'), Number(meta.danaAwal||0));
   document.querySelectorAll('.settings-tab').forEach(t=>t.classList.remove('active'));
   document.querySelector('[data-pane="paneDana"]').classList.add('active');
   document.querySelectorAll('.settings-pane').forEach(p=>p.classList.remove('active'));
@@ -799,9 +1424,33 @@ document.getElementById('btnSaveTelegram').addEventListener('click', ()=>{
 });
 
 document.getElementById('btnSaveDanaAwal').addEventListener('click', async ()=>{
-  const val = Number(document.getElementById('danaAwalInput').value || 0);
-  await saveDanaAwal(val);
-  closeModal('modalSettings');
+  const val = moneyValue(document.getElementById('danaAwalInput'));
+  const btn = document.getElementById('btnSaveDanaAwal');
+  btn.disabled = true; const origText = btn.textContent; btn.textContent = 'Menyimpan…';
+  try{
+    await saveDanaAwal(val);
+    closeModal('modalSettings');
+  }catch(e){
+    // error toast already shown
+  }finally{
+    btn.disabled = false; btn.textContent = origText;
+  }
+});
+
+document.getElementById('btnFetchGoldPrice').addEventListener('click', fetchAntamPriceOnline);
+
+document.getElementById('btnSaveGoldPrice').addEventListener('click', async ()=>{
+  const val = moneyValue(document.getElementById('goldPriceInput'));
+  if(!val || val <= 0){ showToast('Isi harga emas per gram terlebih dahulu', true); return; }
+  const btn = document.getElementById('btnSaveGoldPrice');
+  btn.disabled = true; const origText = btn.textContent; btn.textContent = 'Menyimpan…';
+  try{
+    await saveGoldRefPrice(val, 'manual');
+  }catch(e){
+    // error toast already shown
+  }finally{
+    btn.disabled = false; btn.textContent = origText;
+  }
 });
 
 document.getElementById('btnDisconnectFb').addEventListener('click', ()=>{
@@ -810,9 +1459,44 @@ document.getElementById('btnDisconnectFb').addEventListener('click', ()=>{
   location.reload();
 });
 
+// ---------- Gold modal wiring ----------
+function openAddGoldModal(){
+  document.getElementById('goldName').value = '';
+  document.getElementById('goldGrams').value = '';
+  document.getElementById('goldPurity').value = '';
+  document.getElementById('goldBuyPrice').value = '';
+  document.getElementById('goldBuyDate').value = todayISO();
+  openModal('modalGold');
+}
+document.getElementById('btnAddGold').addEventListener('click', openAddGoldModal);
+
+document.getElementById('btnSaveGold').addEventListener('click', async ()=>{
+  const name = document.getElementById('goldName').value.trim();
+  const grams = Number(document.getElementById('goldGrams').value || 0);
+  const purity = Number(document.getElementById('goldPurity').value || 0);
+  const buyPrice = moneyValue(document.getElementById('goldBuyPrice'));
+  const buyDate = document.getElementById('goldBuyDate').value || todayISO();
+  if(!name){ showToast('Jenis/nama emas wajib diisi', true); return; }
+  if(!grams || grams <= 0){ showToast('Berat emas harus lebih dari 0 gram', true); return; }
+  if(!purity || purity <= 0 || purity > 100){ showToast('Kadar emas harus antara 0-100%', true); return; }
+  if(!uid){ showToast('Belum terhubung ke Firebase, coba lagi sebentar.', true); return; }
+  const btn = document.getElementById('btnSaveGold');
+  btn.disabled = true; const origText = btn.textContent; btn.textContent = 'Menyimpan…';
+  try{
+    await saveGold({ name, grams, purity, buyPrice, buyDate });
+    closeModal('modalGold');
+  }catch(e){
+    // error toast already shown by saveGold
+  }finally{
+    btn.disabled = false; btn.textContent = origText;
+  }
+});
+
 // ---------- Init ----------
 (function init(){
+  attachMoneyFormatting();
   document.getElementById('txDate').value = todayISO();
+  document.getElementById('goldBuyDate').value = todayISO();
   if(firebaseConfig){
     startApp();
   }else{
