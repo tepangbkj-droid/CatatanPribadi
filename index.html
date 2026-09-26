@@ -283,6 +283,22 @@
   .gold-hero-label{font-size:11.5px;color:rgba(255,255,255,0.78);}
   .gold-hero-value{font-family:var(--font-head);font-size:17px;font-weight:700;margin-top:2px;color:#fff;}
 
+  /* Period (monthly closing) rows */
+  .period-list{display:flex;flex-direction:column;gap:10px;}
+  .period-row{
+    padding:14px;border:1px solid var(--line);border-radius:var(--radius-m);
+    background:var(--card);box-shadow:0 8px 18px -14px rgba(34,26,61,0.4);
+    border-left:5px solid var(--blue);
+  }
+  .period-row-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+  .period-label{font-weight:700;font-size:14px;}
+  .period-dates{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+  .period-balance{font-family:var(--font-head);font-weight:700;font-size:15px;white-space:nowrap;}
+  .period-balance.profit{color:var(--emerald);}
+  .period-balance.loss{color:var(--rose);}
+  .period-row-bottom{display:flex;justify-content:space-between;margin-top:10px;font-size:12.5px;color:var(--ink-soft);gap:10px;flex-wrap:wrap;}
+  .period-row-actions{display:flex;justify-content:flex-end;margin-top:8px;}
+
   /* FAB */
   .fab{
     position:fixed;right:20px;bottom:96px;z-index:30;
@@ -426,19 +442,9 @@
 <div id="onboard" class="onboard-wrap hidden">
   <div class="onboard-card">
     <h1>Buku Kas &amp; Tabungan Emas</h1>
-    <p>Catat pemasukan &amp; pengeluaran per kategori, pantau tabungan emasmu, dengan riwayat tersimpan di Firebase milikmu dan notifikasi otomatis ke Telegram. Tempelkan konfigurasi Firebase Web App untuk mulai.</p>
-    <div class="field">
-      <label>Konfigurasi Firebase (salin objek firebaseConfig dari Firebase Console)</label>
-      <textarea id="fbConfigInput" placeholder='{
-  "apiKey": "...",
-  "authDomain": "...",
-  "projectId": "...",
-  "storageBucket": "...",
-  "messagingSenderId": "...",
-  "appId": "..."
-}'></textarea>
-    </div>
-    <button class="btn btn-primary" id="btnConnectFirebase">Hubungkan &amp; Mulai</button>
+    <p>Aplikasi ini memakai satu ruang data bersama: siapa pun yang membuka link ini melihat &amp; mengubah data yang sama, dan notifikasi Telegram sudah terhubung otomatis untuk semua orang. Konfigurasinya perlu diisi sekali oleh pemilik aplikasi langsung di dalam kode.</p>
+    <p>Buka file <code>index.html</code>, cari bagian <strong>KONFIGURASI BERSAMA</strong> di awal <code>&lt;script type="module"&gt;</code>, lalu isi <code>FIREBASE_CONFIG</code> (dari Firebase Console → Project settings → Your apps) dan <code>TELEGRAM_CONFIG</code> (token bot &amp; chat ID dari @BotFather). Setelah disimpan dan halaman dimuat ulang, semua pengunjung otomatis memakai data &amp; Telegram yang sama.</p>
+    <button class="btn btn-primary" id="btnRetryConnect">Coba muat ulang</button>
     <div id="onboardStatus" class="status-line"></div>
   </div>
 </div>
@@ -450,7 +456,7 @@
         <div class="brand-mark">💰</div>
         <div class="brand-text">
           <span class="brand-name">Buku Kas</span>
-          <span class="brand-tag" id="topbarTag">Catatan keuangan pribadi</span>
+          <span class="brand-tag" id="topbarTag">Catatan keuangan bersama</span>
         </div>
       </div>
       <button class="icon-btn" id="btnSettings" aria-label="Pengaturan">⚙</button>
@@ -474,6 +480,7 @@
             <div class="hero-meta-value" id="heroUnalloc">Rp0</div>
           </div>
         </div>
+        <div class="hero-sub" id="heroPeriodActive">📅 Periode aktif: —</div>
       </div>
 
       <div class="summary-strip">
@@ -500,6 +507,14 @@
           <button class="chip" data-filter="expense">Pengeluaran</button>
         </div>
         <div id="txArea"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <div class="section-title">📅 Riwayat Pembukuan Bulanan</div>
+        </div>
+        <div class="field-hint" style="margin:-4px 0 12px;">Pembukuan baru dibuat otomatis setiap tanggal 25 (periode berjalan 25 – 24 bulan berikutnya). Saat periode ditutup: transaksi periode itu diarsipkan ke sini, sisa dananya ditambahkan ke dana utama, dan alokasi tiap kategori direset ke 0 untuk periode baru.</div>
+        <div id="periodArea"></div>
       </div>
     </div>
 
@@ -646,26 +661,12 @@
       <button class="icon-btn" data-close="modalSettings">✕</button>
     </div>
     <div class="settings-tabs">
-      <button class="settings-tab active" data-pane="paneTelegram">Telegram</button>
-      <button class="settings-tab" data-pane="paneDana">Dana awal</button>
+      <button class="settings-tab active" data-pane="paneDana">Dana awal</button>
       <button class="settings-tab" data-pane="paneGoldPrice">Harga Emas</button>
-      <button class="settings-tab" data-pane="paneFirebase">Firebase</button>
+      <button class="settings-tab" data-pane="paneInfo">Info</button>
     </div>
 
-    <div class="settings-pane active" id="paneTelegram">
-      <div class="field">
-        <label>Token Bot Telegram</label>
-        <input type="text" id="tgToken" placeholder="123456:ABC-DEF...">
-      </div>
-      <div class="field">
-        <label>Chat ID</label>
-        <input type="text" id="tgChatId" placeholder="mis. 123456789">
-      </div>
-      <div class="field-hint">Buat bot lewat @BotFather di Telegram, lalu kirim satu pesan ke bot dan buka https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates untuk menemukan Chat ID kamu.</div>
-      <button class="btn btn-primary" id="btnSaveTelegram" style="margin-top:14px;">Simpan Telegram</button>
-    </div>
-
-    <div class="settings-pane" id="paneDana">
+    <div class="settings-pane active" id="paneDana">
       <div class="field">
         <label>Dana awal saat ini (Rp)</label>
         <input type="text" inputmode="numeric" id="danaAwalInput" data-money>
@@ -692,16 +693,18 @@
       <div class="field-hint" id="goldPriceFetchHint">Pengambilan otomatis memakai data publik logam-mulia-api (sumber: logammulia.com). Jika gagal (mis. karena koneksi), isi harga secara manual — cek di app Logam Mulia Antam atau logammulia.com.</div>
     </div>
 
-    <div class="settings-pane" id="paneFirebase">
-      <div class="field-hint" style="margin-bottom:12px;">Proyek Firebase yang tersambung sekarang: <strong id="fbProjectLabel">-</strong></div>
-      <button class="btn btn-ghost" id="btnDisconnectFb">Putuskan &amp; ganti proyek Firebase</button>
-      <div class="divider-note">Memutuskan tidak akan menghapus data di Firebase, hanya melepas koneksi di perangkat ini.</div>
+    <div class="settings-pane" id="paneInfo">
+      <div class="field-hint" style="margin-bottom:12px;">🔗 Data bersama — proyek Firebase: <strong id="fbProjectLabel">-</strong>. Semua orang yang membuka link aplikasi ini melihat &amp; mengubah data keuangan dan tabungan emas yang sama.</div>
+      <div class="field-hint" style="margin-bottom:12px;">📨 Notifikasi Telegram: <strong id="tgStatusLabel">-</strong>. Setiap transaksi baru otomatis terkirim ke chat Telegram yang sama untuk semua orang, tanpa perlu diatur ulang.</div>
+      <div class="divider-note">Konfigurasi Firebase &amp; Telegram diatur sekali oleh pemilik aplikasi langsung di dalam kode (bagian KONFIGURASI BERSAMA), bukan per-perangkat.</div>
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import {
@@ -711,16 +714,53 @@ import {
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
 // ---------- State ----------
-let firebaseConfig = safeParseJSON(localStorage.getItem('bk_firebase_config'));
-let telegramConfig = safeParseJSON(localStorage.getItem('bk_telegram_config')) || { token:'', chatId:'' };
+// =====================================================================
+// KONFIGURASI BERSAMA — diisi SEKALI oleh pemilik aplikasi.
+// Setelah diisi, SEMUA orang yang membuka link ini otomatis memakai
+// Firebase & Telegram yang sama (satu ruang data bersama, saling terhubung).
+// Jangan menaruh nilai ini di localStorage / per-perangkat lagi.
+// =====================================================================
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyA1_pHUVSIyjS7_x13_zCWDHkqx5ONMeRE",
+  authDomain: "catatanpribadi-e0aca.firebaseapp.com",
+  projectId: "catatanpribadi-e0aca",
+  storageBucket: "catatanpribadi-e0aca.firebasestorage.app",
+  messagingSenderId: "377825654328",
+  appId: "1:377825654328:web:2ef78f046b800e8fced8cd"
+};
+const TELEGRAM_CONFIG = {
+  token: "8769536722:AAGb4LcABqUbfOxf4-JlBmpTZIQq9IXhKiI",   // dari @BotFather
+  chatId: "-1004297338375"     // chat/group tujuan notifikasi
+};
+// ID ruang data bersama. Biarkan "main" kecuali sengaja ingin memisah data
+// (mis. jadi beberapa "buku kas" berbeda) dengan mengganti ID ini.
+const SHARED_SPACE_ID = "main";
+// =====================================================================
+
+function isPlaceholder(v){ return !v || String(v).startsWith('GANTI_'); }
+function isFirebaseConfigValid(){
+  return !isPlaceholder(FIREBASE_CONFIG.apiKey) && !isPlaceholder(FIREBASE_CONFIG.projectId);
+}
+function isTelegramConfigValid(){
+  return !isPlaceholder(TELEGRAM_CONFIG.token) && !isPlaceholder(TELEGRAM_CONFIG.chatId);
+}
+
 let app, db, auth, uid = null;
-let meta = { danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null };
+let meta = { danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null };
 let categories = [];
 let transactions = [];
 let goldItems = [];
+let periods = [];
 let txFilter = 'all';
 let selectedTxType = 'expense';
 let activeTab = 'kas';
+
+// ---------- Monthly closing (pembukuan) init flags ----------
+// Pembukuan otomatis hanya boleh dijalankan setelah data meta, kategori,
+// dan transaksi awal sudah termuat dari Firestore, dan hanya sekali per sesi.
+let closingInitFlags = { meta:false, categories:false, transactions:false };
+let closingChecked = false;
+let closingRunning = false;
 
 const CATEGORY_ICONS = ['🍽️','🚗','🏠','🛒','💊','🎓','🎁','🧾','📱','💡','🐾','✈️','🎉','🧴','🏦','💼','🐷','☕'];
 const CATEGORY_COLORS = [
@@ -736,7 +776,6 @@ const CATEGORY_COLORS = [
 let selectedCatIcon = CATEGORY_ICONS[0];
 let selectedCatColorIdx = 0;
 
-function safeParseJSON(s){ try{ return s ? JSON.parse(s) : null; }catch(e){ return null; } }
 function catColor(cat, fallbackIdx){
   const idx = (typeof cat?.colorIdx === 'number') ? cat.colorIdx : (fallbackIdx % CATEGORY_COLORS.length);
   return CATEGORY_COLORS[idx] || CATEGORY_COLORS[0];
@@ -804,18 +843,31 @@ function attachMoneyFormatting(){
 }
 
 // ---------- Firebase bootstrap ----------
+function showOnboardError(msg){
+  document.getElementById('appRoot').classList.add('hidden');
+  document.getElementById('globalLoading').classList.add('hidden');
+  document.getElementById('onboard').classList.remove('hidden');
+  document.getElementById('onboardStatus').textContent = msg;
+  document.getElementById('onboardStatus').className = 'status-line err';
+}
+
 async function startApp(){
+  if(!isFirebaseConfigValid()){
+    showOnboardError('FIREBASE_CONFIG belum diisi. Edit bagian KONFIGURASI BERSAMA di dalam <script> lalu muat ulang halaman.');
+    return;
+  }
   document.getElementById('onboard').classList.add('hidden');
   document.getElementById('appRoot').classList.remove('hidden');
   document.getElementById('globalLoading').classList.remove('hidden');
   try{
-    app = initializeApp(firebaseConfig);
+    app = initializeApp(FIREBASE_CONFIG);
     db = getFirestore(app);
     auth = getAuth(app);
     onAuthStateChanged(auth, (user)=>{
       if(user){
         uid = user.uid;
-        document.getElementById('fbProjectLabel').textContent = firebaseConfig.projectId || '-';
+        document.getElementById('fbProjectLabel').textContent = FIREBASE_CONFIG.projectId || '-';
+        document.getElementById('tgStatusLabel').textContent = isTelegramConfigValid() ? 'Aktif' : 'Belum diisi';
         attachListeners();
         document.getElementById('globalLoading').classList.add('hidden');
       }
@@ -823,35 +875,43 @@ async function startApp(){
     await signInAnonymously(auth);
   }catch(e){
     console.error(e);
-    document.getElementById('globalLoading').classList.add('hidden');
-    showToast('Gagal terhubung ke Firebase. Periksa konfigurasi.');
-    document.getElementById('appRoot').classList.add('hidden');
-    document.getElementById('onboard').classList.remove('hidden');
-    document.getElementById('onboardStatus').textContent = 'Gagal terhubung: ' + (e.message||e);
-    document.getElementById('onboardStatus').className = 'status-line err';
+    showOnboardError('Gagal terhubung ke Firebase: ' + (e.message||e) + '. Periksa nilai FIREBASE_CONFIG dan Firestore Rules proyekmu.');
   }
 }
 
-function userDocRef(){ return doc(db, 'bukukas_users', uid); }
-function categoriesColRef(){ return collection(db, 'bukukas_users', uid, 'categories'); }
-function txColRef(){ return collection(db, 'bukukas_users', uid, 'transactions'); }
-function goldColRef(){ return collection(db, 'bukukas_users', uid, 'gold'); }
+// Semua orang yang membuka link ini membaca/menulis ke ruang data BERSAMA
+// yang sama (SHARED_SPACE_ID), bukan ruang privat per-perangkat/per-uid.
+function userDocRef(){ return doc(db, 'bukukas_shared', SHARED_SPACE_ID); }
+function categoriesColRef(){ return collection(db, 'bukukas_shared', SHARED_SPACE_ID, 'categories'); }
+function txColRef(){ return collection(db, 'bukukas_shared', SHARED_SPACE_ID, 'transactions'); }
+function goldColRef(){ return collection(db, 'bukukas_shared', SHARED_SPACE_ID, 'gold'); }
+function periodsColRef(){ return collection(db, 'bukukas_shared', SHARED_SPACE_ID, 'periods'); }
 
 function attachListeners(){
   onSnapshot(userDocRef(), (snap)=>{
-    meta = snap.exists() ? { danaAwal:0, goldRefPrice:0, goldRefPriceUpdatedAt:null, goldRefPriceSource:null, ...snap.data() } : { danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null };
+    meta = snap.exists() ? { danaAwal:0, goldRefPrice:0, goldRefPriceUpdatedAt:null, goldRefPriceSource:null, currentPeriodStart:null, ...snap.data() } : { danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null };
+    closingInitFlags.meta = true;
     render();
+    maybeRunClosingCheck();
   });
   onSnapshot(categoriesColRef(), (snap)=>{
     categories = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    closingInitFlags.categories = true;
     render();
+    maybeRunClosingCheck();
   });
   onSnapshot(query(txColRef(), orderBy('createdAt','desc')), (snap)=>{
     transactions = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    closingInitFlags.transactions = true;
     render();
+    maybeRunClosingCheck();
   });
   onSnapshot(query(goldColRef(), orderBy('createdAt','desc')), (snap)=>{
     goldItems = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    render();
+  });
+  onSnapshot(query(periodsColRef(), orderBy('startDate','desc')), (snap)=>{
+    periods = snap.docs.map(d=>({ id:d.id, ...d.data() }));
     render();
   });
 }
@@ -890,6 +950,185 @@ function goldTotals(){
   return { refPrice, totalGrams, totalBuy, totalEst, totalProfit: totalEst - totalBuy };
 }
 
+// ---------- Monthly period (pembukuan) helpers ----------
+// Satu periode pembukuan berjalan dari tanggal 25 sampai tanggal 24 bulan berikutnya.
+function isoFromYMD(y, m, d){
+  const dt = new Date(y, m, d);
+  const mm = String(dt.getMonth()+1).padStart(2,'0');
+  const dd = String(dt.getDate()).padStart(2,'0');
+  return `${dt.getFullYear()}-${mm}-${dd}`;
+}
+function periodStartForDate(iso){
+  const d = new Date(iso + 'T00:00:00');
+  const y = d.getFullYear(), m = d.getMonth(), day = d.getDate();
+  if(day >= 25) return isoFromYMD(y, m, 25);
+  return isoFromYMD(y, m - 1, 25);
+}
+function periodEndFromStart(startIso){
+  const d = new Date(startIso + 'T00:00:00');
+  return isoFromYMD(d.getFullYear(), d.getMonth() + 1, 24);
+}
+function nextPeriodStart(startIso){
+  const d = new Date(startIso + 'T00:00:00');
+  return isoFromYMD(d.getFullYear(), d.getMonth() + 1, 25);
+}
+function periodLabel(startIso, endIso){
+  const fmt = (iso)=>{
+    const d = new Date(iso + 'T00:00:00');
+    return d.toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
+  };
+  return `${fmt(startIso)} – ${fmt(endIso)}`;
+}
+
+// ---------- Monthly closing (pembukuan otomatis) ----------
+function maybeRunClosingCheck(){
+  if(closingChecked || closingRunning) return;
+  if(!(closingInitFlags.meta && closingInitFlags.categories && closingInitFlags.transactions)) return;
+  closingChecked = true;
+  runMonthlyClosingIfNeeded().catch(e=>{
+    console.error('runMonthlyClosingIfNeeded', e);
+  });
+}
+
+async function runMonthlyClosingIfNeeded(){
+  const todayStart = periodStartForDate(todayISO());
+  let curStart = meta.currentPeriodStart;
+
+  // Pertama kali dipakai (belum pernah ada periode aktif tercatat):
+  // set baseline periode berjalan tanpa menutup/mengarsipkan apa pun,
+  // supaya data yang sudah ada saat ini tidak tiba-tiba terarsip.
+  if(!curStart){
+    await setDoc(userDocRef(), { currentPeriodStart: todayStart }, { merge:true });
+    meta = { ...meta, currentPeriodStart: todayStart };
+    return;
+  }
+
+  if(curStart >= todayStart) return; // masih di periode yang sama, tidak perlu tutup buku
+
+  closingRunning = true;
+  try{
+    showToast('Menutup pembukuan periode sebelumnya…');
+    let guard = 0;
+    while(curStart < todayStart && guard < 60){ // guard: maksimal 60 bulan sekali jalan
+      const periodEnd = periodEndFromStart(curStart);
+      await closeSinglePeriod(curStart, periodEnd);
+      curStart = nextPeriodStart(curStart);
+      guard++;
+    }
+    showToast('Pembukuan bulanan selesai diperbarui ✅');
+  }catch(e){
+    console.error('runMonthlyClosingIfNeeded loop', e);
+    showToast('Gagal menyelesaikan pembukuan otomatis: ' + errorMessage(e), true);
+  }finally{
+    closingRunning = false;
+  }
+}
+
+async function closeSinglePeriod(startIso, endIso){
+  const periodTx = transactions.filter(t => t.date >= startIso && t.date <= endIso);
+  const income = periodTx.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount||0),0);
+  const expense = periodTx.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount||0),0);
+  const opening = Number(meta.danaAwal||0);
+  const closing = opening + income - expense;
+
+  const catSnapshot = categories.map(c=>{
+    const rel = periodTx.filter(t=>t.categoryId===c.id);
+    const cIncome = rel.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount||0),0);
+    const cExpense = rel.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount||0),0);
+    const alloc = Number(c.allocated||0);
+    return { name: c.name || '', icon: c.icon || '', allocated: alloc, income: cIncome, expense: cExpense, remaining: alloc + cIncome - cExpense };
+  });
+
+  const txSnapshot = periodTx
+    .map(t=>({ date: t.date, type: t.type, categoryName: t.categoryName || 'Tanpa kategori', amount: Number(t.amount||0), note: t.note || '' }))
+    .sort((a,b)=> a.date < b.date ? -1 : (a.date > b.date ? 1 : 0));
+
+  // 1) Arsipkan pembukuan periode ini
+  await addDoc(periodsColRef(), {
+    startDate: startIso,
+    endDate: endIso,
+    label: periodLabel(startIso, endIso),
+    openingBalance: opening,
+    totalIncome: income,
+    totalExpense: expense,
+    closingBalance: closing,
+    categories: catSnapshot,
+    transactions: txSnapshot,
+    closedAt: serverTimestamp()
+  });
+
+  // 2) Hapus transaksi periode ini dari riwayat utama (sudah diarsipkan di atas)
+  for(const t of periodTx){
+    await deleteDoc(doc(txColRef(), t.id));
+  }
+
+  // 3) Reset alokasi tiap kategori ke 0 untuk periode baru
+  for(const c of categories){
+    await updateDoc(doc(categoriesColRef(), c.id), { allocated: 0 });
+  }
+
+  // 4) Sisa dana periode ini menjadi dana utama periode berikutnya
+  const next = nextPeriodStart(startIso);
+  await setDoc(userDocRef(), { danaAwal: closing, currentPeriodStart: next }, { merge:true });
+
+  // Perbarui cache lokal supaya iterasi berikutnya (jika menutup >1 bulan sekaligus) akurat
+  meta = { ...meta, danaAwal: closing, currentPeriodStart: next };
+  transactions = transactions.filter(t => !(t.date >= startIso && t.date <= endIso));
+  categories = categories.map(c=>({ ...c, allocated: 0 }));
+  render();
+}
+
+// ---------- PDF laporan keuangan bulanan ----------
+function generatePeriodPDF(period){
+  if(!window.jspdf || !window.jspdf.jsPDF){
+    showToast('Gagal memuat modul PDF. Periksa koneksi internet lalu coba lagi.', true);
+    return;
+  }
+  const { jsPDF } = window.jspdf;
+  const docPdf = new jsPDF();
+  let y = 18;
+
+  docPdf.setFont('helvetica','bold'); docPdf.setFontSize(16);
+  docPdf.text('Laporan Keuangan Bulanan', 14, y); y += 8;
+  docPdf.setFont('helvetica','normal'); docPdf.setFontSize(11);
+  docPdf.text(`Periode: ${period.label || ''}`, 14, y); y += 6;
+  docPdf.text(`Dicetak: ${new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}`, 14, y); y += 10;
+
+  docPdf.setFont('helvetica','bold'); docPdf.text('Ringkasan', 14, y); y += 6;
+  docPdf.setFont('helvetica','normal');
+  const summaryLines = [
+    `Dana awal periode: ${formatRupiah(period.openingBalance)}`,
+    `Total pemasukan: ${formatRupiah(period.totalIncome)}`,
+    `Total pengeluaran: ${formatRupiah(period.totalExpense)}`,
+    `Dana akhir periode (dibawa ke bulan berikutnya): ${formatRupiah(period.closingBalance)}`
+  ];
+  summaryLines.forEach(l=>{ docPdf.text(l, 14, y); y += 6; });
+  y += 4;
+
+  if(typeof docPdf.autoTable === 'function'){
+    docPdf.autoTable({
+      startY: y,
+      head: [['Kategori','Alokasi','Pemasukan','Pengeluaran','Sisa']],
+      body: (period.categories||[]).map(c=>[c.name, formatRupiah(c.allocated), formatRupiah(c.income), formatRupiah(c.expense), formatRupiah(c.remaining)]),
+      styles: { fontSize:9 }, headStyles: { fillColor:[109,74,255] }
+    });
+    y = docPdf.lastAutoTable.finalY + 10;
+
+    docPdf.autoTable({
+      startY: y,
+      head: [['Tanggal','Tipe','Kategori','Catatan','Jumlah']],
+      body: (period.transactions||[]).map(t=>[
+        formatDateHuman(t.date), t.type==='income' ? 'Masuk' : 'Keluar', t.categoryName || '-', t.note || '-',
+        (t.type==='income'?'+':'-') + formatRupiah(t.amount)
+      ]),
+      styles: { fontSize:8 }, headStyles: { fillColor:[46,139,255] }
+    });
+  }
+
+  const fileSafe = `${period.startDate || ''}_${period.endDate || ''}`.replace(/[^0-9a-zA-Z_-]/g,'');
+  docPdf.save(`Laporan-Keuangan-${fileSafe || 'periode'}.pdf`);
+}
+
 // ---------- Render ----------
 function render(){
   const danaAwal = Number(meta.danaAwal||0);
@@ -908,10 +1147,16 @@ function render(){
   document.getElementById('statExpense').textContent = formatRupiah(tExpense);
   document.getElementById('statCatCount').textContent = categories.length;
 
+  const curStart = meta.currentPeriodStart || periodStartForDate(todayISO());
+  const curEnd = periodEndFromStart(curStart);
+  const periodEl = document.getElementById('heroPeriodActive');
+  if(periodEl) periodEl.textContent = `📅 Periode aktif: ${periodLabel(curStart, curEnd)}`;
+
   renderCategories();
   renderTransactions();
   renderCategorySelect();
   renderGold();
+  renderPeriods();
 }
 
 function renderCategories(){
@@ -1104,6 +1349,45 @@ function renderGold(){
   });
 }
 
+function renderPeriods(){
+  const area = document.getElementById('periodArea');
+  if(!area) return;
+  if(periods.length === 0){
+    area.innerHTML = `<div class="empty-box"><span class="emoji">📅</span>Belum ada pembukuan bulanan. Pembukuan pertama akan dibuat otomatis saat aplikasi dibuka setelah tanggal 25.</div>`;
+    return;
+  }
+  let html = '<div class="period-list">';
+  periods.forEach((p,i)=>{
+    const profit = Number(p.closingBalance||0) - Number(p.openingBalance||0);
+    html += `
+      <div class="period-row fade-up" style="animation-delay:${i*40}ms">
+        <div class="period-row-top">
+          <div>
+            <div class="period-label">${escapeHtml(p.label || '')}</div>
+            <div class="period-dates">Dana awal ${formatRupiah(p.openingBalance)} → dana akhir</div>
+          </div>
+          <div class="period-balance ${profit>=0?'profit':'loss'}">${formatRupiah(p.closingBalance)}</div>
+        </div>
+        <div class="period-row-bottom">
+          <span>Masuk ${formatRupiah(p.totalIncome)}</span>
+          <span>Keluar ${formatRupiah(p.totalExpense)}</span>
+        </div>
+        <div class="period-row-actions">
+          <button class="link-btn" data-pdf-period="${p.id}">📄 Unduh PDF</button>
+        </div>
+      </div>`;
+  });
+  html += '</div>';
+  area.innerHTML = html;
+  area.querySelectorAll('[data-pdf-period]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const p = periods.find(x=>x.id===btn.dataset.pdfPeriod);
+      if(p) generatePeriodPDF(p);
+      else showToast('Data periode tidak ditemukan', true);
+    });
+  });
+}
+
 function escapeHtml(s){
   return String(s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
@@ -1171,8 +1455,20 @@ async function deleteTransaction(id){
   }
 }
 
+async function sendTelegramMessage(text){
+  if(!isTelegramConfigValid()) return;
+  try{
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ chat_id: TELEGRAM_CONFIG.chatId, text, parse_mode:'HTML' })
+    });
+  }catch(e){
+    console.warn('Gagal mengirim ke Telegram', e);
+  }
+}
+
 async function sendTelegramNotification(tx){
-  if(!telegramConfig.token || !telegramConfig.chatId) return;
   const danaAwal = Number(meta.danaAwal||0);
   const sisa = danaAwal + totalIncome() - totalExpense();
   const emoji = tx.type === 'income' ? '🟢' : '🔴';
@@ -1186,15 +1482,19 @@ async function sendTelegramNotification(tx){
     ``,
     `Sisa dana: ${formatRupiah(sisa)}`
   ].filter(Boolean).join('\n');
-  try{
-    await fetch(`https://api.telegram.org/bot${telegramConfig.token}/sendMessage`, {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ chat_id: telegramConfig.chatId, text, parse_mode:'HTML' })
-    });
-  }catch(e){
-    console.warn('Gagal mengirim ke Telegram', e);
-  }
+  sendTelegramMessage(text);
+}
+
+async function sendTelegramGoldNotification(item){
+  const text = [
+    `🪙 <b>Emas baru ditambahkan</b>`,
+    `Nama: ${item.name}`,
+    `Berat: ${formatGram(item.grams)}`,
+    `Kadar: ${item.purity}%`,
+    `Harga beli: ${formatRupiah(item.buyPrice)}`,
+    `Tanggal beli: ${formatDateHuman(item.buyDate)}`
+  ].join('\n');
+  sendTelegramMessage(text);
 }
 
 // ---------- Actions: Gold ----------
@@ -1202,6 +1502,7 @@ async function saveGold(data){
   try{
     await addDoc(goldColRef(), { ...data, createdAt: serverTimestamp() });
     showToast('Emas ditambahkan');
+    sendTelegramGoldNotification(data);
   }catch(e){
     console.error('saveGold', e);
     showToast(errorMessage(e), true);
@@ -1259,32 +1560,16 @@ async function fetchAntamPriceOnline(){
 }
 
 // ---------- Event wiring ----------
-document.getElementById('btnConnectFirebase').addEventListener('click', ()=>{
-  const raw = document.getElementById('fbConfigInput').value.trim();
-  const statusEl = document.getElementById('onboardStatus');
-  let cfg = null;
-  try{
-    let cleaned = raw.replace(/^(const|var|let)\s+\w+\s*=\s*/,'').replace(/;\s*$/,'');
-    cfg = (new Function('return ' + cleaned))();
-  }catch(e){ cfg = null; }
-  if(!cfg || !cfg.apiKey || !cfg.projectId){
-    statusEl.textContent = 'Konfigurasi tidak valid. Pastikan berisi apiKey, projectId, dll.';
-    statusEl.className = 'status-line err';
-    return;
-  }
-  firebaseConfig = cfg;
-  localStorage.setItem('bk_firebase_config', JSON.stringify(cfg));
-  statusEl.textContent = 'Terhubung, memuat aplikasi…';
-  statusEl.className = 'status-line ok';
+document.getElementById('btnRetryConnect').addEventListener('click', ()=>{
+  document.getElementById('onboardStatus').textContent = '';
   startApp();
 });
 
 document.getElementById('btnSettings').addEventListener('click', ()=>{
-  document.getElementById('tgToken').value = telegramConfig.token || '';
-  document.getElementById('tgChatId').value = telegramConfig.chatId || '';
   setMoneyValue(document.getElementById('danaAwalInput'), Number(meta.danaAwal||0));
   setMoneyValue(document.getElementById('goldPriceInput'), Number(meta.goldRefPrice||0));
-  document.getElementById('fbProjectLabel').textContent = firebaseConfig?.projectId || '-';
+  document.getElementById('fbProjectLabel').textContent = FIREBASE_CONFIG.projectId || '-';
+  document.getElementById('tgStatusLabel').textContent = isTelegramConfigValid() ? 'Aktif' : 'Belum diisi';
   openModal('modalSettings');
 });
 
@@ -1306,7 +1591,7 @@ function setActiveTab(tab){
   const fab = document.getElementById('btnFab');
   fab.classList.toggle('mode-kas', tab === 'kas');
   fab.classList.toggle('mode-emas', tab === 'emas');
-  document.getElementById('topbarTag').textContent = tab === 'kas' ? 'Catatan keuangan pribadi' : 'Pantau tabungan emasmu';
+  document.getElementById('topbarTag').textContent = tab === 'kas' ? 'Catatan keuangan bersama' : 'Tabungan emas bersama';
 }
 document.getElementById('btnTabKas').addEventListener('click', ()=>setActiveTab('kas'));
 document.getElementById('btnTabEmas').addEventListener('click', ()=>setActiveTab('emas'));
@@ -1414,15 +1699,6 @@ document.querySelectorAll('.settings-tab').forEach(tab=>{
   });
 });
 
-document.getElementById('btnSaveTelegram').addEventListener('click', ()=>{
-  telegramConfig = {
-    token: document.getElementById('tgToken').value.trim(),
-    chatId: document.getElementById('tgChatId').value.trim()
-  };
-  localStorage.setItem('bk_telegram_config', JSON.stringify(telegramConfig));
-  showToast('Pengaturan Telegram disimpan');
-});
-
 document.getElementById('btnSaveDanaAwal').addEventListener('click', async ()=>{
   const val = moneyValue(document.getElementById('danaAwalInput'));
   const btn = document.getElementById('btnSaveDanaAwal');
@@ -1451,12 +1727,6 @@ document.getElementById('btnSaveGoldPrice').addEventListener('click', async ()=>
   }finally{
     btn.disabled = false; btn.textContent = origText;
   }
-});
-
-document.getElementById('btnDisconnectFb').addEventListener('click', ()=>{
-  if(!confirm('Putuskan koneksi Firebase di perangkat ini?')) return;
-  localStorage.removeItem('bk_firebase_config');
-  location.reload();
 });
 
 // ---------- Gold modal wiring ----------
@@ -1497,11 +1767,7 @@ document.getElementById('btnSaveGold').addEventListener('click', async ()=>{
   attachMoneyFormatting();
   document.getElementById('txDate').value = todayISO();
   document.getElementById('goldBuyDate').value = todayISO();
-  if(firebaseConfig){
-    startApp();
-  }else{
-    document.getElementById('onboard').classList.remove('hidden');
-  }
+  startApp();
 })();
 </script>
 </body>
