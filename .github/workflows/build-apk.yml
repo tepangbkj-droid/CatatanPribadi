@@ -30,11 +30,20 @@ jobs:
         run: npm install -g @bubblewrap/cli
 
       - name: Arahkan Bubblewrap ke JDK & Android SDK bawaan runner
-        # "yes n |" otomatis menjawab "n" ke prompt "Do you want Bubblewrap to
-        # install the JDK (recommended)?" dsb — supaya Bubblewrap pakai JDK/SDK
-        # yang sudah disiapkan runner (lewat --jdkPath/--androidSdkPath), bukan
-        # mencoba download instalasi sendiri dan macet menunggu jawaban di CI.
-        run: yes n | bubblewrap updateConfig --jdkPath="$JAVA_HOME" --androidSdkPath="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+        # Bubblewrap CLI selalu menampilkan prompt interaktif di first-run,
+        # bahkan saat --jdkPath/--androidSdkPath sudah diberikan. Untuk
+        # menghindarinya di CI, tulis langsung file konfigurasinya
+        # (~/.bubblewrap/config.json) tanpa lewat perintah CLI sama sekali.
+        run: |
+          mkdir -p "$HOME/.bubblewrap"
+          cat > "$HOME/.bubblewrap/config.json" << EOF
+          {
+            "jdkPath": "$JAVA_HOME",
+            "androidSdkPath": "${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          }
+          EOF
+          echo "Isi config.json:"
+          cat "$HOME/.bubblewrap/config.json"
 
       # Kalau secret ANDROID_KEYSTORE_BASE64 sudah ada, pakai keystore yang sama terus
       # (WAJIB supaya sha256_cert_fingerprints di assetlinks.json tetap cocok setiap build).
