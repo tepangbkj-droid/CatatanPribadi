@@ -30,7 +30,11 @@ jobs:
         run: npm install -g @bubblewrap/cli
 
       - name: Arahkan Bubblewrap ke JDK & Android SDK bawaan runner
-        run: bubblewrap updateConfig --jdkPath="$JAVA_HOME" --androidSdkPath="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+        # "yes n |" otomatis menjawab "n" ke prompt "Do you want Bubblewrap to
+        # install the JDK (recommended)?" dsb — supaya Bubblewrap pakai JDK/SDK
+        # yang sudah disiapkan runner (lewat --jdkPath/--androidSdkPath), bukan
+        # mencoba download instalasi sendiri dan macet menunggu jawaban di CI.
+        run: yes n | bubblewrap updateConfig --jdkPath="$JAVA_HOME" --androidSdkPath="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
 
       # Kalau secret ANDROID_KEYSTORE_BASE64 sudah ada, pakai keystore yang sama terus
       # (WAJIB supaya sha256_cert_fingerprints di assetlinks.json tetap cocok setiap build).
@@ -55,13 +59,16 @@ jobs:
           fi
 
       - name: Generate project Android dari twa-manifest.json
-        run: bubblewrap update --skipVersionUpgrade
+        # "yes |" otomatis menjawab "y" ke semua prompt konfirmasi yang muncul dari
+        # Bubblewrap (mis. saat ada perubahan pada twa-manifest.json). Tanpa ini,
+        # perintah akan macet menunggu input dan job gagal dengan exit code 130.
+        run: yes | bubblewrap update --skipVersionUpgrade
 
       - name: Build APK yang sudah ditandatangani
         env:
           BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: bubblewrap build --skipPwaValidation
+        run: yes | bubblewrap build --skipPwaValidation
 
       - name: Generate assetlinks.json (biar tidak ada address bar)
         env:
@@ -100,4 +107,3 @@ jobs:
           name: keystore-backup
           path: SIMPAN-SEBAGAI-SECRET-ANDROID_KEYSTORE_BASE64.txt
           if-no-files-found: ignore
-          
