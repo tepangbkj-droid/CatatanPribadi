@@ -4,7 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Buku Kas — Catatan Keuangan &amp; Tabungan Emas</title>
-<link rel="icon" href="data:,">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6D4AFF">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Buku Kas">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -459,7 +466,10 @@
           <span class="brand-tag" id="topbarTag">Catatan keuangan bersama</span>
         </div>
       </div>
-      <button class="icon-btn" id="btnSettings" aria-label="Pengaturan">⚙</button>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="icon-btn" id="btnNotif" aria-label="Aktifkan notifikasi">🔔</button>
+        <button class="icon-btn" id="btnSettings" aria-label="Pengaturan">⚙</button>
+      </div>
     </div>
   </div>
 
@@ -754,6 +764,8 @@ let periods = [];
 let txFilter = 'all';
 let selectedTxType = 'expense';
 let activeTab = 'kas';
+let txSnapshotReady = false;
+let goldSnapshotReady = false;
 
 // ---------- Monthly closing (pembukuan) init flags ----------
 // Pembukuan otomatis hanya boleh dijalankan setelah data meta, kategori,
@@ -825,6 +837,59 @@ function errorMessage(e){
 }
 function openModal(id){ document.getElementById(id).classList.remove('hidden'); }
 function closeModal(id){ document.getElementById(id).classList.add('hidden'); }
+
+// ---------- Notifikasi perangkat (muncul saat ada transaksi baru) ----------
+function updateNotifBtn(){
+  const btn = document.getElementById('btnNotif');
+  if(!btn) return;
+  if(!('Notification' in window)){ btn.textContent = '🔕'; return; }
+  btn.textContent = Notification.permission === 'granted' ? '🔔' : '🔕';
+}
+function showLocalNotification(title, body){
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  const opts = { body, icon: 'icon-192.png', badge: 'icon-192.png', vibrate: [80,40,80] };
+  if(navigator.serviceWorker && navigator.serviceWorker.ready){
+    navigator.serviceWorker.ready.then(reg=>{
+      if(reg && reg.showNotification) reg.showNotification(title, opts);
+      else new Notification(title, opts);
+    }).catch(()=>{ try{ new Notification(title, opts); }catch(e){} });
+  }else{
+    try{ new Notification(title, opts); }catch(e){}
+  }
+}
+function notifyNewTransaction(tx){
+  const emoji = tx.type === 'income' ? '🟢' : '🔴';
+  const label = tx.type === 'income' ? 'Pemasukan baru' : 'Pengeluaran baru';
+  const body = `${tx.categoryName || 'Tanpa kategori'} • ${formatRupiah(tx.amount)}${tx.note ? ' • ' + tx.note : ''}`;
+  showLocalNotification(`${emoji} ${label}`, body);
+}
+function notifyNewGold(item){
+  const body = `${item.name} • ${formatGram(item.grams)} • ${formatRupiah(item.buyPrice)}`;
+  showLocalNotification('🪙 Emas baru ditambahkan', body);
+}
+async function requestNotifPermission(){
+  if(!('Notification' in window)){
+    showToast('Browser ini tidak mendukung notifikasi', true);
+    return;
+  }
+  if(Notification.permission === 'granted'){
+    showToast('Notifikasi sudah aktif 🔔');
+    return;
+  }
+  if(Notification.permission === 'denied'){
+    showToast('Notifikasi diblokir. Aktifkan lewat pengaturan browser/HP kamu.', true);
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  updateNotifBtn();
+  if(perm === 'granted'){
+    showToast('Notifikasi diaktifkan 🔔');
+    showLocalNotification('🔔 Notifikasi aktif', 'Kamu akan diberi tahu setiap ada transaksi baru.');
+  }else{
+    showToast('Notifikasi tidak diaktifkan', true);
+  }
+}
+document.getElementById('btnNotif').addEventListener('click', requestNotifPermission);
 
 // ---------- Number input formatting (pemisah ribuan) ----------
 function digitsOnly(s){ return String(s||'').replace(/\D/g,''); }
@@ -901,13 +966,25 @@ function attachListeners(){
     maybeRunClosingCheck();
   });
   onSnapshot(query(txColRef(), orderBy('createdAt','desc')), (snap)=>{
+    if(txSnapshotReady){
+      snap.docChanges().forEach(change=>{
+        if(change.type === 'added') notifyNewTransaction({ id: change.doc.id, ...change.doc.data() });
+      });
+    }
     transactions = snap.docs.map(d=>({ id:d.id, ...d.data() }));
     closingInitFlags.transactions = true;
+    txSnapshotReady = true;
     render();
     maybeRunClosingCheck();
   });
   onSnapshot(query(goldColRef(), orderBy('createdAt','desc')), (snap)=>{
+    if(goldSnapshotReady){
+      snap.docChanges().forEach(change=>{
+        if(change.type === 'added') notifyNewGold({ id: change.doc.id, ...change.doc.data() });
+      });
+    }
     goldItems = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    goldSnapshotReady = true;
     render();
   });
   onSnapshot(query(periodsColRef(), orderBy('startDate','desc')), (snap)=>{
@@ -1767,6 +1844,12 @@ document.getElementById('btnSaveGold').addEventListener('click', async ()=>{
   attachMoneyFormatting();
   document.getElementById('txDate').value = todayISO();
   document.getElementById('goldBuyDate').value = todayISO();
+  updateNotifBtn();
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('sw.js').catch(e=>console.warn('Gagal mendaftarkan service worker', e));
+    });
+  }
   startApp();
 })();
 </script>

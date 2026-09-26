@@ -1,0 +1,26 @@
+{
+  "packageId": "id.bukukas.app",
+  "host": "tepangbkj.github.io",
+  "name": "Buku Kas & Tabungan Emas",
+  "launcherName": "Buku Kas",
+  "display": "standalone",
+  "themeColor": "#6D4AFF",
+  "themeColorDark": "#221A3D",
+  "navigationColor": "#6D4AFF",
+  "navigationColorDark": "#221A3D",
+  "backgroundColor": "#F5F2FF",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://tepangbkj.github.io/icon-512.png",
+  "maskableIconUrl": "https://tepangbkj.github.io/icon-512.png",
+  "webManifestUrl": "https://tepangbkj.github.io/manifest.json",
+  "splashScreenFadeOutDuration": 300,
+  "orientation": "portrait",
+  "fallbackType": "customtabs",
+  "appVersion": "1.0.0",
+  "appVersionCode": 1,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "bukukas"
+  }
+}
