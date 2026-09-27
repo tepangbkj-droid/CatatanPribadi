@@ -11,39 +11,16 @@ on:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+    # Pakai image Docker resmi dari tim Bubblewrap: sudah berisi JDK, Android SDK,
+    # dan Bubblewrap CLI yang sudah dites cocok satu sama lain. Ini menghindari
+    # semua masalah "JDK/SDK bawaan runner tidak cocok" yang sering muncul kalau
+    # setup manual di ubuntu-latest biasa.
+    container:
+      image: ghcr.io/googlechromelabs/bubblewrap:latest
+      options: --user root
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-
-      - name: Setup JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install Bubblewrap CLI
-        run: npm install -g @bubblewrap/cli
-
-      - name: Arahkan Bubblewrap ke JDK & Android SDK bawaan runner
-        # Bubblewrap CLI selalu menampilkan prompt interaktif di first-run,
-        # bahkan saat --jdkPath/--androidSdkPath sudah diberikan. Untuk
-        # menghindarinya di CI, tulis langsung file konfigurasinya
-        # (~/.bubblewrap/config.json) tanpa lewat perintah CLI sama sekali.
-        run: |
-          mkdir -p "$HOME/.bubblewrap"
-          cat > "$HOME/.bubblewrap/config.json" << EOF
-          {
-            "jdkPath": "$JAVA_HOME",
-            "androidSdkPath": "${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
-          }
-          EOF
-          echo "Isi config.json:"
-          cat "$HOME/.bubblewrap/config.json"
 
       # Kalau secret ANDROID_KEYSTORE_BASE64 sudah ada, pakai keystore yang sama terus
       # (WAJIB supaya sha256_cert_fingerprints di assetlinks.json tetap cocok setiap build).
@@ -68,9 +45,6 @@ jobs:
           fi
 
       - name: Generate project Android dari twa-manifest.json
-        # "yes |" otomatis menjawab "y" ke semua prompt konfirmasi yang muncul dari
-        # Bubblewrap (mis. saat ada perubahan pada twa-manifest.json). Tanpa ini,
-        # perintah akan macet menunggu input dan job gagal dengan exit code 130.
         run: yes | bubblewrap update --skipVersionUpgrade
 
       - name: Build APK yang sudah ditandatangani
