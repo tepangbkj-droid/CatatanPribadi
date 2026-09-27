@@ -1,8 +1,0 @@
-[{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "id.bukukas.app",
-    "sha256_cert_fingerprints": ["6D:46:9C:E7:44:44:32:52:57:64:B6:A5:6A:5A:4B:0B:EA:71:F5:0F:60:67:EE:33:E2:49:D6:29:90:2D:60:F5"]
-  }
-}]
