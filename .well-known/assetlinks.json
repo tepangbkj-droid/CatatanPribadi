@@ -3,6 +3,6 @@
   "target": {
     "namespace": "android_app",
     "package_name": "id.bukukas.app",
-    "sha256_cert_fingerprints": ["6D:46:9C:E7:44:44:32:52:57:64:B6:A5:6A:5A:4B:0B:EA:71:F5:0F:60:67:EE:33:E2:49:D6:29:90:2D:60:F5"]
+    "sha256_cert_fingerprints": ["C2:47:03:32:1F:E1:D0:55:17:34:FC:6F:61:D4:4E:82:DD:18:65:1F:05:ED:28:72:78:83:EE:43:A1:6E:E5:12"]
   }
 }]
