@@ -2,7 +2,7 @@
 // Tugasnya: (1) membuat app ini bisa "diinstall" di HP, dan
 // (2) menyimpan cache tampilan dasar agar tetap bisa terbuka saat sinyal jelek.
 // Data transaksi tetap selalu diambil langsung dari Firebase saat online.
-const CACHE_NAME = 'buku-kas-shell-v1';
+const CACHE_NAME = 'buku-kas-shell-v2';
 const APP_SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
