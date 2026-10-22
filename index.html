@@ -336,6 +336,30 @@
   .tab-btn.active{color:var(--violet-dark);background:var(--violet-soft);}
   .tab-btn.active.tab-emas{color:var(--amber-dark);background:var(--amber-soft);}
 
+  /* Saran AI */
+  .hero.hero-ai{
+    background:linear-gradient(150deg,#0B8F6A 0%,#0FAE73 40%,#2E8BFF 100%);
+    box-shadow:0 16px 34px -14px rgba(15,174,115,0.55);
+  }
+  .tab-btn.active.tab-ai{color:#0A8C5A;background:var(--emerald-soft);}
+  .btn-ai{background:linear-gradient(135deg,var(--emerald),var(--blue));color:#fff;box-shadow:0 10px 22px -10px rgba(15,174,115,0.7);}
+  .btn-ai:disabled{opacity:.6;cursor:not-allowed;}
+  .ai-card{
+    margin-top:14px;padding:16px;border:1px solid var(--line);border-radius:var(--radius-m);
+    background:var(--card);box-shadow:0 8px 18px -14px rgba(34,26,61,0.4);
+  }
+  .ai-card h3{margin:0 0 8px;font-family:var(--font-head);font-size:15px;display:flex;align-items:center;gap:6px;}
+  .ai-card p,.ai-card li{font-size:13.5px;line-height:1.6;color:var(--ink);margin:0 0 6px;}
+  .ai-card ul{margin:4px 0 0;padding-left:18px;}
+  .ai-metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+  .ai-metric{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-m);padding:12px;}
+  .ai-metric .k{font-size:11.5px;color:var(--ink-soft);}
+  .ai-metric .v{font-family:var(--font-head);font-size:16px;font-weight:700;margin-top:3px;}
+  .ai-metric .v.good{color:var(--emerald);} .ai-metric .v.bad{color:var(--rose);} .ai-metric .v.warn{color:var(--amber-dark);}
+  .ai-tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:var(--radius-pill);background:var(--violet-soft);color:var(--violet-dark);margin-left:auto;}
+  .ai-disclaimer{font-size:11.5px;color:var(--ink-soft);margin-top:14px;line-height:1.5;}
+  .ai-loading{font-size:13.5px;color:var(--ink-soft);}
+
   /* Modal */
   .modal-overlay{
     position:fixed;inset:0;background:rgba(34,26,61,0.45);backdrop-filter:blur(2px);
@@ -523,7 +547,8 @@
         <div class="section-head">
           <div class="section-title">📅 Riwayat Pembukuan Bulanan</div>
         </div>
-        <div class="field-hint" style="margin:-4px 0 12px;">Pembukuan baru dibuat otomatis setiap tanggal 25 (periode berjalan 25 – 24 bulan berikutnya). Saat periode ditutup: transaksi periode itu diarsipkan ke sini, sisa dananya ditambahkan ke dana utama, dan alokasi tiap kategori direset ke 0 untuk periode baru.</div>
+        <div class="field-hint" style="margin:-4px 0 12px;">Pembukuan baru dibuat otomatis setiap tanggal 25 (periode berjalan 25 – 24 bulan berikutnya). Jika tanggal 24/25 jatuh di tanggal merah (Sabtu, Minggu, libur nasional), awal periode baru digeser mundur ke hari kerja sebelumnya. Saat periode ditutup: transaksi periode itu diarsipkan ke sini, sisa dananya ditambahkan ke dana utama, dan alokasi tiap kategori direset ke 0 untuk periode baru.</div>
+        <div class="field-hint" id="periodRuleHint" style="margin:-4px 0 12px;font-weight:600;color:var(--violet-dark);"></div>
         <div id="periodArea"></div>
       </div>
     </div>
@@ -556,6 +581,22 @@
       </div>
     </div>
 
+
+    <!-- ===== VIEW: SARAN AI ===== -->
+    <div id="viewAI" class="view-pane">
+      <div class="hero hero-ai fade-up">
+        <div class="hero-label">🤖 Ringkasan saran finansial</div>
+        <div class="hero-number" style="font-size:24px;">Analisis periode aktif</div>
+        <div class="hero-sub" id="aiPeriodLine">—</div>
+      </div>
+      <div style="margin-top:16px;">
+        <button class="btn btn-ai" id="btnAiRun">✨ Buat ringkasan &amp; saran</button>
+        <div class="field-hint" id="aiProviderHint" style="margin-top:8px;"></div>
+      </div>
+      <div id="aiOutput"></div>
+      <div class="ai-disclaimer">Saran bersifat umum berdasarkan data catatanmu, bukan nasihat keuangan/investasi profesional.</div>
+    </div>
+
   </div>
 
   <button class="fab mode-kas" id="btnFab" aria-label="Tambah">+</button>
@@ -564,6 +605,7 @@
     <div class="tabbar-inner">
       <button class="tab-btn active" id="btnTabKas" data-tab="kas"><span class="tab-ic">💰</span>Kas</button>
       <button class="tab-btn" id="btnTabEmas" data-tab="emas"><span class="tab-ic">🪙</span>Tabungan Emas</button>
+      <button class="tab-btn" id="btnTabAI" data-tab="ai"><span class="tab-ic">🤖</span>Saran AI</button>
     </div>
   </div>
 </div>
@@ -673,6 +715,7 @@
     <div class="settings-tabs">
       <button class="settings-tab active" data-pane="paneDana">Dana awal</button>
       <button class="settings-tab" data-pane="paneGoldPrice">Harga Emas</button>
+      <button class="settings-tab" data-pane="paneAI">AI</button>
       <button class="settings-tab" data-pane="paneInfo">Info</button>
     </div>
 
@@ -701,6 +744,27 @@
         <button class="btn btn-amber" id="btnSaveGoldPrice">Simpan harga</button>
       </div>
       <div class="field-hint" id="goldPriceFetchHint">Pengambilan otomatis memakai data publik logam-mulia-api (sumber: logammulia.com). Jika gagal (mis. karena koneksi), isi harga secara manual — cek di app Logam Mulia Antam atau logammulia.com.</div>
+    </div>
+
+    <div class="settings-pane" id="paneAI">
+      <div class="field">
+        <label>Penyedia AI</label>
+        <select id="aiProviderSel">
+          <option value="">Analisis lokal saja (tanpa AI online)</option>
+          <option value="gemini">Google Gemini</option>
+          <option value="claude">Anthropic Claude</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>API key</label>
+        <input type="password" id="aiKeyInput" autocomplete="off" placeholder="Tempel API key di sini">
+        <div class="field-hint">Disimpan hanya di perangkat ini (tidak masuk kode &amp; tidak dibagikan ke pengguna lain). Saat kamu menekan "Buat ringkasan", ringkasan angka periode aktif (tanpa catatan transaksi) dikirim ke penyedia yang dipilih.</div>
+      </div>
+      <div class="field">
+        <label>Nama model (opsional)</label>
+        <input type="text" id="aiModelInput" placeholder="kosongkan untuk bawaan">
+      </div>
+      <button class="btn btn-primary" id="btnSaveAI">Simpan pengaturan AI</button>
     </div>
 
     <div class="settings-pane" id="paneInfo">
@@ -1028,32 +1092,96 @@ function goldTotals(){
 }
 
 // ---------- Monthly period (pembukuan) helpers ----------
-// Satu periode pembukuan berjalan dari tanggal 25 sampai tanggal 24 bulan berikutnya.
+// Patokan: periode baru dimulai tanggal 25 dan periode lama berakhir tanggal 24.
+// Kalau awal periode (tgl 25) ATAU hari terakhir periode lama (tgl 24) jatuh di tanggal merah
+// (Sabtu, Minggu, libur nasional, cuti bersama), tanggal mulai digeser MUNDUR ke hari kerja
+// terdekat sebelumnya, sehingga awal periode baru & hari terakhir periode lama sama-sama hari kerja.
+// Contoh Oktober 2026: 25 (Minggu) & 24 (Sabtu) merah -> periode baru mulai Jumat 23 Okt,
+// periode lama berakhir Kamis 22 Okt.
+//
+// Daftar tanggal merah di bawah bersumber dari SKB 3 Menteri (2026 & 2027).
+// Tahun lain hanya mengenali Sabtu/Minggu — tambahkan tanggal ke daftar ini tiap SKB baru terbit.
+const INCLUDE_CUTI_BERSAMA = true;   // false = cuti bersama dianggap hari kerja biasa
+const LIBUR_NASIONAL = [
+  // 2025
+  '2025-12-25',
+  // 2026
+  '2026-01-01','2026-01-16','2026-02-17','2026-03-19','2026-03-21','2026-03-22','2026-04-03','2026-04-05',
+  '2026-05-01','2026-05-14','2026-05-27','2026-05-31','2026-06-01','2026-06-16','2026-08-17','2026-08-25','2026-12-25',
+  // 2027
+  '2027-01-01','2027-01-05','2027-02-06','2027-03-08','2027-03-10','2027-03-11','2027-03-26','2027-03-28',
+  '2027-05-01','2027-05-06','2027-05-17','2027-05-20','2027-06-01','2027-06-06','2027-08-15','2027-08-17',
+  '2027-12-25','2027-12-26'
+];
+const CUTI_BERSAMA = [
+  '2025-12-26',
+  '2026-02-16','2026-03-18','2026-03-20','2026-03-23','2026-03-24','2026-05-15','2026-05-28','2026-12-24',
+  '2027-02-05','2027-03-09','2027-03-12','2027-03-15','2027-03-25','2027-05-18','2027-05-19','2027-12-24'
+];
+const RED_DATES = new Set([...LIBUR_NASIONAL, ...(INCLUDE_CUTI_BERSAMA ? CUTI_BERSAMA : [])]);
+
 function isoFromYMD(y, m, d){
   const dt = new Date(y, m, d);
   const mm = String(dt.getMonth()+1).padStart(2,'0');
   const dd = String(dt.getDate()).padStart(2,'0');
   return `${dt.getFullYear()}-${mm}-${dd}`;
 }
-function periodStartForDate(iso){
-  const d = new Date(iso + 'T00:00:00');
-  const y = d.getFullYear(), m = d.getMonth(), day = d.getDate();
-  if(day >= 25) return isoFromYMD(y, m, 25);
-  return isoFromYMD(y, m - 1, 25);
+function parseISO(iso){ return new Date(iso + 'T00:00:00'); }
+function addDaysISO(iso, n){
+  const d = parseISO(iso);
+  return isoFromYMD(d.getFullYear(), d.getMonth(), d.getDate() + n);
 }
-function periodEndFromStart(startIso){
-  const d = new Date(startIso + 'T00:00:00');
-  return isoFromYMD(d.getFullYear(), d.getMonth() + 1, 24);
+function isRedDate(iso){
+  const wd = parseISO(iso).getDay();      // 0 = Minggu, 6 = Sabtu
+  return wd === 0 || wd === 6 || RED_DATES.has(iso);
+}
+function redDateReason(iso){
+  const wd = parseISO(iso).getDay();
+  if(wd === 0) return 'Minggu';
+  if(wd === 6) return 'Sabtu';
+  if(LIBUR_NASIONAL.includes(iso)) return 'libur nasional';
+  if(INCLUDE_CUTI_BERSAMA && CUTI_BERSAMA.includes(iso)) return 'cuti bersama';
+  return '';
+}
+const _boundaryCache = {};
+// Tanggal mulai periode yang "dipatok" di bulan m (0-11) tahun y, setelah digeser karena tanggal merah.
+function periodBoundary(y, m){
+  const key = `${y}-${m}`;
+  if(_boundaryCache[key]) return _boundaryCache[key];
+  let iso = isoFromYMD(y, m, 25);
+  let guard = 0;
+  while((isRedDate(iso) || isRedDate(addDaysISO(iso, -1))) && guard < 20){
+    iso = addDaysISO(iso, -1);
+    guard++;
+  }
+  _boundaryCache[key] = iso;
+  return iso;
+}
+function periodStartForDate(iso){
+  const d = parseISO(iso);
+  const y = d.getFullYear(), m = d.getMonth();
+  const b = periodBoundary(y, m);
+  if(iso >= b) return b;
+  return m === 0 ? periodBoundary(y - 1, 11) : periodBoundary(y, m - 1);
 }
 function nextPeriodStart(startIso){
-  const d = new Date(startIso + 'T00:00:00');
-  return isoFromYMD(d.getFullYear(), d.getMonth() + 1, 25);
+  const d = parseISO(startIso);
+  const m = d.getMonth() + 1;
+  return periodBoundary(m > 11 ? d.getFullYear() + 1 : d.getFullYear(), m > 11 ? 0 : m);
+}
+function periodEndFromStart(startIso){
+  return addDaysISO(nextPeriodStart(startIso), -1);
+}
+// Data lama bisa menyimpan awal periode "tgl 25 polos". Rapikan ke tanggal patokan yang benar.
+function normalizePeriodStart(startIso){
+  const d = parseISO(startIso);
+  return periodBoundary(d.getFullYear(), d.getMonth());
+}
+function formatDateWithDay(iso){
+  return parseISO(iso).toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
 }
 function periodLabel(startIso, endIso){
-  const fmt = (iso)=>{
-    const d = new Date(iso + 'T00:00:00');
-    return d.toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
-  };
+  const fmt = (iso)=> parseISO(iso).toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
   return `${fmt(startIso)} – ${fmt(endIso)}`;
 }
 
@@ -1078,6 +1206,14 @@ async function runMonthlyClosingIfNeeded(){
     await setDoc(userDocRef(), { currentPeriodStart: todayStart }, { merge:true });
     meta = { ...meta, currentPeriodStart: todayStart };
     return;
+  }
+
+  // Rapikan data lama (mis. tersimpan 25 polos padahal patokan baru digeser karena tanggal merah)
+  const normalized = normalizePeriodStart(curStart);
+  if(normalized !== curStart){
+    curStart = normalized;
+    await setDoc(userDocRef(), { currentPeriodStart: curStart }, { merge:true });
+    meta = { ...meta, currentPeriodStart: curStart };
   }
 
   if(curStart >= todayStart) return; // masih di periode yang sama, tidak perlu tutup buku
@@ -1224,16 +1360,38 @@ function render(){
   document.getElementById('statExpense').textContent = formatRupiah(tExpense);
   document.getElementById('statCatCount').textContent = categories.length;
 
-  const curStart = meta.currentPeriodStart || periodStartForDate(todayISO());
+  const curStart = normalizePeriodStart(meta.currentPeriodStart || periodStartForDate(todayISO()));
   const curEnd = periodEndFromStart(curStart);
   const periodEl = document.getElementById('heroPeriodActive');
   if(periodEl) periodEl.textContent = `📅 Periode aktif: ${periodLabel(curStart, curEnd)}`;
+  renderPeriodRuleHint(curStart, curEnd);
 
   renderCategories();
   renderTransactions();
   renderCategorySelect();
   renderGold();
   renderPeriods();
+}
+
+function renderPeriodRuleHint(curStart, curEnd){
+  const el = document.getElementById('periodRuleHint');
+  if(!el) return;
+  const nextStart = nextPeriodStart(curStart);
+  const d = parseISO(nextStart);
+  const nominal = isoFromYMD(d.getFullYear(), d.getMonth(), 25);
+  let line = `Periode aktif berakhir ${formatDateWithDay(curEnd)}. Periode berikutnya mulai ${formatDateWithDay(nextStart)}`;
+  if(nominal !== nextStart){
+    const reasons = [];
+    const r25 = redDateReason(nominal);
+    if(r25) reasons.push(`tgl 25 jatuh di hari ${r25}`);
+    const dayBefore = isoFromYMD(d.getFullYear(), d.getMonth(), 24);
+    const r24 = redDateReason(dayBefore);
+    if(r24) reasons.push(`tgl 24 jatuh di hari ${r24}`);
+    line += ` (digeser mundur dari tgl 25 karena ${reasons.join(' & ') || 'tanggal merah'}).`;
+  }else{
+    line += '.';
+  }
+  el.textContent = line;
 }
 
 function renderCategories(){
@@ -1430,7 +1588,7 @@ function renderPeriods(){
   const area = document.getElementById('periodArea');
   if(!area) return;
   if(periods.length === 0){
-    area.innerHTML = `<div class="empty-box"><span class="emoji">📅</span>Belum ada pembukuan bulanan. Pembukuan pertama akan dibuat otomatis saat aplikasi dibuka setelah tanggal 25.</div>`;
+    area.innerHTML = `<div class="empty-box"><span class="emoji">📅</span>Belum ada pembukuan bulanan. Pembukuan pertama akan dibuat otomatis saat aplikasi dibuka setelah awal periode baru (sekitar tanggal 25, digeser jika tanggal merah).</div>`;
     return;
   }
   let html = '<div class="period-list">';
@@ -1643,6 +1801,7 @@ document.getElementById('btnRetryConnect').addEventListener('click', ()=>{
 });
 
 document.getElementById('btnSettings').addEventListener('click', ()=>{
+  fillAISettings();
   setMoneyValue(document.getElementById('danaAwalInput'), Number(meta.danaAwal||0));
   setMoneyValue(document.getElementById('goldPriceInput'), Number(meta.goldRefPrice||0));
   document.getElementById('fbProjectLabel').textContent = FIREBASE_CONFIG.projectId || '-';
@@ -1662,16 +1821,23 @@ function setActiveTab(tab){
   activeTab = tab;
   document.getElementById('viewKas').classList.toggle('active', tab === 'kas');
   document.getElementById('viewEmas').classList.toggle('active', tab === 'emas');
+  document.getElementById('viewAI').classList.toggle('active', tab === 'ai');
   document.getElementById('btnTabKas').classList.toggle('active', tab === 'kas');
   document.getElementById('btnTabEmas').classList.toggle('active', tab === 'emas');
   document.getElementById('btnTabEmas').classList.toggle('tab-emas', tab === 'emas');
+  document.getElementById('btnTabAI').classList.toggle('active', tab === 'ai');
+  document.getElementById('btnTabAI').classList.toggle('tab-ai', tab === 'ai');
   const fab = document.getElementById('btnFab');
   fab.classList.toggle('mode-kas', tab === 'kas');
   fab.classList.toggle('mode-emas', tab === 'emas');
-  document.getElementById('topbarTag').textContent = tab === 'kas' ? 'Catatan keuangan bersama' : 'Tabungan emas bersama';
+  fab.classList.toggle('hidden', tab === 'ai');
+  document.getElementById('topbarTag').textContent =
+    tab === 'kas' ? 'Catatan keuangan bersama' : (tab === 'emas' ? 'Tabungan emas bersama' : 'Saran finansial dari AI');
+  if(tab === 'ai') renderAIHeader();
 }
 document.getElementById('btnTabKas').addEventListener('click', ()=>setActiveTab('kas'));
 document.getElementById('btnTabEmas').addEventListener('click', ()=>setActiveTab('emas'));
+document.getElementById('btnTabAI').addEventListener('click', ()=>setActiveTab('ai'));
 
 document.getElementById('btnFab').addEventListener('click', ()=>{
   if(activeTab === 'emas'){
@@ -1836,6 +2002,284 @@ document.getElementById('btnSaveGold').addEventListener('click', async ()=>{
     // error toast already shown by saveGold
   }finally{
     btn.disabled = false; btn.textContent = origText;
+  }
+});
+
+// ---------- Saran finansial AI ----------
+// Analisis lokal (rule-based) selalu jalan tanpa internet/API key. Jika API key diisi di
+// Pengaturan → AI, narasi saran tambahan dibuat oleh model AI pilihan.
+const AI_DEFAULT_MODELS = { gemini: 'gemini-2.5-flash', claude: 'claude-sonnet-5-5' };
+function loadAIConfig(){
+  try{ return JSON.parse(localStorage.getItem('bukukas_ai_cfg') || '{}') || {}; }catch(e){ return {}; }
+}
+function saveAIConfig(cfg){
+  try{ localStorage.setItem('bukukas_ai_cfg', JSON.stringify(cfg)); return true; }catch(e){ return false; }
+}
+function aiConfigured(){
+  const c = loadAIConfig();
+  return !!(c.provider && c.apiKey);
+}
+
+function currentPeriodInfo(){
+  const start = normalizePeriodStart(meta.currentPeriodStart || periodStartForDate(todayISO()));
+  const end = periodEndFromStart(start);
+  const today = todayISO();
+  const totalDays = Math.round((parseISO(end) - parseISO(start)) / 86400000) + 1;
+  let elapsed = Math.round((parseISO(today) - parseISO(start)) / 86400000) + 1;
+  elapsed = Math.max(1, Math.min(totalDays, elapsed));
+  return { start, end, totalDays, elapsed, daysLeft: Math.max(0, totalDays - elapsed) };
+}
+
+function buildFinanceSnapshot(){
+  const per = currentPeriodInfo();
+  const danaAwal = Number(meta.danaAwal||0);
+  const income = totalIncome(), expense = totalExpense();
+  const remaining = danaAwal + income - expense;
+  const avgDaily = expense / per.elapsed;
+  const safeDaily = per.daysLeft > 0 ? Math.max(0, remaining) / per.daysLeft : Math.max(0, remaining);
+  // Proyeksi baru berarti setelah ada cukup hari data (hari 1-4 terlalu bias oleh satu-dua transaksi)
+  const projectedEnd = per.elapsed >= 5 ? remaining - avgDaily * per.daysLeft : null;
+  const cats = categories.map(c=>{
+    const st = categoryStats(c.id);
+    const usedPct = st.allocated > 0 ? (st.expense / (st.allocated + st.income)) * 100 : null;
+    return { name: c.name || 'Tanpa nama', allocated: st.allocated, income: st.income, expense: st.expense, remaining: st.remaining, usedPct };
+  });
+  const topExpenses = transactions.filter(t=>t.type==='expense')
+    .sort((a,b)=>Number(b.amount)-Number(a.amount)).slice(0,5)
+    .map(t=>({ kategori: t.categoryName || 'Tanpa kategori', jumlah: Number(t.amount), tanggal: t.date }));
+  const gt = goldTotals();
+  const prev = periods.slice(0,3).map(p=>({
+    periode: p.label, pemasukan: Number(p.totalIncome||0), pengeluaran: Number(p.totalExpense||0), danaAkhir: Number(p.closingBalance||0)
+  }));
+  return {
+    periode: { mulai: per.start, selesai: per.end, hariKe: per.elapsed, totalHari: per.totalDays, sisaHari: per.daysLeft },
+    danaAwal, pemasukan: income, pengeluaran: expense, sisaDana: remaining,
+    belumDialokasikan: danaAwal - totalAllocated(),
+    rataPengeluaranPerHari: Math.round(avgDaily),
+    batasAmanPerHariSisaPeriode: Math.round(safeDaily),
+    proyeksiSisaDanaAkhirPeriode: projectedEnd === null ? null : Math.round(projectedEnd),
+    kategori: cats, pengeluaranTerbesar: topExpenses,
+    emas: { totalGram: gt.totalGrams, estimasiNilai: Math.round(gt.totalEst), modal: Math.round(gt.totalBuy), untungRugi: Math.round(gt.totalProfit) },
+    periodeSebelumnya: prev
+  };
+}
+
+function localAnalysis(snap){
+  const out = { metrics: [], findings: [], advice: [] };
+  const rp = formatRupiah;
+  const noData = snap.pemasukan === 0 && snap.pengeluaran === 0 && snap.kategori.length === 0;
+  if(noData){
+    out.findings.push('Belum ada transaksi atau kategori pada periode ini, jadi belum ada yang bisa dianalisis.');
+    out.advice.push('Mulai dengan membuat kategori (mis. Makan, Transport, Tabungan), beri alokasi dana, lalu catat transaksi harian.');
+    return out;
+  }
+  const hasProj = snap.proyeksiSisaDanaAkhirPeriode !== null;
+  const projCls = !hasProj ? '' : (snap.proyeksiSisaDanaAkhirPeriode < 0 ? 'bad' : (snap.proyeksiSisaDanaAkhirPeriode < snap.sisaDana*0.1 ? 'warn' : 'good'));
+  out.metrics.push({ k:'Sisa dana', v: rp(snap.sisaDana), cls: snap.sisaDana < 0 ? 'bad' : '' });
+  out.metrics.push({ k:'Rata-rata keluar / hari', v: rp(snap.rataPengeluaranPerHari), cls:'' });
+  out.metrics.push({ k:'Batas aman / hari (sisa periode)', v: rp(snap.batasAmanPerHariSisaPeriode), cls: !hasProj ? '' : (snap.rataPengeluaranPerHari > snap.batasAmanPerHariSisaPeriode ? 'warn' : 'good') });
+  out.metrics.push({ k:'Proyeksi sisa di akhir periode', v: hasProj ? rp(snap.proyeksiSisaDanaAkhirPeriode) : 'Menunggu data', cls: projCls });
+
+  // Laju belanja
+  if(snap.periode.sisaHari > 0 && !hasProj){
+    out.findings.push(`Periode baru berjalan ${snap.periode.hariKe} hari, proyeksi belanja akan muncul setelah hari ke-5. Batas aman belanja saat ini ${rp(snap.batasAmanPerHariSisaPeriode)}/hari.`);
+  }else if(snap.periode.sisaHari > 0){
+    if(snap.proyeksiSisaDanaAkhirPeriode < 0){
+      out.findings.push(`Dengan laju belanja saat ini (${rp(snap.rataPengeluaranPerHari)}/hari), dana diperkirakan kurang sekitar ${rp(Math.abs(snap.proyeksiSisaDanaAkhirPeriode))} sebelum periode berakhir.`);
+      out.advice.push(`Turunkan belanja harian ke ≤ ${rp(snap.batasAmanPerHariSisaPeriode)} untuk ${snap.periode.sisaHari} hari ke depan, dan tunda pembelian non-esensial.`);
+    }else{
+      out.findings.push(`Laju belanja masih aman: diperkirakan tersisa ${rp(snap.proyeksiSisaDanaAkhirPeriode)} di akhir periode.`);
+    }
+  }else{
+    out.findings.push(`Hari terakhir periode. Sisa dana ${rp(snap.sisaDana)} akan dibawa ke periode berikutnya.`);
+  }
+
+  // Kategori
+  const over = snap.kategori.filter(c=>c.allocated > 0 && c.remaining < 0);
+  const near = snap.kategori.filter(c=>c.allocated > 0 && c.remaining >= 0 && c.usedPct !== null && c.usedPct >= 80);
+  over.forEach(c=>out.findings.push(`Kategori ${c.name} melebihi alokasi sebesar ${rp(Math.abs(c.remaining))}.`));
+  near.forEach(c=>out.findings.push(`Kategori ${c.name} sudah terpakai ${Math.round(c.usedPct)}% dari alokasi.`));
+  if(over.length){
+    out.advice.push(`Pindahkan alokasi dari kategori yang masih longgar ke ${over.map(c=>c.name).join(', ')}, atau kurangi belanja di kategori itu.`);
+  }
+  const loose = snap.kategori.filter(c=>c.allocated > 0 && c.usedPct !== null && c.usedPct < 40 && snap.periode.hariKe/snap.periode.totalHari > 0.6);
+  if(loose.length){
+    out.findings.push(`Kategori ${loose.map(c=>c.name).join(', ')} baru terpakai di bawah 40% padahal periode sudah lewat 60%.`);
+  }
+
+  // Dana belum dialokasi
+  if(snap.belumDialokasikan > 0){
+    out.advice.push(`Ada ${rp(snap.belumDialokasikan)} dana yang belum dialokasikan. Alokasikan ke kategori tabungan/dana darurat agar tidak habis tanpa terasa.`);
+  }else if(snap.belumDialokasikan < 0){
+    out.findings.push(`Total alokasi kategori melebihi dana awal sebesar ${rp(Math.abs(snap.belumDialokasikan))}.`);
+    out.advice.push('Kurangi alokasi beberapa kategori agar totalnya tidak melebihi dana awal.');
+  }
+
+  // Dibanding periode sebelumnya
+  const prev = snap.periodeSebelumnya[0];
+  if(prev && prev.pengeluaran > 0 && snap.periode.hariKe >= 7){
+    const projectedExpense = snap.rataPengeluaranPerHari * snap.periode.totalHari;
+    const diff = ((projectedExpense - prev.pengeluaran) / prev.pengeluaran) * 100;
+    if(Math.abs(diff) >= 10){
+      out.findings.push(`Proyeksi pengeluaran periode ini sekitar ${Math.abs(Math.round(diff))}% ${diff>0?'lebih tinggi':'lebih rendah'} dibanding periode lalu (${rp(prev.pengeluaran)}).`);
+    }
+  }
+
+  // Tabungan
+  if(snap.pemasukan > 0){
+    const rate = ((snap.pemasukan - snap.pengeluaran) / snap.pemasukan) * 100;
+    if(rate < 10) out.advice.push('Rasio tabungan periode ini di bawah 10% dari pemasukan. Coba sisihkan di awal periode (bayar diri sendiri dulu), baru belanja dari sisanya.');
+    else if(rate >= 20) out.findings.push(`Rasio tabungan periode ini baik: sekitar ${Math.round(rate)}% dari pemasukan.`);
+  }
+
+  // Emas
+  if(snap.emas.totalGram > 0 && snap.emas.modal > 0){
+    const pct = (snap.emas.untungRugi / snap.emas.modal) * 100;
+    out.findings.push(`Tabungan emas ${formatGram(snap.emas.totalGram)} bernilai estimasi ${rp(snap.emas.estimasiNilai)} (${pct>=0?'untung':'rugi'} ${Math.abs(pct).toFixed(1)}% dari modal).`);
+  }
+  if(!out.advice.length) out.advice.push('Pertahankan kebiasaan mencatat dan cek halaman ini tiap beberapa hari untuk memantau laju belanja.');
+  return out;
+}
+
+function mdLite(text){
+  const lines = escapeHtml(text).split('\n');
+  let html = '', inList = false;
+  const inline = (t)=> t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  lines.forEach(raw=>{
+    const line = raw.trim();
+    const li = line.match(/^[-*•]\s+(.*)$/) || line.match(/^\d+[.)]\s+(.*)$/);
+    if(li){
+      if(!inList){ html += '<ul>'; inList = true; }
+      html += `<li>${inline(li[1])}</li>`;
+      return;
+    }
+    if(inList){ html += '</ul>'; inList = false; }
+    if(!line) return;
+    const h = line.match(/^#{1,4}\s+(.*)$/);
+    html += h ? `<p><strong>${inline(h[1])}</strong></p>` : `<p>${inline(line)}</p>`;
+  });
+  if(inList) html += '</ul>';
+  return html;
+}
+
+async function callAI(snap){
+  const cfg = loadAIConfig();
+  const model = (cfg.model || '').trim() || AI_DEFAULT_MODELS[cfg.provider];
+  const system = 'Kamu adalah asisten keuangan pribadi yang ramah dan praktis untuk pengguna Indonesia. Jawab dalam Bahasa Indonesia, ringkas (maksimal sekitar 250 kata), pakai angka dari data yang diberikan saja dan jangan mengarang angka. Format: satu paragraf ringkasan, lalu "Temuan" (3 poin), lalu "Saran" (3 poin konkret dan bisa langsung dilakukan), lalu satu kalimat "Perhatian". Jangan memberi rekomendasi produk investasi tertentu.';
+  const user = 'Berikut data keuangan periode berjalan (JSON, satuan Rupiah). Berikan ringkasan dan saran finansial.\n' + JSON.stringify(snap);
+
+  if(cfg.provider === 'gemini'){
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'x-goog-api-key': cfg.apiKey },
+      body: JSON.stringify({
+        systemInstruction:{ parts:[{ text: system }] },
+        contents:[{ role:'user', parts:[{ text: user }] }],
+        generationConfig:{ temperature:0.5, maxOutputTokens:1200 }
+      })
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data?.error?.message || ('HTTP ' + res.status));
+    const txt = (data.candidates?.[0]?.content?.parts || []).map(p=>p.text||'').join('').trim();
+    if(!txt) throw new Error('AI tidak mengembalikan teks.');
+    return txt;
+  }
+  if(cfg.provider === 'claude'){
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': cfg.apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({ model, max_tokens:1200, system, messages:[{ role:'user', content:user }] })
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data?.error?.message || ('HTTP ' + res.status));
+    const txt = (data.content || []).filter(b=>b.type==='text').map(b=>b.text).join('').trim();
+    if(!txt) throw new Error('AI tidak mengembalikan teks.');
+    return txt;
+  }
+  throw new Error('Penyedia AI belum dipilih.');
+}
+
+function renderAIHeader(){
+  const per = currentPeriodInfo();
+  const line = document.getElementById('aiPeriodLine');
+  if(line) line.textContent = `📅 ${periodLabel(per.start, per.end)} · hari ke-${per.elapsed} dari ${per.totalDays}`;
+  const hint = document.getElementById('aiProviderHint');
+  if(hint){
+    const c = loadAIConfig();
+    hint.textContent = aiConfigured()
+      ? `Saran naratif memakai ${c.provider === 'gemini' ? 'Google Gemini' : 'Anthropic Claude'} (diatur di ⚙ → AI).`
+      : 'Analisis lokal aktif. Untuk saran naratif dari AI, isi API key di ⚙ Pengaturan → AI.';
+  }
+}
+
+let aiRunning = false;
+async function runAIAdvice(){
+  if(aiRunning) return;
+  aiRunning = true;
+  const btn = document.getElementById('btnAiRun');
+  const out = document.getElementById('aiOutput');
+  btn.disabled = true;
+  const origText = btn.textContent;
+  btn.textContent = 'Menganalisis…';
+  try{
+    renderAIHeader();
+    const snap = buildFinanceSnapshot();
+    const la = localAnalysis(snap);
+    const li = (arr)=> arr.length ? `<ul>${arr.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul>` : '';
+    let html = `<div class="ai-metrics">${la.metrics.map(m=>`<div class="ai-metric"><div class="k">${escapeHtml(m.k)}</div><div class="v ${m.cls||''}">${escapeHtml(m.v)}</div></div>`).join('')}</div>`;
+    if(la.findings.length) html += `<div class="ai-card"><h3>🔎 Temuan <span class="ai-tag">Analisis lokal</span></h3>${li(la.findings)}</div>`;
+    if(la.advice.length) html += `<div class="ai-card"><h3>💡 Saran <span class="ai-tag">Analisis lokal</span></h3>${li(la.advice)}</div>`;
+    if(aiConfigured()){
+      html += `<div class="ai-card" id="aiNarrative"><h3>🤖 Ringkasan dari AI</h3><div class="ai-loading">AI sedang menulis ringkasan…</div></div>`;
+    }
+    out.innerHTML = html;
+    if(aiConfigured()){
+      const box = document.getElementById('aiNarrative');
+      try{
+        const txt = await callAI(snap);
+        box.innerHTML = `<h3>🤖 Ringkasan dari AI</h3>${mdLite(txt)}`;
+      }catch(e){
+        console.error('callAI', e);
+        box.innerHTML = `<h3>🤖 Ringkasan dari AI</h3><p>Gagal mengambil saran dari AI: ${escapeHtml(errorMessage(e))}. Periksa API key &amp; koneksi di ⚙ Pengaturan → AI. Analisis lokal di atas tetap bisa dipakai.</p>`;
+      }
+    }
+  }finally{
+    btn.disabled = false;
+    btn.textContent = origText;
+    aiRunning = false;
+  }
+}
+document.getElementById('btnAiRun').addEventListener('click', runAIAdvice);
+
+function fillAISettings(){
+  const c = loadAIConfig();
+  document.getElementById('aiProviderSel').value = c.provider || '';
+  document.getElementById('aiKeyInput').value = c.apiKey || '';
+  document.getElementById('aiModelInput').value = c.model || '';
+}
+document.getElementById('btnSaveAI').addEventListener('click', ()=>{
+  const provider = document.getElementById('aiProviderSel').value;
+  const apiKey = document.getElementById('aiKeyInput').value.trim();
+  const model = document.getElementById('aiModelInput').value.trim();
+  if(provider && !apiKey){ showToast('Isi API key untuk penyedia AI yang dipilih', true); return; }
+  if(saveAIConfig({ provider, apiKey, model })){
+    showToast('Pengaturan AI disimpan ✅');
+    renderAIHeader();
+  }else{
+    showToast('Gagal menyimpan (penyimpanan browser tidak tersedia)', true);
+  }
+});
+
+// Cek penutupan periode lagi saat aplikasi kembali dibuka (mis. dibiarkan di latar belakang melewati pergantian periode)
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible'){
+    closingChecked = false;
+    maybeRunClosingCheck();
   }
 });
 
