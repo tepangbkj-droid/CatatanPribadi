@@ -753,6 +753,8 @@
           <option value="">Analisis lokal saja (tanpa AI online)</option>
           <option value="gemini">Google Gemini</option>
           <option value="claude">Anthropic Claude</option>
+          <option value="groq">Groq (gratis)</option>
+          <option value="openrouter">OpenRouter (model gratis)</option>
         </select>
       </div>
       <div class="field">
@@ -763,6 +765,7 @@
       <div class="field">
         <label>Nama model (opsional)</label>
         <input type="text" id="aiModelInput" placeholder="kosongkan untuk bawaan">
+        <div class="field-hint">Groq: console.groq.com → API Keys. OpenRouter: openrouter.ai → Keys. Jika OpenRouter gagal karena model gratis berganti, isi nama model yang berakhiran :free dari daftar mereka.</div>
       </div>
       <button class="btn btn-primary" id="btnSaveAI">Simpan pengaturan AI</button>
     </div>
@@ -2008,7 +2011,17 @@ document.getElementById('btnSaveGold').addEventListener('click', async ()=>{
 // ---------- Saran finansial AI ----------
 // Analisis lokal (rule-based) selalu jalan tanpa internet/API key. Jika API key diisi di
 // Pengaturan → AI, narasi saran tambahan dibuat oleh model AI pilihan.
-const AI_DEFAULT_MODELS = { gemini: 'gemini-2.5-flash', claude: 'claude-sonnet-5-5' };
+const AI_DEFAULT_MODELS = {
+  gemini: 'gemini-2.5-flash',
+  claude: 'claude-sonnet-5-5',
+  groq: 'llama-3.3-70b-versatile',
+  openrouter: 'meta-llama/llama-3.3-70b-instruct:free'   // model gratis OpenRouter bisa berganti; ganti di Pengaturan jika gagal
+};
+const AI_PROVIDER_NAMES = { gemini:'Google Gemini', claude:'Anthropic Claude', groq:'Groq', openrouter:'OpenRouter' };
+const OPENAI_COMPAT_URLS = {
+  groq: 'https://api.groq.com/openai/v1/chat/completions',
+  openrouter: 'https://openrouter.ai/api/v1/chat/completions'
+};
 function loadAIConfig(){
   try{ return JSON.parse(localStorage.getItem('bukukas_ai_cfg') || '{}') || {}; }catch(e){ return {}; }
 }
@@ -2201,6 +2214,21 @@ async function callAI(snap){
     if(!txt) throw new Error('AI tidak mengembalikan teks.');
     return txt;
   }
+  if(OPENAI_COMPAT_URLS[cfg.provider]){
+    const res = await fetch(OPENAI_COMPAT_URLS[cfg.provider], {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization': 'Bearer ' + cfg.apiKey },
+      body: JSON.stringify({
+        model, temperature:0.5, max_tokens:1200,
+        messages:[{ role:'system', content:system }, { role:'user', content:user }]
+      })
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data?.error?.message || ('HTTP ' + res.status));
+    const txt = String(data.choices?.[0]?.message?.content || '').trim();
+    if(!txt) throw new Error('AI tidak mengembalikan teks.');
+    return txt;
+  }
   throw new Error('Penyedia AI belum dipilih.');
 }
 
@@ -2212,7 +2240,7 @@ function renderAIHeader(){
   if(hint){
     const c = loadAIConfig();
     hint.textContent = aiConfigured()
-      ? `Saran naratif memakai ${c.provider === 'gemini' ? 'Google Gemini' : 'Anthropic Claude'} (diatur di ⚙ → AI).`
+      ? `Saran naratif memakai ${AI_PROVIDER_NAMES[c.provider] || c.provider} (diatur di ⚙ → AI).`
       : 'Analisis lokal aktif. Untuk saran naratif dari AI, isi API key di ⚙ Pengaturan → AI.';
   }
 }
