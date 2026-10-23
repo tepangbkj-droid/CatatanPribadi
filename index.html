@@ -765,7 +765,7 @@
       <div class="field">
         <label>Nama model (opsional)</label>
         <input type="text" id="aiModelInput" placeholder="kosongkan untuk bawaan">
-        <div class="field-hint">Groq: console.groq.com → API Keys. OpenRouter: openrouter.ai → Keys. Jika OpenRouter gagal karena model gratis berganti, isi nama model yang berakhiran :free dari daftar mereka.</div>
+        <div class="field-hint">Groq: console.groq.com → API Keys. OpenRouter: openrouter.ai → Keys. Bawaan OpenRouter memakai openrouter/free (otomatis memilih model gratis yang tersedia). Jika masih gagal, isi nama model berakhiran :free dari daftar mereka.</div>
       </div>
       <button class="btn btn-primary" id="btnSaveAI">Simpan pengaturan AI</button>
     </div>
@@ -1713,9 +1713,9 @@ async function sendTelegramNotification(tx){
   const label = tx.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
   const text = [
     `${emoji} <b>${label} baru</b>`,
-    `Kategori: ${tx.categoryName || 'Tanpa kategori'}`,
+    `Kategori: ${escapeHtml(tx.categoryName || 'Tanpa kategori')}`,
     `Jumlah: ${formatRupiah(tx.amount)}`,
-    tx.note ? `Catatan: ${tx.note}` : null,
+    tx.note ? `Catatan: ${escapeHtml(tx.note)}` : null,
     `Tanggal: ${formatDateHuman(tx.date)}`,
     ``,
     `Sisa dana: ${formatRupiah(sisa)}`
@@ -1726,7 +1726,7 @@ async function sendTelegramNotification(tx){
 async function sendTelegramGoldNotification(item){
   const text = [
     `🪙 <b>Emas baru ditambahkan</b>`,
-    `Nama: ${item.name}`,
+    `Nama: ${escapeHtml(item.name)}`,
     `Berat: ${formatGram(item.grams)}`,
     `Kadar: ${item.purity}%`,
     `Harga beli: ${formatRupiah(item.buyPrice)}`,
@@ -2015,7 +2015,7 @@ const AI_DEFAULT_MODELS = {
   gemini: 'gemini-2.5-flash',
   claude: 'claude-sonnet-5-5',
   groq: 'llama-3.3-70b-versatile',
-  openrouter: 'meta-llama/llama-3.3-70b-instruct:free'   // model gratis OpenRouter bisa berganti; ganti di Pengaturan jika gagal
+  openrouter: 'openrouter/free'   // router OpenRouter yang otomatis memilih model gratis yang sedang tersedia
 };
 const AI_PROVIDER_NAMES = { gemini:'Google Gemini', claude:'Anthropic Claude', groq:'Groq', openrouter:'OpenRouter' };
 const OPENAI_COMPAT_URLS = {
