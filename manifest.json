@@ -1,7 +1,7 @@
 {
   "name": "Buku Kas & Tabungan Emas",
   "short_name": "Buku Kas",
-  "description": "Catatan keuangan dan tabungan emas bersama, dengan notifikasi otomatis setiap ada transaksi baru.",
+  "description": "Catatan keuangan, tabungan, hutang, dan tabungan emas bersama, dengan notifikasi otomatis setiap ada transaksi baru.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

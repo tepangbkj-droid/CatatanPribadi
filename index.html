@@ -326,11 +326,11 @@
     padding:8px 18px calc(8px + env(safe-area-inset-bottom));
     display:flex;justify-content:center;
   }
-  .tabbar-inner{max-width:640px;width:100%;display:flex;gap:8px;}
+  .tabbar-inner{max-width:640px;width:100%;display:flex;gap:4px;}
   .tab-btn{
     flex:1;border:none;background:transparent;border-radius:14px;
     display:flex;flex-direction:column;align-items:center;gap:2px;
-    padding:7px 0 5px;font-size:11.5px;font-weight:600;color:var(--ink-soft);
+    padding:7px 0 5px;font-size:10.5px;font-weight:600;color:var(--ink-soft);min-width:0;
   }
   .tab-btn .tab-ic{font-size:20px;}
   .tab-btn.active{color:var(--violet-dark);background:var(--violet-soft);}
@@ -466,9 +466,86 @@
   .status-line.ok{color:var(--emerald);}
   .status-line.err{color:var(--rose);}
   .loading-dot{font-size:14px;color:var(--ink-soft);text-align:center;padding:60px 0;}
+
+  /* ===== Tabungan, Hutang, Update ===== */
+  .hero.hero-tab{background:linear-gradient(150deg,#0B8F8A 0%,#14B8A6 45%,#2E8BFF 100%);box-shadow:0 16px 34px -14px rgba(20,184,166,0.55);}
+  .hero.hero-hutang{background:linear-gradient(150deg,#C2185B 0%,#F0355A 50%,#8B5CF6 100%);box-shadow:0 16px 34px -14px rgba(240,53,90,0.5);}
+  .fab.mode-tab{background:linear-gradient(150deg,#2DD4BF,var(--teal) 55%,var(--blue));box-shadow:0 12px 26px -8px rgba(20,184,166,0.6);}
+  .fab.mode-hutang{background:linear-gradient(150deg,#FB7185,var(--rose) 55%,#8B5CF6);box-shadow:0 12px 26px -8px rgba(240,53,90,0.6);}
+  .tab-btn.active.tab-tab{color:#0C8F83;background:var(--teal-soft);}
+  .tab-btn.active.tab-hutang{color:var(--rose);background:var(--rose-soft);}
+  .link-btn.teal{background:var(--teal-soft);color:#0C8F83;}
+  .link-btn.teal:hover{background:var(--teal);color:#fff;}
+  .link-btn.rose{background:var(--rose-soft);color:var(--rose);}
+  .link-btn.rose:hover{background:var(--rose);color:#fff;}
+  .btn-teal{background:linear-gradient(135deg,var(--teal),var(--blue));color:#fff;box-shadow:0 10px 22px -10px rgba(20,184,166,0.7);}
+  .btn-rose{background:linear-gradient(135deg,var(--rose),#8B5CF6);color:#fff;box-shadow:0 10px 22px -10px rgba(240,53,90,0.6);}
+  .btn-teal:disabled,.btn-rose:disabled{opacity:.6;cursor:not-allowed;}
+  .btn-teal:active,.btn-rose:active{opacity:.9;transform:scale(.99);}
+
+  .debt-filter{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+  .debt-filter .chip{padding:8px 12px;font-size:12.5px;}
+  .fin-list{display:flex;flex-direction:column;gap:10px;}
+  .fin-row{
+    padding:16px;border:1px solid var(--line);border-radius:var(--radius-m);
+    background:var(--card);box-shadow:0 8px 18px -14px rgba(34,26,61,0.4);
+    border-left:5px solid var(--accent, var(--teal));
+  }
+  .fin-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .fin-name-wrap{display:flex;align-items:center;gap:10px;min-width:0;}
+  .fin-icon{
+    width:38px;height:38px;border-radius:12px;flex:0 0 auto;font-size:18px;
+    display:flex;align-items:center;justify-content:center;background:var(--accent-soft, var(--teal-soft));
+  }
+  .fin-name{font-weight:700;font-size:15px;overflow-wrap:anywhere;}
+  .fin-sub{font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+  .fin-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+  .fin-metric{background:#FAF8FF;border-radius:12px;padding:9px 11px;}
+  .fin-metric .k{font-size:11px;color:var(--ink-soft);}
+  .fin-metric .v{font-family:var(--font-head);font-size:14.5px;font-weight:700;margin-top:2px;}
+  .prog-track{height:9px;border-radius:var(--radius-pill);background:#F1EEFC;margin-top:12px;overflow:hidden;}
+  .prog-fill{height:100%;border-radius:var(--radius-pill);background:var(--accent, var(--teal));transition:width .5s ease;}
+  .fin-hint{font-size:12.5px;color:var(--ink-soft);margin-top:8px;line-height:1.45;}
+  .fin-note{font-size:12.5px;color:var(--ink-soft);margin-top:8px;font-style:italic;overflow-wrap:anywhere;}
+  .fin-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center;}
+  .fin-actions .spacer{flex:1;}
+  .badge{
+    display:inline-flex;align-items:center;font-size:11.5px;font-weight:700;padding:4px 9px;
+    border-radius:var(--radius-pill);background:#F1EEFC;color:var(--ink-soft);white-space:nowrap;
+  }
+  .badge.late{background:var(--rose-soft);color:var(--rose);}
+  .badge.soon{background:var(--amber-soft);color:var(--amber-dark);}
+  .badge.ok{background:var(--emerald-soft);color:#0A8C5A;}
+  details.hist{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px;}
+  details.hist summary{font-size:12.5px;color:var(--ink-soft);cursor:pointer;font-weight:600;}
+  .hist-row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12.5px;padding:7px 0;border-bottom:1px solid #F4F1FC;}
+  .hist-row:last-child{border-bottom:none;}
+  .hist-row .meta{min-width:0;color:var(--ink-soft);overflow-wrap:anywhere;}
+  .hist-row .amt{font-family:var(--font-head);font-weight:700;white-space:nowrap;}
+  .hist-row .amt.in{color:var(--emerald);}
+  .hist-row .amt.out{color:var(--rose);}
+  .checkline{display:flex;align-items:flex-start;gap:9px;font-size:13px;color:var(--ink-soft);margin:2px 0 16px;line-height:1.4;}
+  .checkline input{width:18px;height:18px;margin-top:1px;flex:0 0 auto;accent-color:var(--violet);}
+
+  .update-banner{
+    position:fixed;left:12px;right:12px;top:calc(10px + env(safe-area-inset-top));
+    max-width:616px;margin:0 auto;z-index:95;
+    display:flex;align-items:center;gap:10px;
+    background:var(--ink);color:#fff;padding:10px 10px 10px 16px;border-radius:16px;
+    box-shadow:0 14px 30px -12px rgba(34,26,61,0.7);font-size:13.5px;animation:popIn .3s ease both;
+  }
+  .update-banner span{flex:1;line-height:1.35;}
+  .update-banner .ub-go{border:none;border-radius:var(--radius-pill);padding:8px 14px;font-weight:700;font-size:13px;background:linear-gradient(135deg,var(--violet),var(--blue));color:#fff;}
+  .update-banner .ub-x{border:none;background:transparent;color:rgba(255,255,255,0.7);font-size:16px;padding:6px 8px;}
 </style>
 </head>
 <body>
+
+<div id="updateBanner" class="update-banner hidden" role="status">
+  <span id="updateBannerText">🚀 Versi baru tersedia.</span>
+  <button class="ub-go" id="btnApplyUpdate">Perbarui</button>
+  <button class="ub-x" id="btnDismissUpdate" aria-label="Tutup">✕</button>
+</div>
 
 <div id="onboard" class="onboard-wrap hidden">
   <div class="onboard-card">
@@ -582,6 +659,66 @@
     </div>
 
 
+    <!-- ===== VIEW: TABUNGAN ===== -->
+    <div id="viewTabungan" class="view-pane">
+      <div class="hero hero-tab fade-up">
+        <div class="hero-label">🐷 Total tabungan</div>
+        <div class="hero-number" id="svTotal">Rp0</div>
+        <div class="hero-meta">
+          <div class="hero-meta-item">
+            <div class="hero-meta-label">Total target</div>
+            <div class="hero-meta-value" id="svTargetTotal">Rp0</div>
+          </div>
+          <div class="hero-meta-item">
+            <div class="hero-meta-label">Target tercapai</div>
+            <div class="hero-meta-value" id="svDoneCount">0 / 0</div>
+          </div>
+        </div>
+        <div class="hero-badge" id="svBadge">Belum ada target tabungan</div>
+      </div>
+
+      <div class="section" style="margin-top:22px;">
+        <div class="section-head">
+          <div class="section-title">🎯 Target tabungan</div>
+          <button class="link-btn teal" id="btnAddGoal">+ Target</button>
+        </div>
+        <div id="savingsArea"></div>
+      </div>
+    </div>
+
+    <!-- ===== VIEW: HUTANG ===== -->
+    <div id="viewHutang" class="view-pane">
+      <div class="hero hero-hutang fade-up">
+        <div class="hero-label">💸 Total hutang saya</div>
+        <div class="hero-number" id="debtOweTotal">Rp0</div>
+        <div class="hero-meta">
+          <div class="hero-meta-item">
+            <div class="hero-meta-label">Piutang (belum diterima)</div>
+            <div class="hero-meta-value" id="debtLentTotal">Rp0</div>
+          </div>
+          <div class="hero-meta-item">
+            <div class="hero-meta-label">Posisi bersih</div>
+            <div class="hero-meta-value" id="debtNet">Rp0</div>
+          </div>
+        </div>
+        <div class="hero-badge" id="debtBadge">Tidak ada hutang aktif</div>
+      </div>
+
+      <div class="section" style="margin-top:22px;">
+        <div class="section-head">
+          <div class="section-title">📒 Hutang &amp; piutang</div>
+          <button class="link-btn rose" id="btnAddDebt">+ Catat</button>
+        </div>
+        <div class="debt-filter" id="debtFilter">
+          <button class="chip active" data-dfilter="active">Aktif</button>
+          <button class="chip" data-dfilter="owe">Hutang saya</button>
+          <button class="chip" data-dfilter="lent">Piutang</button>
+          <button class="chip" data-dfilter="settled">Lunas</button>
+        </div>
+        <div id="debtArea"></div>
+      </div>
+    </div>
+
     <!-- ===== VIEW: SARAN AI ===== -->
     <div id="viewAI" class="view-pane">
       <div class="hero hero-ai fade-up">
@@ -604,8 +741,10 @@
   <div class="tabbar">
     <div class="tabbar-inner">
       <button class="tab-btn active" id="btnTabKas" data-tab="kas"><span class="tab-ic">💰</span>Kas</button>
-      <button class="tab-btn" id="btnTabEmas" data-tab="emas"><span class="tab-ic">🪙</span>Tabungan Emas</button>
-      <button class="tab-btn" id="btnTabAI" data-tab="ai"><span class="tab-ic">🤖</span>Saran AI</button>
+      <button class="tab-btn" id="btnTabEmas" data-tab="emas"><span class="tab-ic">🪙</span>Emas</button>
+      <button class="tab-btn" id="btnTabTabungan" data-tab="tabungan"><span class="tab-ic">🐷</span>Tabungan</button>
+      <button class="tab-btn" id="btnTabHutang" data-tab="hutang"><span class="tab-ic">📒</span>Hutang</button>
+      <button class="tab-btn" id="btnTabAI" data-tab="ai"><span class="tab-ic">🤖</span>AI</button>
     </div>
   </div>
 </div>
@@ -705,6 +844,132 @@
   </div>
 </div>
 
+<!-- Modal: Savings goal -->
+<div class="modal-overlay hidden" id="modalGoal">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <div class="modal-title">🐷 Target tabungan baru</div>
+      <button class="icon-btn" data-close="modalGoal">✕</button>
+    </div>
+    <div class="field">
+      <label>Nama target</label>
+      <input type="text" id="goalName" placeholder="mis. Dana darurat, Liburan, DP rumah">
+    </div>
+    <div class="field">
+      <label>Ikon</label>
+      <div class="icon-grid" id="goalIconGrid"></div>
+    </div>
+    <div class="field">
+      <label>Target dana (Rp)</label>
+      <input type="text" inputmode="numeric" id="goalTarget" data-money placeholder="0">
+    </div>
+    <div class="field">
+      <label>Target tercapai pada (opsional)</label>
+      <input type="date" id="goalDate">
+      <div class="field-hint">Jika diisi, aplikasi menghitung berapa yang perlu disisihkan tiap bulan.</div>
+    </div>
+    <div class="field">
+      <label>Setoran awal (opsional)</label>
+      <input type="text" inputmode="numeric" id="goalInitial" data-money placeholder="0">
+    </div>
+    <label class="checkline"><input type="checkbox" id="goalMirror"><span>Catat setoran awal juga sebagai pengeluaran di Kas</span></label>
+    <button class="btn btn-teal" id="btnSaveGoal">Simpan target</button>
+  </div>
+</div>
+
+<!-- Modal: Savings entry (setor / tarik) -->
+<div class="modal-overlay hidden" id="modalSvEntry">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <div class="modal-title" id="svEntryTitle">Setor tabungan</div>
+      <button class="icon-btn" data-close="modalSvEntry">✕</button>
+    </div>
+    <div class="segmented" id="svTypeSeg">
+      <button type="button" data-type="deposit">Setor</button>
+      <button type="button" data-type="withdraw">Tarik</button>
+    </div>
+    <div class="field-hint" id="svEntryHint" style="margin:-6px 0 14px;"></div>
+    <div class="field">
+      <label>Jumlah (Rp)</label>
+      <input type="text" inputmode="numeric" id="svAmount" data-money placeholder="0">
+    </div>
+    <div class="field">
+      <label>Catatan (opsional)</label>
+      <input type="text" id="svNote" placeholder="mis. Sisa gaji, bonus">
+    </div>
+    <div class="field">
+      <label>Tanggal</label>
+      <input type="date" id="svDate">
+    </div>
+    <label class="checkline"><input type="checkbox" id="svMirror"><span id="svMirrorLabel">Catat juga sebagai pengeluaran di Kas</span></label>
+    <button class="btn btn-teal" id="btnSaveSvEntry">Simpan</button>
+  </div>
+</div>
+
+<!-- Modal: Debt -->
+<div class="modal-overlay hidden" id="modalDebt">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <div class="modal-title">📒 Catat hutang / piutang</div>
+      <button class="icon-btn" data-close="modalDebt">✕</button>
+    </div>
+    <div class="segmented" id="debtKindSeg">
+      <button type="button" data-kind="owe">Hutang saya</button>
+      <button type="button" data-kind="lent">Piutang</button>
+    </div>
+    <div class="field-hint" id="debtKindHint" style="margin:-6px 0 14px;"></div>
+    <div class="field">
+      <label id="debtPersonLabel">Berhutang kepada</label>
+      <input type="text" id="debtPerson" placeholder="Nama orang / lembaga">
+    </div>
+    <div class="field">
+      <label>Jumlah (Rp)</label>
+      <input type="text" inputmode="numeric" id="debtAmount" data-money placeholder="0">
+    </div>
+    <div class="field">
+      <label>Catatan (opsional)</label>
+      <input type="text" id="debtNote" placeholder="mis. Pinjam untuk modal, cicilan HP">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Tanggal</label>
+        <input type="date" id="debtDate">
+      </div>
+      <div class="field">
+        <label>Jatuh tempo (opsional)</label>
+        <input type="date" id="debtDue">
+      </div>
+    </div>
+    <label class="checkline"><input type="checkbox" id="debtMirror"><span id="debtMirrorLabel">Catat juga sebagai pemasukan di Kas</span></label>
+    <button class="btn btn-rose" id="btnSaveDebt">Simpan</button>
+  </div>
+</div>
+
+<!-- Modal: Debt payment -->
+<div class="modal-overlay hidden" id="modalDebtPay">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <div class="modal-title" id="dpTitle">Bayar cicilan</div>
+      <button class="icon-btn" data-close="modalDebtPay">✕</button>
+    </div>
+    <div class="field-hint" id="dpHint" style="margin:-6px 0 14px;"></div>
+    <div class="field">
+      <label>Jumlah (Rp)</label>
+      <input type="text" inputmode="numeric" id="dpAmount" data-money placeholder="0">
+    </div>
+    <div class="field">
+      <label>Catatan (opsional)</label>
+      <input type="text" id="dpNote" placeholder="mis. Cicilan ke-2">
+    </div>
+    <div class="field">
+      <label>Tanggal</label>
+      <input type="date" id="dpDate">
+    </div>
+    <label class="checkline"><input type="checkbox" id="dpMirror"><span id="dpMirrorLabel">Catat juga sebagai pengeluaran di Kas</span></label>
+    <button class="btn btn-rose" id="btnSaveDebtPay">Simpan</button>
+  </div>
+</div>
+
 <!-- Modal: Settings -->
 <div class="modal-overlay hidden" id="modalSettings">
   <div class="modal-sheet">
@@ -740,10 +1005,28 @@
         <div class="field-hint">Harga ini dipakai untuk menghitung estimasi jual seluruh emasmu: harga acuan × kadar (%) × berat (gram).</div>
       </div>
       <div class="btn-row" style="margin-bottom:10px;">
-        <button class="btn btn-ghost" id="btnFetchGoldPrice">🔄 Ambil otomatis</button>
+        <button class="btn btn-ghost" id="btnFetchGoldPrice">🔄 Ambil sekarang</button>
         <button class="btn btn-amber" id="btnSaveGoldPrice">Simpan harga</button>
       </div>
-      <div class="field-hint" id="goldPriceFetchHint">Pengambilan otomatis memakai data publik logam-mulia-api (sumber: logammulia.com). Jika gagal (mis. karena koneksi), isi harga secara manual — cek di app Logam Mulia Antam atau logammulia.com.</div>
+      <div class="field-hint" id="goldPriceFetchHint">Tombol "Ambil sekarang" memakai pengaturan di bawah (sumber &amp; penyesuaian). Harga disimpan hanya setelah kamu menekan "Simpan harga".</div>
+      <div class="divider-note">
+        <strong style="color:var(--ink);">⏱ Pembaruan otomatis harian</strong>
+        <label class="checkline" style="margin-top:10px;"><input type="checkbox" id="goldAutoChk"><span>Perbarui harga emas otomatis sekali sehari saat aplikasi dibuka. Hasilnya tersimpan &amp; dipakai semua pengguna.</span></label>
+        <div class="field">
+          <label>Sumber harga</label>
+          <select id="goldSourceSel">
+            <option value="spot">Harga emas dunia (spot) → Rupiah — paling stabil</option>
+            <option value="antam">Antam buyback (API komunitas, cadangan: spot)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Penyesuaian harga (%)</label>
+          <input type="number" id="goldAdjustInput" step="0.1" placeholder="0">
+          <div class="field-hint">Hanya berlaku untuk sumber spot. Harga spot dunia biasanya sedikit berbeda dari harga buyback Antam: bandingkan hasilnya dengan logammulia.com, lalu isi selisihnya dalam persen (mis. -3 jika hasil aplikasi terlalu tinggi 3%).</div>
+        </div>
+        <button class="btn btn-primary" id="btnSaveGoldAuto">Simpan pengaturan otomatis</button>
+        <div class="field-hint" style="margin-top:10px;">Sumber gratis tanpa API key: gold-api.com (emas) dan open.er-api.com (kurs USD→IDR), dengan beberapa cadangan. Jika harga diisi manual hari ini, pembaruan otomatis menunggu hari berikutnya.</div>
+      </div>
     </div>
 
     <div class="settings-pane" id="paneAI">
@@ -774,6 +1057,8 @@
       <div class="field-hint" style="margin-bottom:12px;">🔗 Data bersama — proyek Firebase: <strong id="fbProjectLabel">-</strong>. Semua orang yang membuka link aplikasi ini melihat &amp; mengubah data keuangan dan tabungan emas yang sama.</div>
       <div class="field-hint" style="margin-bottom:12px;">📨 Notifikasi Telegram: <strong id="tgStatusLabel">-</strong>. Setiap transaksi baru otomatis terkirim ke chat Telegram yang sama untuk semua orang, tanpa perlu diatur ulang.</div>
       <div class="divider-note">Konfigurasi Firebase &amp; Telegram diatur sekali oleh pemilik aplikasi langsung di dalam kode (bagian KONFIGURASI BERSAMA), bukan per-perangkat.</div>
+      <div class="divider-note">📲 Versi aplikasi: <strong id="appVersionLabel">-</strong>. Pembaruan dimuat otomatis dari server — tidak perlu install ulang APK. Saat ada versi baru, muncul banner "Perbarui".</div>
+      <button class="btn btn-ghost" id="btnCheckUpdate">🔄 Cek pembaruan</button>
     </div>
   </div>
 </div>
@@ -823,7 +1108,20 @@ function isTelegramConfigValid(){
 }
 
 let app, db, auth, uid = null;
-let meta = { danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null };
+// Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
+const APP_VERSION = '2.0.0';
+const DEFAULT_META = {
+  danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
+  goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
+};
+let meta = { ...DEFAULT_META };
+let savingsGoals = [];
+let savingsEntries = [];
+let debts = [];
+let debtPayments = [];
+let savingsEntriesReady = false, debtsReady = false, debtPaymentsReady = false;
+let debtFilter = 'active';
+const openHist = new Set();
 let categories = [];
 let transactions = [];
 let goldItems = [];
@@ -1018,13 +1316,18 @@ function categoriesColRef(){ return collection(db, 'bukukas_shared', SHARED_SPAC
 function txColRef(){ return collection(db, 'bukukas_shared', SHARED_SPACE_ID, 'transactions'); }
 function goldColRef(){ return collection(db, 'bukukas_shared', SHARED_SPACE_ID, 'gold'); }
 function periodsColRef(){ return collection(db, 'bukukas_shared', SHARED_SPACE_ID, 'periods'); }
+function savingsGoalsColRef(){ return collection(db, 'bukukas_shared', SHARED_SPACE_ID, 'savingsGoals'); }
+function savingsEntriesColRef(){ return collection(db, 'bukukas_shared', SHARED_SPACE_ID, 'savingsEntries'); }
+function debtsColRef(){ return collection(db, 'bukukas_shared', SHARED_SPACE_ID, 'debts'); }
+function debtPaymentsColRef(){ return collection(db, 'bukukas_shared', SHARED_SPACE_ID, 'debtPayments'); }
 
 function attachListeners(){
   onSnapshot(userDocRef(), (snap)=>{
-    meta = snap.exists() ? { danaAwal:0, goldRefPrice:0, goldRefPriceUpdatedAt:null, goldRefPriceSource:null, currentPeriodStart:null, ...snap.data() } : { danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null };
+    meta = { ...DEFAULT_META, ...(snap.exists() ? snap.data() : {}) };
     closingInitFlags.meta = true;
     render();
     maybeRunClosingCheck();
+    maybeAutoUpdateGold();
   });
   onSnapshot(categoriesColRef(), (snap)=>{
     categories = snap.docs.map(d=>({ id:d.id, ...d.data() }));
@@ -1056,6 +1359,40 @@ function attachListeners(){
   });
   onSnapshot(query(periodsColRef(), orderBy('startDate','desc')), (snap)=>{
     periods = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    render();
+  });
+  onSnapshot(query(savingsGoalsColRef(), orderBy('createdAt','asc')), (snap)=>{
+    savingsGoals = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    render();
+  });
+  onSnapshot(query(savingsEntriesColRef(), orderBy('createdAt','desc')), (snap)=>{
+    if(savingsEntriesReady){
+      snap.docChanges().forEach(change=>{
+        if(change.type === 'added') notifyNewSavingsEntry({ id: change.doc.id, ...change.doc.data() });
+      });
+    }
+    savingsEntries = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    savingsEntriesReady = true;
+    render();
+  });
+  onSnapshot(query(debtsColRef(), orderBy('createdAt','desc')), (snap)=>{
+    if(debtsReady){
+      snap.docChanges().forEach(change=>{
+        if(change.type === 'added') notifyNewDebt({ id: change.doc.id, ...change.doc.data() });
+      });
+    }
+    debts = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    debtsReady = true;
+    render();
+  });
+  onSnapshot(query(debtPaymentsColRef(), orderBy('createdAt','desc')), (snap)=>{
+    if(debtPaymentsReady){
+      snap.docChanges().forEach(change=>{
+        if(change.type === 'added') notifyNewDebtPayment({ id: change.doc.id, ...change.doc.data() });
+      });
+    }
+    debtPayments = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    debtPaymentsReady = true;
     render();
   });
 }
@@ -1374,6 +1711,8 @@ function render(){
   renderCategorySelect();
   renderGold();
   renderPeriods();
+  renderSavings();
+  renderDebts();
 }
 
 function renderPeriodRuleHint(curStart, curEnd){
@@ -1774,27 +2113,609 @@ async function saveGoldRefPrice(value, source){
   }
 }
 
-async function fetchAntamPriceOnline(){
+// =====================================================================
+// HARGA EMAS OTOMATIS (gratis, tanpa API key)
+// Sumber utama : harga emas dunia (spot XAU/USD) dari gold-api.com × kurs USD→IDR
+//                (open.er-api.com, cadangan: frankfurter.app & currency-api via jsDelivr).
+// Opsional     : Antam buyback lewat API komunitas (jika tersedia).
+// Harga per gram = (USD per troy ounce × kurs IDR) / 31,1034768, lalu × (1 + penyesuaian%).
+// Diperbarui otomatis SEKALI per hari (tanggal lokal) saat aplikasi dibuka, dan hasilnya
+// disimpan ke Firestore sehingga semua pengguna ikut melihat harga yang sama.
+// =====================================================================
+const GOLD_OZ_GRAM = 31.1034768;
+async function fetchJSONTimeout(url, ms){
+  const ctl = new AbortController();
+  const tm = setTimeout(()=>ctl.abort(), ms || 8000);
+  try{
+    const res = await fetch(url, { signal: ctl.signal, cache: 'no-store' });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    return await res.json();
+  }finally{ clearTimeout(tm); }
+}
+async function getGoldUsdPerOunce(){
+  const j = await fetchJSONTimeout('https://api.gold-api.com/price/XAU');
+  const p = Number(j?.price);
+  if(!(p > 500 && p < 100000)) throw new Error('Harga XAU tidak valid');
+  return p;
+}
+async function getUsdIdrRate(){
+  const sources = [
+    async ()=> Number((await fetchJSONTimeout('https://open.er-api.com/v6/latest/USD'))?.rates?.IDR),
+    async ()=> Number((await fetchJSONTimeout('https://api.frankfurter.app/latest?from=USD&to=IDR'))?.rates?.IDR),
+    async ()=> Number((await fetchJSONTimeout('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json'))?.usd?.idr)
+  ];
+  for(const fn of sources){
+    try{
+      const r = await fn();
+      if(r > 5000 && r < 100000) return r;
+    }catch(e){ console.warn('kurs gagal, coba sumber berikutnya', e); }
+  }
+  throw new Error('Kurs USD→IDR tidak tersedia');
+}
+async function getGoldPricePerGram(opts){
+  const source = opts?.source === 'antam' ? 'antam' : 'spot';
+  const adj = Number(opts?.adjustPct) || 0;
+  let antamFailed = false;
+
+  if(source === 'antam'){
+    try{
+      const json = await fetchJSONTimeout('https://logam-mulia-api.iamutaki.workers.dev/api/prices/logammulia');
+      const list = Array.isArray(json?.data) ? json.data : [];
+      const rec = list.find(r => Number(r.weight) === 1) || list[0];
+      const price = Number(rec?.buybackPrice || rec?.sellPrice || 0);
+      if(price > 100000) return { price: Math.round(price), label: 'Otomatis · Antam buyback (logammulia)' };
+      throw new Error('Harga Antam tidak valid');
+    }catch(e){
+      antamFailed = true;
+      console.warn('API Antam gagal, beralih ke harga spot dunia', e);
+    }
+  }
+
+  let perGram;
+  try{
+    const [usd, idr] = await Promise.all([getGoldUsdPerOunce(), getUsdIdrRate()]);
+    perGram = usd * idr / GOLD_OZ_GRAM;
+  }catch(e1){
+    console.warn('gold-api gagal, coba currency-api (XAU→IDR langsung)', e1);
+    const j = await fetchJSONTimeout('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/xau.json');
+    const idrPerOz = Number(j?.xau?.idr);
+    if(!(idrPerOz > 1000000)) throw new Error('Semua sumber harga emas gagal diakses');
+    perGram = idrPerOz / GOLD_OZ_GRAM;
+  }
+  const price = Math.round(perGram * (1 + adj/100) / 100) * 100;
+  let label = 'Otomatis · spot dunia';
+  if(adj) label += ` ${adj>0?'+':''}${adj}%`;
+  if(antamFailed) label += ' (Antam tidak tersedia)';
+  return { price, label };
+}
+
+let pendingGoldFetch = null;
+async function fetchGoldPriceManual(){
   const btn = document.getElementById('btnFetchGoldPrice');
   const origText = btn.textContent;
   btn.disabled = true; btn.textContent = 'Mengambil…';
   try{
-    const res = await fetch('https://logam-mulia-api.iamutaki.workers.dev/api/prices/logammulia');
-    if(!res.ok) throw new Error('HTTP ' + res.status);
-    const json = await res.json();
-    const list = Array.isArray(json?.data) ? json.data : [];
-    let rec = list.find(r => Number(r.weight) === 1) || list[0];
-    if(!rec) throw new Error('Data harga tidak ditemukan pada respons API');
-    const price = Number(rec.buybackPrice || rec.sellPrice || 0);
-    if(!price) throw new Error('Harga tidak valid pada respons API');
-    setMoneyValue(document.getElementById('goldPriceInput'), price);
-    showToast('Harga terbaru diambil: ' + formatRupiah(price) + '/gram. Klik "Simpan harga" untuk menyimpannya.');
+    const r = await getGoldPricePerGram({
+      source: document.getElementById('goldSourceSel').value,
+      adjustPct: document.getElementById('goldAdjustInput').value
+    });
+    pendingGoldFetch = r;
+    setMoneyValue(document.getElementById('goldPriceInput'), r.price);
+    showToast('Harga terbaru: ' + formatRupiah(r.price) + '/gram. Tekan "Simpan harga" untuk menyimpan.');
   }catch(e){
-    console.warn('fetchAntamPriceOnline gagal', e);
-    showToast('Gagal mengambil harga otomatis (kemungkinan koneksi/CORS diblokir browser). Silakan isi harga secara manual.', true);
+    console.warn('fetchGoldPriceManual gagal', e);
+    showToast('Gagal mengambil harga otomatis. Periksa koneksi, atau isi harga secara manual.', true);
   }finally{
     btn.disabled = false; btn.textContent = origText;
   }
+}
+
+let goldAutoRunning = false;
+let goldAutoLastTry = 0;
+async function autoUpdateGoldNow(opts){
+  if(goldAutoRunning) return false;
+  goldAutoRunning = true;
+  goldAutoLastTry = Date.now();
+  try{
+    const r = await getGoldPricePerGram(opts);
+    await setDoc(userDocRef(), {
+      goldRefPrice: r.price,
+      goldRefPriceUpdatedAt: new Date().toISOString(),
+      goldRefPriceSource: r.label
+    }, { merge:true });
+    showToast('Harga emas diperbarui otomatis: ' + formatRupiah(r.price) + '/gram');
+    return true;
+  }catch(e){
+    console.warn('autoUpdateGoldNow gagal', e);
+    return false;
+  }finally{
+    goldAutoRunning = false;
+  }
+}
+function maybeAutoUpdateGold(){
+  if(!uid || !closingInitFlags.meta || goldAutoRunning) return;
+  if(meta.goldAutoUpdate === false) return;
+  if(Date.now() - goldAutoLastTry < 30*60*1000) return;   // jangan mengulang terus kalau gagal
+  const hasPrice = Number(meta.goldRefPrice||0) > 0;
+  const lastDay = meta.goldRefPriceUpdatedAt ? dateToLocalISO(new Date(meta.goldRefPriceUpdatedAt)) : null;
+  if(hasPrice && lastDay === todayISO()) return;           // hari ini sudah diperbarui
+  autoUpdateGoldNow({ source: meta.goldSource || 'spot', adjustPct: meta.goldAdjustPct || 0 });
+}
+function fillGoldAutoSettings(){
+  document.getElementById('goldAutoChk').checked = meta.goldAutoUpdate !== false;
+  document.getElementById('goldSourceSel').value = meta.goldSource === 'antam' ? 'antam' : 'spot';
+  document.getElementById('goldAdjustInput').value = meta.goldAdjustPct ? String(meta.goldAdjustPct) : '';
+}
+
+// =====================================================================
+// TABUNGAN (target tabungan) & HUTANG / PIUTANG
+// =====================================================================
+const SAVINGS_ICONS = ['🐷','🏠','🚗','✈️','🎓','💍','📱','🏥','🎁','💼','🏖️','👶'];
+let selectedGoalIcon = SAVINGS_ICONS[0];
+let svEntryType = 'deposit';
+let svEntryGoalId = null;
+let debtKindSel = 'owe';
+let debtPayId = null;
+
+function dateToLocalISO(d){
+  return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+}
+function daysBetween(aIso, bIso){
+  return Math.round((parseISO(bIso) - parseISO(aIso)) / 86400000);
+}
+function shortDate(iso){
+  return iso ? parseISO(iso).toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' }) : '';
+}
+
+function goalSaved(goalId){
+  return savingsEntries.filter(e=>e.goalId===goalId)
+    .reduce((s,e)=> s + (e.type==='withdraw' ? -1 : 1) * Number(e.amount||0), 0);
+}
+function debtPaid(debtId){
+  return debtPayments.filter(p=>p.debtId===debtId).reduce((s,p)=>s+Number(p.amount||0), 0);
+}
+function debtRemaining(d){ return Math.max(0, Number(d.amount||0) - debtPaid(d.id)); }
+function debtSummary(){
+  const today = todayISO();
+  const r = { owe:0, lent:0, overdueAll:0, oweLateCount:0, oweLateTotal:0, oweSoonCount:0, oweSoonTotal:0, activeCount:0 };
+  debts.forEach(d=>{
+    const rem = debtRemaining(d);
+    if(rem <= 0) return;
+    r.activeCount++;
+    const isLent = d.kind === 'lent';
+    if(isLent) r.lent += rem; else r.owe += rem;
+    if(d.dueDate){
+      const dd = daysBetween(today, d.dueDate);
+      if(dd < 0){ r.overdueAll++; if(!isLent){ r.oweLateCount++; r.oweLateTotal += rem; } }
+      else if(dd <= 7 && !isLent){ r.oweSoonCount++; r.oweSoonTotal += rem; }
+    }
+  });
+  return r;
+}
+
+// ---------- Render: Tabungan ----------
+function renderSavings(){
+  const area = document.getElementById('savingsArea');
+  if(!area) return;
+  let total = 0, targetTotal = 0, counted = 0, done = 0;
+  const rows = savingsGoals.map(g=>{
+    const saved = goalSaved(g.id), target = Number(g.target||0);
+    total += saved; targetTotal += target;
+    counted += Math.min(Math.max(saved,0), target);
+    if(target > 0 && saved >= target) done++;
+    return { g, saved, target };
+  });
+  const totalEl = document.getElementById('svTotal');
+  totalEl.textContent = formatRupiah(total);
+  totalEl.classList.toggle('negative', total < 0);
+  document.getElementById('svTargetTotal').textContent = formatRupiah(targetTotal);
+  document.getElementById('svDoneCount').textContent = `${done} / ${savingsGoals.length}`;
+  document.getElementById('svBadge').textContent = rows.length
+    ? `🎯 ${(targetTotal>0 ? counted/targetTotal*100 : 0).toFixed(0)}% dari total target`
+    : 'Belum ada target tabungan';
+
+  if(!rows.length){
+    area.innerHTML = `<div class="empty-box"><span class="emoji">🐷</span>Belum ada target tabungan. Buat target (mis. Dana darurat, Liburan, DP rumah) lalu catat setoran secara berkala.<br><button class="link-btn teal" data-act="add-goal">+ Buat target pertama</button></div>`;
+    return;
+  }
+  const today = todayISO();
+  let html = '<div class="fin-list">';
+  rows.forEach(({g, saved, target}, i)=>{
+    const pct = target > 0 ? Math.min(100, Math.max(0, saved/target*100)) : 0;
+    const reached = target > 0 && saved >= target;
+    const remaining = Math.max(0, target - saved);
+    let hint = '';
+    if(reached){
+      hint = '🎉 Target tercapai!';
+    }else if(g.targetDate){
+      const days = daysBetween(today, g.targetDate);
+      if(days < 0){
+        hint = `⏰ Melewati target ${shortDate(g.targetDate)} — masih kurang ${formatRupiah(remaining)}.`;
+      }else{
+        const months = Math.max(1, Math.ceil(days/30));
+        hint = `Target ${shortDate(g.targetDate)} (${days} hari lagi) · sisihkan ±${formatRupiah(Math.ceil(remaining/months))}/bulan.`;
+      }
+    }else{
+      hint = `Masih kurang ${formatRupiah(remaining)}.`;
+    }
+    const entries = savingsEntries.filter(e=>e.goalId===g.id)
+      .slice().sort((a,b)=> (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)).slice(0, 25);
+    const histKey = 'sv:' + g.id;
+    const histHtml = entries.length ? `
+      <details class="hist" data-hist="${histKey}" ${openHist.has(histKey)?'open':''}>
+        <summary>Riwayat setoran (${entries.length})</summary>
+        ${entries.map(e=>`
+          <div class="hist-row">
+            <div class="meta">${shortDate(e.date)}${e.note ? ' · ' + escapeHtml(e.note) : ''}</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span class="amt ${e.type==='withdraw'?'out':'in'}">${e.type==='withdraw'?'−':'+'}${formatRupiah(e.amount)}</span>
+              <button class="tiny-btn" data-act="del-sv-entry" data-id="${e.id}" aria-label="Hapus">✕</button>
+            </div>
+          </div>`).join('')}
+      </details>` : '';
+    html += `
+      <div class="fin-row fade-up" style="--accent:var(--teal);--accent-soft:var(--teal-soft);animation-delay:${i*40}ms">
+        <div class="fin-top">
+          <div class="fin-name-wrap">
+            <div class="fin-icon">${escapeHtml(g.icon || '🐷')}</div>
+            <div>
+              <div class="fin-name">${escapeHtml(g.name || 'Target')}</div>
+              <div class="fin-sub">Target ${formatRupiah(target)}</div>
+            </div>
+          </div>
+          <span class="badge ${reached?'ok':''}">${pct.toFixed(0)}%</span>
+        </div>
+        <div class="fin-grid">
+          <div class="fin-metric"><div class="k">Terkumpul</div><div class="v">${formatRupiah(saved)}</div></div>
+          <div class="fin-metric"><div class="k">Kurang</div><div class="v">${formatRupiah(remaining)}</div></div>
+        </div>
+        <div class="prog-track"><div class="prog-fill" style="width:${pct}%"></div></div>
+        <div class="fin-hint">${escapeHtml(hint)}</div>
+        <div class="fin-actions">
+          <button class="link-btn teal" data-act="sv-dep" data-id="${g.id}">＋ Setor</button>
+          <button class="link-btn" data-act="sv-wd" data-id="${g.id}">Tarik</button>
+          <span class="spacer"></span>
+          <button class="tiny-btn" data-act="del-goal" data-id="${g.id}">Hapus target</button>
+        </div>
+        ${histHtml}
+      </div>`;
+  });
+  html += '</div>';
+  area.innerHTML = html;
+  bindHistToggles(area);
+}
+
+// ---------- Render: Hutang ----------
+function renderDebts(){
+  const area = document.getElementById('debtArea');
+  if(!area) return;
+  const sum = debtSummary();
+  document.getElementById('debtOweTotal').textContent = formatRupiah(sum.owe);
+  document.getElementById('debtLentTotal').textContent = formatRupiah(sum.lent);
+  document.getElementById('debtNet').textContent = formatRupiah(sum.lent - sum.owe);
+  const badge = document.getElementById('debtBadge');
+  badge.classList.remove('profit','loss');
+  if(sum.activeCount === 0){
+    badge.textContent = debts.length ? '✅ Semua sudah lunas' : 'Tidak ada hutang aktif';
+  }else if(sum.overdueAll > 0){
+    badge.classList.add('loss');
+    badge.textContent = `⚠️ ${sum.overdueAll} catatan lewat jatuh tempo`;
+  }else{
+    badge.textContent = `${sum.activeCount} catatan aktif`;
+  }
+
+  const today = todayISO();
+  let list = debts.map(d=>({ d, rem: debtRemaining(d), paid: debtPaid(d.id) }));
+  if(debtFilter === 'active') list = list.filter(x=>x.rem > 0);
+  else if(debtFilter === 'owe') list = list.filter(x=>x.rem > 0 && x.d.kind !== 'lent');
+  else if(debtFilter === 'lent') list = list.filter(x=>x.rem > 0 && x.d.kind === 'lent');
+  else list = list.filter(x=>x.rem <= 0);
+  if(debtFilter !== 'settled'){
+    list.sort((a,b)=>{
+      const ad = a.d.dueDate || '9999-12-31', bd = b.d.dueDate || '9999-12-31';
+      return ad < bd ? -1 : ad > bd ? 1 : 0;
+    });
+  }
+
+  if(!list.length){
+    const msg = debtFilter === 'settled' ? 'Belum ada catatan yang lunas.'
+      : (debts.length ? 'Tidak ada catatan pada filter ini.' : 'Belum ada catatan hutang atau piutang. Catat pinjamanmu agar tidak lupa kapan harus membayar atau menagih.');
+    area.innerHTML = `<div class="empty-box"><span class="emoji">📒</span>${msg}${debts.length ? '' : '<br><button class="link-btn rose" data-act="add-debt">+ Catat pertama</button>'}</div>`;
+    return;
+  }
+
+  let html = '<div class="fin-list">';
+  list.forEach(({d, rem, paid}, i)=>{
+    const isLent = d.kind === 'lent';
+    const amount = Number(d.amount||0);
+    const pct = amount > 0 ? Math.min(100, paid/amount*100) : 0;
+    const settled = rem <= 0;
+    let dueBadge = '';
+    if(settled){
+      dueBadge = '<span class="badge ok">Lunas ✅</span>';
+    }else if(d.dueDate){
+      const dd = daysBetween(today, d.dueDate);
+      if(dd < 0) dueBadge = `<span class="badge late">Terlambat ${-dd} hari</span>`;
+      else if(dd === 0) dueBadge = '<span class="badge soon">Jatuh tempo hari ini</span>';
+      else if(dd <= 7) dueBadge = `<span class="badge soon">${dd} hari lagi</span>`;
+      else dueBadge = `<span class="badge">Tempo ${shortDate(d.dueDate)}</span>`;
+    }
+    const pays = debtPayments.filter(p=>p.debtId===d.id)
+      .slice().sort((a,b)=> (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)).slice(0, 25);
+    const histKey = 'debt:' + d.id;
+    const histHtml = pays.length ? `
+      <details class="hist" data-hist="${histKey}" ${openHist.has(histKey)?'open':''}>
+        <summary>Riwayat ${isLent?'penerimaan':'pembayaran'} (${pays.length})</summary>
+        ${pays.map(p=>`
+          <div class="hist-row">
+            <div class="meta">${shortDate(p.date)}${p.note ? ' · ' + escapeHtml(p.note) : ''}</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span class="amt ${isLent?'in':'out'}">${formatRupiah(p.amount)}</span>
+              <button class="tiny-btn" data-act="del-debt-pay" data-id="${p.id}" aria-label="Hapus">✕</button>
+            </div>
+          </div>`).join('')}
+      </details>` : '';
+    const accent = isLent ? 'var(--emerald)' : 'var(--rose)';
+    const accentSoft = isLent ? 'var(--emerald-soft)' : 'var(--rose-soft)';
+    html += `
+      <div class="fin-row fade-up" style="--accent:${accent};--accent-soft:${accentSoft};animation-delay:${i*40}ms">
+        <div class="fin-top">
+          <div class="fin-name-wrap">
+            <div class="fin-icon">${isLent ? '🤝' : '💸'}</div>
+            <div>
+              <div class="fin-name">${escapeHtml(d.person || 'Tanpa nama')}</div>
+              <div class="fin-sub">${isLent ? 'Piutang · dipinjamkan' : 'Hutang saya'} · ${shortDate(d.date)}</div>
+            </div>
+          </div>
+          ${dueBadge}
+        </div>
+        <div class="fin-grid">
+          <div class="fin-metric"><div class="k">Total pinjaman</div><div class="v">${formatRupiah(amount)}</div></div>
+          <div class="fin-metric"><div class="k">${settled ? (isLent?'Sudah diterima':'Sudah dibayar') : 'Sisa'}</div><div class="v">${formatRupiah(settled ? paid : rem)}</div></div>
+        </div>
+        <div class="prog-track"><div class="prog-fill" style="width:${pct}%"></div></div>
+        <div class="fin-hint">${isLent ? 'Diterima' : 'Dibayar'} ${formatRupiah(paid)} dari ${formatRupiah(amount)} (${pct.toFixed(0)}%)</div>
+        ${d.note ? `<div class="fin-note">${escapeHtml(d.note)}</div>` : ''}
+        <div class="fin-actions">
+          ${settled ? '' : `
+            <button class="link-btn ${isLent?'':'rose'}" data-act="debt-pay" data-id="${d.id}">${isLent ? '📥 Terima cicilan' : '💳 Bayar cicilan'}</button>
+            <button class="link-btn" data-act="debt-full" data-id="${d.id}">✅ Lunasi</button>`}
+          <span class="spacer"></span>
+          <button class="tiny-btn" data-act="del-debt" data-id="${d.id}">Hapus</button>
+        </div>
+        ${histHtml}
+      </div>`;
+  });
+  html += '</div>';
+  area.innerHTML = html;
+  bindHistToggles(area);
+}
+
+function bindHistToggles(area){
+  area.querySelectorAll('details[data-hist]').forEach(el=>{
+    el.addEventListener('toggle', ()=>{
+      if(el.open) openHist.add(el.dataset.hist); else openHist.delete(el.dataset.hist);
+    });
+  });
+}
+
+// ---------- Aksi: pencatatan ke Kas (opsional) ----------
+async function mirrorToKas(type, amount, categoryName, note, date){
+  await addDoc(txColRef(), {
+    type, categoryId: null, categoryName, amount, note, date, createdAt: serverTimestamp()
+  });
+}
+
+// ---------- Aksi: Tabungan ----------
+async function saveSavingsGoal(data){
+  try{
+    const ref = await addDoc(savingsGoalsColRef(), {
+      name: data.name, icon: data.icon, target: data.target,
+      targetDate: data.targetDate || null, createdAt: serverTimestamp()
+    });
+    if(data.initial > 0){
+      await addSavingsEntry({ goalId: ref.id, goalName: data.name, type:'deposit', amount: data.initial,
+        note:'Setoran awal', date: todayISO(), mirror: data.mirror }, true);
+    }
+    showToast('Target tabungan dibuat');
+    sendTelegramMessage([
+      `🐷 <b>Target tabungan baru</b>`,
+      `Nama: ${escapeHtml(data.name)}`,
+      `Target: ${formatRupiah(data.target)}`,
+      data.targetDate ? `Tercapai pada: ${formatDateHuman(data.targetDate)}` : null
+    ].filter(Boolean).join('\n'));
+  }catch(e){
+    console.error('saveSavingsGoal', e);
+    showToast(errorMessage(e), true);
+    throw e;
+  }
+}
+async function addSavingsEntry(d, silent){
+  await addDoc(savingsEntriesColRef(), {
+    goalId: d.goalId, goalName: d.goalName, type: d.type, amount: d.amount,
+    note: d.note || '', date: d.date, createdAt: serverTimestamp()
+  });
+  if(d.mirror){
+    await mirrorToKas(d.type === 'deposit' ? 'expense' : 'income', d.amount, 'Tabungan',
+      `${d.type === 'deposit' ? 'Setor ke' : 'Tarik dari'} tabungan ${d.goalName}`, d.date);
+  }
+  if(!silent){
+    const goal = savingsGoals.find(g=>g.id===d.goalId);
+    const newSaved = goalSaved(d.goalId) + (d.type === 'deposit' ? d.amount : -d.amount);
+    sendTelegramMessage([
+      `${d.type === 'deposit' ? '🟢' : '🔴'} <b>${d.type === 'deposit' ? 'Setoran tabungan' : 'Penarikan tabungan'}</b>`,
+      `Target: ${escapeHtml(d.goalName)}`,
+      `Jumlah: ${formatRupiah(d.amount)}`,
+      d.note ? `Catatan: ${escapeHtml(d.note)}` : null,
+      `Terkumpul: ${formatRupiah(newSaved)}${goal ? ' / ' + formatRupiah(goal.target) : ''}`
+    ].filter(Boolean).join('\n'));
+  }
+}
+async function deleteGoal(id){
+  if(!confirm('Hapus target tabungan ini beserta seluruh riwayat setorannya?')) return;
+  try{
+    for(const e of savingsEntries.filter(x=>x.goalId===id)){
+      await deleteDoc(doc(savingsEntriesColRef(), e.id));
+    }
+    await deleteDoc(doc(savingsGoalsColRef(), id));
+    showToast('Target tabungan dihapus');
+  }catch(e){
+    console.error('deleteGoal', e);
+    showToast(errorMessage(e), true);
+  }
+}
+async function deleteSvEntry(id){
+  if(!confirm('Hapus catatan setoran/penarikan ini? (Catatan di Kas, jika ada, tidak ikut terhapus.)')) return;
+  try{
+    await deleteDoc(doc(savingsEntriesColRef(), id));
+    showToast('Catatan dihapus');
+  }catch(e){
+    console.error('deleteSvEntry', e);
+    showToast(errorMessage(e), true);
+  }
+}
+
+// ---------- Aksi: Hutang ----------
+async function saveDebt(d){
+  try{
+    await addDoc(debtsColRef(), {
+      kind: d.kind, person: d.person, amount: d.amount, note: d.note || '',
+      date: d.date, dueDate: d.dueDate || null, createdAt: serverTimestamp()
+    });
+    if(d.mirror){
+      await mirrorToKas(d.kind === 'owe' ? 'income' : 'expense', d.amount,
+        d.kind === 'owe' ? 'Hutang' : 'Piutang',
+        `${d.kind === 'owe' ? 'Pinjaman dari' : 'Meminjamkan ke'} ${d.person}${d.note ? ' — ' + d.note : ''}`, d.date);
+    }
+    showToast(d.kind === 'owe' ? 'Hutang dicatat' : 'Piutang dicatat');
+    sendTelegramMessage([
+      d.kind === 'owe' ? '💸 <b>Hutang baru dicatat</b>' : '🤝 <b>Piutang baru dicatat</b>',
+      `${d.kind === 'owe' ? 'Kepada' : 'Peminjam'}: ${escapeHtml(d.person)}`,
+      `Jumlah: ${formatRupiah(d.amount)}`,
+      d.dueDate ? `Jatuh tempo: ${formatDateHuman(d.dueDate)}` : null,
+      d.note ? `Catatan: ${escapeHtml(d.note)}` : null
+    ].filter(Boolean).join('\n'));
+  }catch(e){
+    console.error('saveDebt', e);
+    showToast(errorMessage(e), true);
+    throw e;
+  }
+}
+async function saveDebtPayment(debt, p){
+  try{
+    const isLent = debt.kind === 'lent';
+    await addDoc(debtPaymentsColRef(), {
+      debtId: debt.id, person: debt.person, kind: debt.kind, amount: p.amount,
+      note: p.note || '', date: p.date, createdAt: serverTimestamp()
+    });
+    if(p.mirror){
+      await mirrorToKas(isLent ? 'income' : 'expense', p.amount, isLent ? 'Piutang' : 'Hutang',
+        `${isLent ? 'Terima pembayaran dari' : 'Bayar hutang ke'} ${debt.person}${p.note ? ' — ' + p.note : ''}`, p.date);
+    }
+    const sisa = Math.max(0, debtRemaining(debt) - p.amount);
+    showToast(sisa <= 0 ? 'Lunas! ✅' : (isLent ? 'Penerimaan dicatat' : 'Pembayaran dicatat'));
+    sendTelegramMessage([
+      isLent ? '📥 <b>Piutang diterima</b>' : '💳 <b>Cicilan hutang dibayar</b>',
+      `${isLent ? 'Dari' : 'Kepada'}: ${escapeHtml(debt.person)}`,
+      `Jumlah: ${formatRupiah(p.amount)}`,
+      sisa <= 0 ? 'Status: LUNAS ✅' : `Sisa: ${formatRupiah(sisa)}`
+    ].join('\n'));
+  }catch(e){
+    console.error('saveDebtPayment', e);
+    showToast(errorMessage(e), true);
+    throw e;
+  }
+}
+async function deleteDebt(id){
+  if(!confirm('Hapus catatan ini beserta riwayat pembayarannya?')) return;
+  try{
+    for(const p of debtPayments.filter(x=>x.debtId===id)){
+      await deleteDoc(doc(debtPaymentsColRef(), p.id));
+    }
+    await deleteDoc(doc(debtsColRef(), id));
+    showToast('Catatan dihapus');
+  }catch(e){
+    console.error('deleteDebt', e);
+    showToast(errorMessage(e), true);
+  }
+}
+async function deleteDebtPay(id){
+  if(!confirm('Hapus catatan pembayaran ini? (Catatan di Kas, jika ada, tidak ikut terhapus.)')) return;
+  try{
+    await deleteDoc(doc(debtPaymentsColRef(), id));
+    showToast('Catatan dihapus');
+  }catch(e){
+    console.error('deleteDebtPay', e);
+    showToast(errorMessage(e), true);
+  }
+}
+
+// ---------- Notifikasi perangkat untuk data baru ----------
+function notifyNewSavingsEntry(e){
+  showLocalNotification(e.type === 'withdraw' ? '🔴 Penarikan tabungan' : '🟢 Setoran tabungan',
+    `${e.goalName || 'Tabungan'} • ${formatRupiah(e.amount)}`);
+}
+function notifyNewDebt(d){
+  showLocalNotification(d.kind === 'lent' ? '🤝 Piutang baru' : '💸 Hutang baru',
+    `${d.person || ''} • ${formatRupiah(d.amount)}`);
+}
+function notifyNewDebtPayment(p){
+  showLocalNotification(p.kind === 'lent' ? '📥 Piutang diterima' : '💳 Hutang dibayar',
+    `${p.person || ''} • ${formatRupiah(p.amount)}`);
+}
+
+// =====================================================================
+// PEMBARUAN APLIKASI TANPA INSTALL ULANG
+// Aplikasi (juga APK/TWA-nya) memuat index.html langsung dari server, jadi cukup
+// menaikkan APP_VERSION & mengunggah file baru. Pengguna melihat banner "Perbarui".
+// =====================================================================
+let updateAvailable = false;
+let lastUpdateCheck = 0;
+function showUpdateBanner(version){
+  updateAvailable = true;
+  const b = document.getElementById('updateBanner');
+  if(!b) return;
+  document.getElementById('updateBannerText').textContent =
+    '🚀 Versi baru tersedia' + (version ? ` (v${version})` : '') + '. Perbarui untuk fitur terbaru.';
+  b.classList.remove('hidden');
+}
+async function checkForUpdate(manual){
+  if(!navigator.onLine){
+    if(manual) showToast('Tidak ada koneksi internet', true);
+    return false;
+  }
+  const now = Date.now();
+  if(!manual && now - lastUpdateCheck < 15*60*1000) return updateAvailable;
+  lastUpdateCheck = now;
+  try{
+    const res = await fetch('index.html?_v=' + now, { cache: 'no-store' });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const txt = await res.text();
+    const m = txt.match(new RegExp("APP_VERSION\\s*=\\s*'([0-9][0-9.]*)'"));
+    if(m && m[1] !== APP_VERSION){
+      showUpdateBanner(m[1]);
+      return true;
+    }
+    if(manual) showToast(`Kamu sudah memakai versi terbaru (v${APP_VERSION}) ✅`);
+    return false;
+  }catch(e){
+    console.warn('checkForUpdate gagal', e);
+    if(manual) showToast('Gagal memeriksa pembaruan. Coba lagi nanti.', true);
+    return false;
+  }
+}
+async function applyUpdate(){
+  try{
+    if('serviceWorker' in navigator){
+      const reg = await navigator.serviceWorker.getRegistration();
+      if(reg) await reg.update().catch(()=>{});
+    }
+    if(window.caches){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k=>caches.delete(k)));
+    }
+  }catch(e){ console.warn('applyUpdate', e); }
+  location.reload();
 }
 
 // ---------- Event wiring ----------
@@ -1807,6 +2728,8 @@ document.getElementById('btnSettings').addEventListener('click', ()=>{
   fillAISettings();
   setMoneyValue(document.getElementById('danaAwalInput'), Number(meta.danaAwal||0));
   setMoneyValue(document.getElementById('goldPriceInput'), Number(meta.goldRefPrice||0));
+  fillGoldAutoSettings();
+  pendingGoldFetch = null;
   document.getElementById('fbProjectLabel').textContent = FIREBASE_CONFIG.projectId || '-';
   document.getElementById('tgStatusLabel').textContent = isTelegramConfigValid() ? 'Aktif' : 'Belum diisi';
   openModal('modalSettings');
@@ -1820,31 +2743,41 @@ document.querySelectorAll('.modal-overlay').forEach(ov=>{
 });
 
 // ---------- Tab navigation ----------
+const TAB_DEFS = {
+  kas:      { view:'viewKas',       btn:'btnTabKas',       tag:'Catatan keuangan bersama',    fab:'mode-kas' },
+  emas:     { view:'viewEmas',      btn:'btnTabEmas',      tag:'Tabungan emas bersama',       fab:'mode-emas',   cls:'tab-emas' },
+  tabungan: { view:'viewTabungan',  btn:'btnTabTabungan',  tag:'Target tabungan bersama',     fab:'mode-tab',    cls:'tab-tab' },
+  hutang:   { view:'viewHutang',    btn:'btnTabHutang',    tag:'Catatan hutang & piutang',    fab:'mode-hutang', cls:'tab-hutang' },
+  ai:       { view:'viewAI',        btn:'btnTabAI',        tag:'Saran finansial dari AI',     cls:'tab-ai' }
+};
 function setActiveTab(tab){
+  if(!TAB_DEFS[tab]) tab = 'kas';
   activeTab = tab;
-  document.getElementById('viewKas').classList.toggle('active', tab === 'kas');
-  document.getElementById('viewEmas').classList.toggle('active', tab === 'emas');
-  document.getElementById('viewAI').classList.toggle('active', tab === 'ai');
-  document.getElementById('btnTabKas').classList.toggle('active', tab === 'kas');
-  document.getElementById('btnTabEmas').classList.toggle('active', tab === 'emas');
-  document.getElementById('btnTabEmas').classList.toggle('tab-emas', tab === 'emas');
-  document.getElementById('btnTabAI').classList.toggle('active', tab === 'ai');
-  document.getElementById('btnTabAI').classList.toggle('tab-ai', tab === 'ai');
+  Object.entries(TAB_DEFS).forEach(([key, def])=>{
+    document.getElementById(def.view).classList.toggle('active', key === tab);
+    const b = document.getElementById(def.btn);
+    b.classList.toggle('active', key === tab);
+    if(def.cls) b.classList.toggle(def.cls, key === tab);
+  });
   const fab = document.getElementById('btnFab');
-  fab.classList.toggle('mode-kas', tab === 'kas');
-  fab.classList.toggle('mode-emas', tab === 'emas');
+  ['mode-kas','mode-emas','mode-tab','mode-hutang'].forEach(c=>fab.classList.remove(c));
+  if(TAB_DEFS[tab].fab) fab.classList.add(TAB_DEFS[tab].fab);
   fab.classList.toggle('hidden', tab === 'ai');
-  document.getElementById('topbarTag').textContent =
-    tab === 'kas' ? 'Catatan keuangan bersama' : (tab === 'emas' ? 'Tabungan emas bersama' : 'Saran finansial dari AI');
+  document.getElementById('topbarTag').textContent = TAB_DEFS[tab].tag;
   if(tab === 'ai') renderAIHeader();
+  window.scrollTo({ top:0 });
 }
-document.getElementById('btnTabKas').addEventListener('click', ()=>setActiveTab('kas'));
-document.getElementById('btnTabEmas').addEventListener('click', ()=>setActiveTab('emas'));
-document.getElementById('btnTabAI').addEventListener('click', ()=>setActiveTab('ai'));
+Object.entries(TAB_DEFS).forEach(([key, def])=>{
+  document.getElementById(def.btn).addEventListener('click', ()=>setActiveTab(key));
+});
 
 document.getElementById('btnFab').addEventListener('click', ()=>{
   if(activeTab === 'emas'){
     openAddGoldModal();
+  }else if(activeTab === 'tabungan'){
+    openGoalModal();
+  }else if(activeTab === 'hutang'){
+    openDebtModal();
   }else{
     document.getElementById('txDate').value = todayISO();
     document.getElementById('txAmount').value = '';
@@ -1959,7 +2892,7 @@ document.getElementById('btnSaveDanaAwal').addEventListener('click', async ()=>{
   }
 });
 
-document.getElementById('btnFetchGoldPrice').addEventListener('click', fetchAntamPriceOnline);
+document.getElementById('btnFetchGoldPrice').addEventListener('click', fetchGoldPriceManual);
 
 document.getElementById('btnSaveGoldPrice').addEventListener('click', async ()=>{
   const val = moneyValue(document.getElementById('goldPriceInput'));
@@ -1967,7 +2900,8 @@ document.getElementById('btnSaveGoldPrice').addEventListener('click', async ()=>
   const btn = document.getElementById('btnSaveGoldPrice');
   btn.disabled = true; const origText = btn.textContent; btn.textContent = 'Menyimpan…';
   try{
-    await saveGoldRefPrice(val, 'manual');
+    const label = (pendingGoldFetch && pendingGoldFetch.price === val) ? pendingGoldFetch.label.replace('Otomatis', 'Diambil manual') : 'manual';
+    await saveGoldRefPrice(val, label);
   }catch(e){
     // error toast already shown
   }finally{
@@ -2006,6 +2940,258 @@ document.getElementById('btnSaveGold').addEventListener('click', async ()=>{
   }finally{
     btn.disabled = false; btn.textContent = origText;
   }
+});
+
+// ---------- Tabungan: modal & event ----------
+function renderGoalIconGrid(){
+  const grid = document.getElementById('goalIconGrid');
+  grid.innerHTML = SAVINGS_ICONS.map(ic=>
+    `<button type="button" class="icon-opt${ic===selectedGoalIcon?' selected':''}" data-icon="${ic}">${ic}</button>`
+  ).join('');
+  grid.querySelectorAll('.icon-opt').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      selectedGoalIcon = btn.dataset.icon;
+      grid.querySelectorAll('.icon-opt').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+    });
+  });
+}
+function openGoalModal(){
+  document.getElementById('goalName').value = '';
+  document.getElementById('goalTarget').value = '';
+  document.getElementById('goalDate').value = '';
+  document.getElementById('goalInitial').value = '';
+  document.getElementById('goalMirror').checked = false;
+  selectedGoalIcon = SAVINGS_ICONS[0];
+  renderGoalIconGrid();
+  openModal('modalGoal');
+}
+document.getElementById('btnAddGoal').addEventListener('click', openGoalModal);
+
+document.getElementById('btnSaveGoal').addEventListener('click', async ()=>{
+  const name = document.getElementById('goalName').value.trim();
+  const target = moneyValue(document.getElementById('goalTarget'));
+  const targetDate = document.getElementById('goalDate').value || '';
+  const initial = moneyValue(document.getElementById('goalInitial'));
+  const mirror = document.getElementById('goalMirror').checked;
+  if(!name){ showToast('Nama target wajib diisi', true); return; }
+  if(!target || target <= 0){ showToast('Target dana harus lebih dari 0', true); return; }
+  if(targetDate && targetDate < todayISO()){ showToast('Tanggal target tidak boleh sudah lewat', true); return; }
+  if(!uid){ showToast('Belum terhubung ke Firebase, coba lagi sebentar.', true); return; }
+  const btn = document.getElementById('btnSaveGoal');
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Menyimpan…';
+  try{
+    await saveSavingsGoal({ name, icon: selectedGoalIcon, target, targetDate, initial, mirror });
+    closeModal('modalGoal');
+  }catch(e){ /* toast sudah tampil */ }
+  finally{ btn.disabled = false; btn.textContent = orig; }
+});
+
+function setSvType(type){
+  svEntryType = type;
+  document.querySelectorAll('#svTypeSeg button').forEach(b=>{
+    b.classList.remove('active-income','active-expense');
+    if(b.dataset.type === type) b.classList.add(type === 'deposit' ? 'active-income' : 'active-expense');
+  });
+  document.getElementById('svEntryTitle').textContent = type === 'deposit' ? '🐷 Setor tabungan' : '🐷 Tarik tabungan';
+  document.getElementById('svMirrorLabel').textContent = type === 'deposit'
+    ? 'Catat juga sebagai pengeluaran di Kas (uang keluar dari dana kas)'
+    : 'Catat juga sebagai pemasukan di Kas (uang kembali ke dana kas)';
+  document.getElementById('btnSaveSvEntry').textContent = type === 'deposit' ? 'Simpan setoran' : 'Simpan penarikan';
+}
+document.querySelectorAll('#svTypeSeg button').forEach(b=>{
+  b.addEventListener('click', ()=>setSvType(b.dataset.type));
+});
+function openSvEntry(goalId, type){
+  const g = savingsGoals.find(x=>x.id===goalId);
+  if(!g) return;
+  svEntryGoalId = goalId;
+  document.getElementById('svAmount').value = '';
+  document.getElementById('svNote').value = '';
+  document.getElementById('svDate').value = todayISO();
+  document.getElementById('svMirror').checked = false;
+  document.getElementById('svEntryHint').textContent =
+    `${g.name} · terkumpul ${formatRupiah(goalSaved(goalId))} dari ${formatRupiah(g.target)}`;
+  setSvType(type);
+  openModal('modalSvEntry');
+}
+document.getElementById('btnSaveSvEntry').addEventListener('click', async ()=>{
+  const g = savingsGoals.find(x=>x.id===svEntryGoalId);
+  if(!g){ showToast('Target tidak ditemukan', true); return; }
+  const amount = moneyValue(document.getElementById('svAmount'));
+  const note = document.getElementById('svNote').value.trim();
+  const date = document.getElementById('svDate').value || todayISO();
+  const mirror = document.getElementById('svMirror').checked;
+  if(!amount || amount <= 0){ showToast('Jumlah harus lebih dari 0', true); return; }
+  if(svEntryType === 'withdraw' && amount > goalSaved(g.id)){
+    showToast('Jumlah penarikan melebihi saldo target ini', true); return;
+  }
+  if(!uid){ showToast('Belum terhubung ke Firebase, coba lagi sebentar.', true); return; }
+  const btn = document.getElementById('btnSaveSvEntry');
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Menyimpan…';
+  try{
+    await addSavingsEntry({ goalId: g.id, goalName: g.name, type: svEntryType, amount, note, date, mirror });
+    showToast(svEntryType === 'deposit' ? 'Setoran disimpan 🐷' : 'Penarikan disimpan');
+    closeModal('modalSvEntry');
+  }catch(e){
+    console.error('addSavingsEntry', e);
+    showToast(errorMessage(e), true);
+  }finally{ btn.disabled = false; btn.textContent = orig; }
+});
+
+document.getElementById('savingsArea').addEventListener('click', (e)=>{
+  const b = e.target.closest('[data-act]');
+  if(!b) return;
+  const id = b.dataset.id;
+  switch(b.dataset.act){
+    case 'add-goal': openGoalModal(); break;
+    case 'sv-dep': openSvEntry(id, 'deposit'); break;
+    case 'sv-wd': openSvEntry(id, 'withdraw'); break;
+    case 'del-goal': deleteGoal(id); break;
+    case 'del-sv-entry': deleteSvEntry(id); break;
+  }
+});
+
+// ---------- Hutang: modal & event ----------
+function setDebtKind(kind){
+  debtKindSel = kind;
+  document.querySelectorAll('#debtKindSeg button').forEach(b=>{
+    b.classList.remove('active-income','active-expense');
+    if(b.dataset.kind === kind) b.classList.add(kind === 'lent' ? 'active-income' : 'active-expense');
+  });
+  const owe = kind === 'owe';
+  document.getElementById('debtKindHint').textContent = owe
+    ? 'Hutang saya: uang yang kamu pinjam dan harus dikembalikan.'
+    : 'Piutang: uang yang kamu pinjamkan ke orang lain dan akan kembali.';
+  document.getElementById('debtPersonLabel').textContent = owe ? 'Berhutang kepada' : 'Dipinjamkan kepada';
+  document.getElementById('debtMirrorLabel').textContent = owe
+    ? 'Catat juga sebagai pemasukan di Kas (uang pinjaman masuk)'
+    : 'Catat juga sebagai pengeluaran di Kas (uang keluar dipinjamkan)';
+}
+document.querySelectorAll('#debtKindSeg button').forEach(b=>{
+  b.addEventListener('click', ()=>setDebtKind(b.dataset.kind));
+});
+function openDebtModal(){
+  document.getElementById('debtPerson').value = '';
+  document.getElementById('debtAmount').value = '';
+  document.getElementById('debtNote').value = '';
+  document.getElementById('debtDate').value = todayISO();
+  document.getElementById('debtDue').value = '';
+  document.getElementById('debtMirror').checked = false;
+  setDebtKind(debtFilter === 'lent' ? 'lent' : 'owe');
+  openModal('modalDebt');
+}
+document.getElementById('btnAddDebt').addEventListener('click', openDebtModal);
+
+document.getElementById('btnSaveDebt').addEventListener('click', async ()=>{
+  const person = document.getElementById('debtPerson').value.trim();
+  const amount = moneyValue(document.getElementById('debtAmount'));
+  const note = document.getElementById('debtNote').value.trim();
+  const date = document.getElementById('debtDate').value || todayISO();
+  const dueDate = document.getElementById('debtDue').value || '';
+  const mirror = document.getElementById('debtMirror').checked;
+  if(!person){ showToast('Nama pihak yang terkait wajib diisi', true); return; }
+  if(!amount || amount <= 0){ showToast('Jumlah harus lebih dari 0', true); return; }
+  if(dueDate && dueDate < date){ showToast('Jatuh tempo tidak boleh sebelum tanggal pinjam', true); return; }
+  if(!uid){ showToast('Belum terhubung ke Firebase, coba lagi sebentar.', true); return; }
+  const btn = document.getElementById('btnSaveDebt');
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Menyimpan…';
+  try{
+    await saveDebt({ kind: debtKindSel, person, amount, note, date, dueDate, mirror });
+    closeModal('modalDebt');
+  }catch(e){ /* toast sudah tampil */ }
+  finally{ btn.disabled = false; btn.textContent = orig; }
+});
+
+function openDebtPay(id, full){
+  const d = debts.find(x=>x.id===id);
+  if(!d) return;
+  debtPayId = id;
+  const rem = debtRemaining(d);
+  const isLent = d.kind === 'lent';
+  document.getElementById('dpTitle').textContent = isLent ? '📥 Terima pembayaran' : '💳 Bayar hutang';
+  document.getElementById('dpHint').textContent = `${d.person} · sisa ${formatRupiah(rem)} dari ${formatRupiah(d.amount)}`;
+  setMoneyValue(document.getElementById('dpAmount'), full ? rem : 0);
+  document.getElementById('dpNote').value = '';
+  document.getElementById('dpDate').value = todayISO();
+  document.getElementById('dpMirror').checked = false;
+  document.getElementById('dpMirrorLabel').textContent = isLent
+    ? 'Catat juga sebagai pemasukan di Kas'
+    : 'Catat juga sebagai pengeluaran di Kas';
+  document.getElementById('btnSaveDebtPay').textContent = isLent ? 'Simpan penerimaan' : 'Simpan pembayaran';
+  openModal('modalDebtPay');
+}
+document.getElementById('btnSaveDebtPay').addEventListener('click', async ()=>{
+  const d = debts.find(x=>x.id===debtPayId);
+  if(!d){ showToast('Catatan tidak ditemukan', true); return; }
+  const amount = moneyValue(document.getElementById('dpAmount'));
+  const note = document.getElementById('dpNote').value.trim();
+  const date = document.getElementById('dpDate').value || todayISO();
+  const mirror = document.getElementById('dpMirror').checked;
+  const rem = debtRemaining(d);
+  if(!amount || amount <= 0){ showToast('Jumlah harus lebih dari 0', true); return; }
+  if(amount > rem){ showToast(`Jumlah melebihi sisa (${formatRupiah(rem)})`, true); return; }
+  if(!uid){ showToast('Belum terhubung ke Firebase, coba lagi sebentar.', true); return; }
+  const btn = document.getElementById('btnSaveDebtPay');
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Menyimpan…';
+  try{
+    await saveDebtPayment(d, { amount, note, date, mirror });
+    closeModal('modalDebtPay');
+  }catch(e){ /* toast sudah tampil */ }
+  finally{ btn.disabled = false; btn.textContent = orig; }
+});
+
+document.querySelectorAll('#debtFilter .chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('#debtFilter .chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    debtFilter = chip.dataset.dfilter;
+    renderDebts();
+  });
+});
+document.getElementById('debtArea').addEventListener('click', (e)=>{
+  const b = e.target.closest('[data-act]');
+  if(!b) return;
+  const id = b.dataset.id;
+  switch(b.dataset.act){
+    case 'add-debt': openDebtModal(); break;
+    case 'debt-pay': openDebtPay(id, false); break;
+    case 'debt-full': openDebtPay(id, true); break;
+    case 'del-debt': deleteDebt(id); break;
+    case 'del-debt-pay': deleteDebtPay(id); break;
+  }
+});
+
+// ---------- Harga emas otomatis: event ----------
+document.getElementById('btnSaveGoldAuto').addEventListener('click', async ()=>{
+  const auto = document.getElementById('goldAutoChk').checked;
+  const source = document.getElementById('goldSourceSel').value === 'antam' ? 'antam' : 'spot';
+  const adj = Number(document.getElementById('goldAdjustInput').value) || 0;
+  if(adj < -50 || adj > 50){ showToast('Penyesuaian harus antara -50% dan 50%', true); return; }
+  const btn = document.getElementById('btnSaveGoldAuto');
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Menyimpan…';
+  try{
+    await setDoc(userDocRef(), { goldAutoUpdate: auto, goldSource: source, goldAdjustPct: adj }, { merge:true });
+    showToast('Pengaturan otomatis disimpan');
+    if(auto){
+      const ok = await autoUpdateGoldNow({ source, adjustPct: adj });
+      if(!ok) showToast('Pengaturan tersimpan, tetapi harga belum bisa diambil. Akan dicoba lagi otomatis.', true);
+    }
+  }catch(e){
+    console.error('saveGoldAuto', e);
+    showToast(errorMessage(e), true);
+  }finally{ btn.disabled = false; btn.textContent = orig; }
+});
+
+// ---------- Pembaruan aplikasi: event ----------
+document.getElementById('btnApplyUpdate').addEventListener('click', applyUpdate);
+document.getElementById('btnDismissUpdate').addEventListener('click', ()=>{
+  document.getElementById('updateBanner').classList.add('hidden');
+});
+document.getElementById('btnCheckUpdate').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnCheckUpdate');
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Memeriksa…';
+  try{ await checkForUpdate(true); }finally{ btn.disabled = false; btn.textContent = orig; }
 });
 
 // ---------- Saran finansial AI ----------
@@ -2073,6 +3259,15 @@ function buildFinanceSnapshot(){
     proyeksiSisaDanaAkhirPeriode: projectedEnd === null ? null : Math.round(projectedEnd),
     kategori: cats, pengeluaranTerbesar: topExpenses,
     emas: { totalGram: gt.totalGrams, estimasiNilai: Math.round(gt.totalEst), modal: Math.round(gt.totalBuy), untungRugi: Math.round(gt.totalProfit) },
+    tabungan: savingsGoals.map(g=>({ nama: g.name || 'Target', target: Number(g.target||0), terkumpul: goalSaved(g.id), targetTanggal: g.targetDate || null })),
+    hutang: (()=>{
+      const s = debtSummary();
+      return {
+        totalHutangSaya: s.owe, totalPiutang: s.lent,
+        hutangTerlambat: { jumlah: s.oweLateCount, total: s.oweLateTotal },
+        hutangJatuhTempo7Hari: { jumlah: s.oweSoonCount, total: s.oweSoonTotal }
+      };
+    })(),
     periodeSebelumnya: prev
   };
 }
@@ -2143,6 +3338,23 @@ function localAnalysis(snap){
     const rate = ((snap.pemasukan - snap.pengeluaran) / snap.pemasukan) * 100;
     if(rate < 10) out.advice.push('Rasio tabungan periode ini di bawah 10% dari pemasukan. Coba sisihkan di awal periode (bayar diri sendiri dulu), baru belanja dari sisanya.');
     else if(rate >= 20) out.findings.push(`Rasio tabungan periode ini baik: sekitar ${Math.round(rate)}% dari pemasukan.`);
+  }
+
+  // Hutang
+  const hut = snap.hutang;
+  if(hut && hut.hutangTerlambat.jumlah > 0){
+    out.findings.push(`Ada ${hut.hutangTerlambat.jumlah} hutang lewat jatuh tempo dengan sisa total ${rp(hut.hutangTerlambat.total)}.`);
+    out.advice.push('Prioritaskan melunasi hutang yang sudah lewat jatuh tempo; jika belum mampu, hubungi pemberi pinjaman untuk menyepakati jadwal baru.');
+  }
+  if(hut && hut.hutangJatuhTempo7Hari.jumlah > 0){
+    out.findings.push(`${hut.hutangJatuhTempo7Hari.jumlah} hutang jatuh tempo dalam 7 hari ke depan (total sisa ${rp(hut.hutangJatuhTempo7Hari.total)}).`);
+    out.advice.push(`Siapkan dana sekitar ${rp(hut.hutangJatuhTempo7Hari.total)} untuk hutang yang segera jatuh tempo.`);
+  }
+  // Tabungan
+  if(snap.tabungan && snap.tabungan.length){
+    const tSaved = snap.tabungan.reduce((s,t)=>s+t.terkumpul,0);
+    const tTarget = snap.tabungan.reduce((s,t)=>s+t.target,0);
+    out.findings.push(`Target tabungan terkumpul ${rp(tSaved)} dari ${rp(tTarget)} (${tTarget>0 ? Math.round(tSaved/tTarget*100) : 0}%).`);
   }
 
   // Emas
@@ -2308,6 +3520,8 @@ document.addEventListener('visibilitychange', ()=>{
   if(document.visibilityState === 'visible'){
     closingChecked = false;
     maybeRunClosingCheck();
+    maybeAutoUpdateGold();
+    checkForUpdate(false);
   }
 });
 
@@ -2317,11 +3531,26 @@ document.addEventListener('visibilitychange', ()=>{
   document.getElementById('txDate').value = todayISO();
   document.getElementById('goldBuyDate').value = todayISO();
   updateNotifBtn();
+  const verEl = document.getElementById('appVersionLabel');
+  if(verEl) verEl.textContent = 'v' + APP_VERSION;
   if('serviceWorker' in navigator){
     window.addEventListener('load', ()=>{
-      navigator.serviceWorker.register('sw.js').catch(e=>console.warn('Gagal mendaftarkan service worker', e));
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg=>{
+        reg.addEventListener('updatefound', ()=>{
+          const nw = reg.installing;
+          if(nw) nw.addEventListener('statechange', ()=>{
+            if(nw.state === 'installed' && navigator.serviceWorker.controller){
+              lastUpdateCheck = 0;
+              checkForUpdate(false);
+            }
+          });
+        });
+        setInterval(()=>reg.update().catch(()=>{}), 60*60*1000);
+      }).catch(e=>console.warn('Gagal mendaftarkan service worker', e));
     });
   }
+  window.addEventListener('load', ()=>{ setTimeout(()=>checkForUpdate(false), 4000); });
+  setInterval(()=>{ checkForUpdate(false); maybeAutoUpdateGold(); }, 60*60*1000);
   startApp();
 })();
 </script>
