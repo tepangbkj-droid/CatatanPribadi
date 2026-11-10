@@ -7,7 +7,7 @@
 // Data transaksi tetap diambil langsung dari Firebase saat online.
 //
 // Setiap rilis: naikkan VERSION di sini DAN APP_VERSION di index.html.
-const VERSION = '2.1.0';
+const VERSION = '2.2.0';
 const CACHE_NAME = 'buku-kas-shell-' + VERSION;
 const APP_SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 

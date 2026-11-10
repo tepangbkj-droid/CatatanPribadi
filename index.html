@@ -595,6 +595,27 @@
   .note-card .d{font-size:11.5px;color:var(--ink-soft);display:flex;justify-content:space-between;align-items:center;}
   .note-card .tx{margin-top:4px;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere;}
   textarea.note-in{width:100%;border:1.5px solid var(--line);border-radius:14px;padding:10px 12px;font:inherit;font-size:14px;resize:none;background:#fff;}
+
+  /* ===== Kucing v2 ===== */
+  .cat-stage svg{transition:transform .6s cubic-bezier(.3,1.4,.5,1);}
+  .cat-away{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--ink);font-weight:700;font-size:13px;gap:4px;}
+  .cat-away .big{font-size:44px;animation:tailWag 1.2s ease-in-out infinite;}
+  .cat-fx span.xp{font-size:17px;font-weight:800;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.45);bottom:130px;}
+  button.chip-mini{border:none;font-size:15px;}
+  .stage-sub{font-size:11.5px;margin-top:5px;opacity:.9;position:relative;z-index:2;}
+  .feed-row,.mission-row{display:flex;align-items:center;gap:11px;padding:11px 12px;border:1px solid var(--line);border-radius:16px;background:var(--card);margin-bottom:8px;}
+  .feed-row .e{font-size:28px;}
+  .feed-row .b{flex:1;min-width:0;}
+  .feed-row .n{font-weight:700;font-size:14px;}
+  .feed-row .s{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+  .feed-row .acts{display:flex;flex-direction:column;gap:5px;align-items:flex-end;}
+  .feed-row button,.mission-row button{border:none;border-radius:99px;padding:7px 12px;font-weight:700;font-size:12px;background:var(--amber-soft);color:var(--amber-dark);}
+  .feed-row button:disabled,.mission-row button:disabled{opacity:.45;}
+  .feed-row button.go{background:linear-gradient(135deg,var(--teal),var(--blue));color:#fff;}
+  .stock-line{font-size:12.5px;font-weight:700;margin:2px 0 10px;}
+  .shop-tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+  .shop-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .shop-grid .shop-item{min-width:0;}
 </style>
 </head>
 <body>
@@ -785,8 +806,10 @@
           <span class="chip-mini" id="catLevel">Lv 1</span>
           <span class="chip-mini" id="catCoins">🐟 0</span>
           <span class="chip-mini" id="catStreak">🔥 0</span>
+          <button class="chip-mini" id="catSound" aria-label="Suara">🔊</button>
         </div>
         <div class="cat-xp"><div id="catXpFill"></div></div>
+        <div class="stage-sub" id="stageSub"></div>
         <div class="cat-bubble" id="catBubble">Meow~</div>
         <div class="cat-room">
           <div class="cat-sky" id="catSky">☀️</div>
@@ -802,11 +825,11 @@
           <div class="cat-bar"><span class="l">🫧 Bersih</span><span class="t"><div id="barClean" style="background:#4DABF7"></div></span></div>
         </div>
         <div class="cat-actions">
-          <button data-cat="feed"><b>🍖</b>Makan</button>
+          <button data-cat="feed"><b>🍽️</b>Makan</button>
           <button data-cat="play"><b>🧶</b>Main</button>
           <button data-cat="bath"><b>🛁</b>Mandi</button>
         </div>
-        <div class="cat-hint">👆 Tap kucingnya untuk mengelus. Dirawat bareng — semua pengguna melihat kucing yang sama!</div>
+        <div class="cat-hint">👆 Tap kucingnya untuk mengelus. Makan &amp; main memberi XP — rawat terus supaya dia tumbuh besar!</div>
       </div>
 
       <div class="section" style="margin-top:22px;">
@@ -816,8 +839,16 @@
       </div>
 
       <div class="section" style="margin-top:18px;">
-        <div class="section-head"><div class="section-title">🛍️ Toko aksesoris</div></div>
-        <div class="shop" id="catShop"></div>
+        <div class="section-head"><div class="section-title">🎣 Misi cari makanan</div></div>
+        <div class="stock-line" id="stockLine"></div>
+        <div id="missionList"></div>
+        <div class="field-hint">Kucing pergi berburu sungguhan sesuai waktu misi (tetap jalan walau aplikasi ditutup). Hasil buruan jadi makanan.</div>
+      </div>
+
+      <div class="section" style="margin-top:18px;">
+        <div class="section-head"><div class="section-title" id="shopTitle">🛍️ Toko aksesoris</div></div>
+        <div class="shop-tabs" id="shopTabs"></div>
+        <div class="shop-grid" id="catShop"></div>
       </div>
 
       <div class="section" style="margin-top:18px;">
@@ -1083,6 +1114,18 @@
   </div>
 </div>
 
+<!-- Modal: Feed -->
+<div class="modal-overlay hidden" id="modalFeed">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <div class="modal-title">🍽️ Mau kasih makan apa?</div>
+      <button class="icon-btn" data-close="modalFeed">✕</button>
+    </div>
+    <div id="feedList"></div>
+    <div class="field-hint">Dapat makanan gratis dari quest harian &amp; misi berburu, atau beli pakai 🐟. Makan memberi XP!</div>
+  </div>
+</div>
+
 <!-- Modal: Settings -->
 <div class="modal-overlay hidden" id="modalSettings">
   <div class="modal-sheet">
@@ -1222,7 +1265,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.1.0';
+const APP_VERSION = '2.2.0';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -1511,10 +1554,10 @@ function attachListeners(){
   onSnapshot(catDocRef(), (snap)=>{
     if(catDirty) return;   // jangan timpa perubahan lokal yang belum tersimpan
     if(!snap.exists()){
-      cat = { ...CAT_DEFAULT, t: Date.now() };
+      cat = normCat({ t: Date.now() });
       catCommit();
     }else{
-      cat = { ...CAT_DEFAULT, ...snap.data() };
+      cat = normCat(snap.data());
     }
     render();
   });
@@ -3324,26 +3367,89 @@ document.getElementById('btnCheckUpdate').addEventListener('click', async ()=>{
 });
 
 // =====================================================================
-// KUCING KITA — mini game rawat kucing bersama (data bersama di Firestore)
+// KUCING KITA v2 — tumbuh dari anak kucing, misi makanan, suara, 58 aksesoris
 // =====================================================================
-const CAT_DEFAULT = { name:'Mochi', hunger:80, happy:80, clean:80, t:0, xp:0, coins:20, owned:[], equip:'',
+const FOODS = {
+  can:     { e:'🥫', n:'Makanan Kaleng', h:20, hp:0,  xp:6,  p:6 },
+  shrimp:  { e:'🦐', n:'Udang Goreng',   h:25, hp:5,  xp:8,  p:10 },
+  milk:    { e:'🥛', n:'Susu Hangat',    h:15, hp:12, xp:8,  p:10 },
+  chicken: { e:'🍗', n:'Ayam Panggang',  h:35, hp:5,  xp:12, p:16 },
+  cake:    { e:'🍰', n:'Kue Spesial',    h:20, hp:25, xp:15, p:24 }
+};
+const MISSIONS = [
+  { id:'mouse', e:'🐭', t:'Berburu tikus',            sec:60,   lv:1, xp:6,  reward:{ can:2 } },
+  { id:'fish',  e:'🎣', t:'Memancing di kolam',       sec:300,  lv:1, xp:12, reward:{ shrimp:2, can:1 } },
+  { id:'farm',  e:'🐓', t:'Jaga kandang ayam',        sec:900,  lv:2, xp:20, reward:{ chicken:2 } },
+  { id:'milk',  e:'🐄', t:'Perah susu di peternakan', sec:1800, lv:3, xp:30, reward:{ milk:3 } },
+  { id:'party', e:'🎂', t:'Toko kue misterius',       sec:3600, lv:5, xp:45, reward:{ cake:1, chicken:1, shrimp:2 } }
+];
+const CAT_STAGES = [
+  { min:1,  n:'Anak Kucing',   e:'🍼', sc:.56, bs:.8 },
+  { min:3,  n:'Kucing Remaja', e:'🐾', sc:.76, bs:.9 },
+  { min:6,  n:'Kucing Dewasa', e:'😺', sc:.94, bs:1 },
+  { min:10, n:'Raja Kucing',   e:'👑', sc:1.08, bs:1.06 }
+];
+// slot: head (kepala), face (wajah), neck (leher), side (teman di samping). o = posisi/ukuran khusus
+const I = (id,slot,e,n,p,lv,o)=>({ id, slot, e, n, p, lv: lv||1, o });
+const CAT_ITEMS = [
+  I('hat','head','🎩','Topi Sulap',70), I('crown','head','👑','Mahkota',150,5), I('grad','head','🎓','Topi Wisuda',90),
+  I('cap','head','🧢','Topi Baseball',50), I('straw','head','👒','Topi Jerami',60), I('sakura','head','🌸','Bunga Sakura',30),
+  I('sunf','head','🌻','Bunga Matahari',35), I('mush','head','🍄','Jamur Imut',40), I('strawb','head','🍓','Stroberi',30),
+  I('cherry','head','🍒','Ceri Kembar',30), I('clover','head','🍀','Semanggi',25), I('star','head','⭐','Bintang',45),
+  I('rainbow','head','🌈','Pelangi',80), I('chick','head','🐣','Anak Ayam',100,3), I('pumpkin','head','🎃','Labu Lucu',60),
+  I('donut','head','🍩','Donat',55), I('icecream','head','🍦','Es Krim',55), I('cloud','head','☁️','Awan Kecil',70), I('tulip','head','🌷','Tulip',30),
+  I('glasses','face','🕶️','Kacamata Hitam',50,1,{s:58,y:99}), I('specs','face','👓','Kacamata Bulat',40,1,{s:58,y:99}),
+  I('goggle','face','🥽','Goggle',65,1,{s:58,y:99}), I('heartc','face','❤️','Pipi Hati',25,1,{x:134,y:108,s:20}),
+  I('starc','face','⭐','Pipi Bintang',25,1,{x:66,y:108,s:20}), I('plaster','face','🩹','Plester Imut',30,1,{x:66,y:104,s:24}),
+  I('kiss','face','💋','Tanda Cium',30,1,{x:134,y:108,s:20}), I('lolli','face','🍭','Lolipop',45,1,{x:118,y:124,s:30}),
+  I('fishm','face','🐟','Ikan di Mulut',60,1,{y:124,s:30}), I('rosem','face','🌹','Mawar di Mulut',60,1,{y:124,s:28}),
+  I('leafc','face','🍃','Daun di Pipi',20,1,{x:66,y:108,s:22}),
+  I('bow','neck','🎀','Pita Merah',30), I('scarf','neck','🧣','Syal Hangat',55), I('bell','neck','🔔','Kalung Lonceng',45),
+  I('beads','neck','📿','Kalung Manik',50), I('gem','neck','💎','Berlian',120,4), I('medal','neck','🏅','Medali',70),
+  I('gold','neck','🥇','Juara 1',110,3), I('badge','neck','🎖️','Bintang Jasa',90), I('butter','neck','🦋','Kupu-kupu',50),
+  I('daisy','neck','🌼','Kalung Daisy',35), I('heartn','neck','💖','Hati Pink',40), I('amulet','neck','🧿','Jimat Mata',60),
+  I('ribbon','neck','🎗️','Pita Pink',30),
+  I('teddy','side','🧸','Boneka Beruang',80), I('balloon','side','🎈','Balon',35), I('gift','side','🎁','Kado',45),
+  I('soccer','side','⚽','Bola Sepak',40), I('basket','side','🏀','Bola Basket',40), I('tennis','side','🎾','Bola Tenis',35),
+  I('guitar','side','🎸','Gitar Mini',95), I('drum','side','🥁','Drum Mini',85), I('books','side','📚','Tumpukan Buku',50),
+  I('popcorn','side','🍿','Popcorn',40), I('cupcake','side','🧁','Cupcake',45), I('cake','side','🍰','Kue Lezat',55),
+  I('trophy','side','🏆','Piala Juara',140,5), I('crystal','side','🔮','Bola Kristal',130,4), I('palette','side','🎨','Palet Warna',70),
+  I('kite','side','🪁','Layang-layang',60)
+];
+const SLOT_POS = { head:{x:100,y:48,s:40}, face:{x:100,y:99,s:58}, neck:{x:100,y:142,s:30}, side:{x:30,y:182,s:38} };
+const SLOT_LABEL = { head:'👒 Kepala', face:'😎 Wajah', neck:'🎀 Leher', side:'🧸 Teman' };
+const CAT_DEFAULT = { name:'Mochi', hunger:80, happy:80, clean:80, t:0, xp:0, coins:40,
+  owned:[], equip:{ head:'', face:'', neck:'', side:'' }, food:{ can:5, shrimp:0, milk:1, chicken:0, cake:0 }, mission:null,
   streak:0, lastClaim:'', bonusDate:'', daily:{ date:'', feed:0, play:0, bath:0, pet:0, claimed:[] } };
-const CAT_ACC = [ {id:'bow',e:'🎀',n:'Pita',p:30}, {id:'glasses',e:'🕶️',n:'Kacamata',p:50}, {id:'hat',e:'🎩',n:'Topi',p:70}, {id:'crown',e:'👑',n:'Mahkota',p:120} ];
 const CAT_DECAY = { hunger:5, happy:3, clean:2 };   // turun per jam
-let cat = null, catDirty = false, catTimer = null, catKey = '', bubbleUntil = 0, noteMood = '😊';
+let cat = null, catDirty = false, catTimer = null, catKey = '', bubbleUntil = 0, noteMood = '😊', shopSlot = 'head', lastTap = 0, missionState = '';
 let petNotes = [];
 function catDocRef(){ return doc(db, 'bukukas_shared', SHARED_SPACE_ID, 'pet', 'cat'); }
 function petNotesColRef(){ return collection(db, 'bukukas_shared', SHARED_SPACE_ID, 'petNotes'); }
+function normCat(d){
+  const c = { ...CAT_DEFAULT, ...(d||{}) };
+  c.food = { ...CAT_DEFAULT.food, ...((d && d.food) || {}) };
+  let eq = c.equip;
+  if(!eq || typeof eq !== 'object'){            // migrasi dari versi lama (satu aksesoris)
+    const o = {}, it = CAT_ITEMS.find(i=>i.id === eq);
+    if(it) o[it.slot] = it.id;
+    eq = o;
+  }
+  c.equip = { head:'', face:'', neck:'', side:'', ...eq };
+  c.owned = Array.isArray(c.owned) ? c.owned : [];
+  return c;
+}
 
 const QUEST_POOL = {
-  feed1:{ t:'Beri makan kucing', e:'🍖', goal:1, xp:12, fish:8, get:()=>catDaily().feed },
-  play2:{ t:'Ajak main 2x', e:'🧶', goal:2, xp:15, fish:10, get:()=>catDaily().play },
-  bath1:{ t:'Mandikan kucing', e:'🛁', goal:1, xp:12, fish:8, get:()=>catDaily().bath },
-  pet5:{ t:'Elus kucing 5x', e:'💗', goal:5, xp:12, fish:8, get:()=>catDaily().pet },
-  note1:{ t:'Tulis catatan harian', e:'📔', goal:1, xp:15, fish:10, get:()=>petNotes.filter(n=>n.date===todayISO()).length },
-  tx1:{ t:'Catat 1 transaksi hari ini', e:'💰', goal:1, xp:20, fish:12, get:()=>transactions.filter(t=>t.date===todayISO()).length },
-  save1:{ t:'Setor ke tabungan ayam', e:'🐓', goal:1, xp:25, fish:15, get:()=>savingsEntries.filter(e=>e.type==='deposit' && e.date===todayISO()).length }
+  feed1:{ t:'Beri makan kucing', e:'🍖', goal:1, xp:12, fish:8,  food:{ can:1 }, get:()=>catDaily().feed },
+  play2:{ t:'Ajak main 2x', e:'🧶', goal:2, xp:15, fish:10, food:{ milk:1 }, get:()=>catDaily().play },
+  bath1:{ t:'Mandikan kucing', e:'🛁', goal:1, xp:12, fish:8,  food:{ can:1 }, get:()=>catDaily().bath },
+  pet5:{ t:'Elus kucing 5x', e:'💗', goal:5, xp:12, fish:8,  food:{ can:1 }, get:()=>catDaily().pet },
+  note1:{ t:'Tulis catatan harian', e:'📔', goal:1, xp:15, fish:10, food:{ shrimp:1 }, get:()=>petNotes.filter(n=>n.date===todayISO()).length },
+  tx1:{ t:'Catat 1 transaksi hari ini', e:'💰', goal:1, xp:20, fish:12, food:{ chicken:1 }, get:()=>transactions.filter(t=>t.date===todayISO()).length },
+  save1:{ t:'Setor ke tabungan ayam', e:'🐓', goal:1, xp:25, fish:15, food:{ cake:1 }, get:()=>savingsEntries.filter(e=>e.type==='deposit' && e.date===todayISO()).length }
 };
+function foodText(o){ return Object.entries(o).map(([k,v])=>`${v}${FOODS[k].e}`).join(' '); }
 function dayQuests(){
   let h = 0; for(const c of todayISO()) h = (h*31 + c.charCodeAt(0)) >>> 0;
   return [ ['tx1','save1'][h%2], 'note1', ['feed1','play2'][(h>>1)%2], ['bath1','pet5'][(h>>2)%2] ];
@@ -3357,7 +3463,10 @@ function catNow(){
   const f = (k)=>Math.max(0, Math.min(100, Math.round(cat[k] - CAT_DECAY[k]*hrs)));
   return { hunger:f('hunger'), happy:f('happy'), clean:f('clean') };
 }
-function catLevel(){ return Math.floor((cat.xp||0)/100) + 1; }
+function catLevel(){ return Math.floor(((cat && cat.xp) || 0)/100) + 1; }
+function stageIdx(lv){ let i = 0; CAT_STAGES.forEach((s,k)=>{ if(lv >= s.min) i = k; }); return i; }
+function isAway(){ return !!(cat && cat.mission && Date.now() < cat.mission.endsAt); }
+function fmtTime(ms){ const s = Math.max(0, Math.ceil(ms/1000)); return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); }
 function catCommit(){
   catDirty = true;
   clearTimeout(catTimer);
@@ -3366,20 +3475,118 @@ function catCommit(){
   }, 400);
 }
 function addXp(n){
-  const before = catLevel();
+  const lv0 = catLevel(), st0 = stageIdx(lv0);
   cat.xp = (cat.xp||0) + n;
-  if(catLevel() > before) showToast(`🎉 ${cat.name} naik ke Level ${catLevel()}!`);
+  const lv1 = catLevel(), st1 = stageIdx(lv1);
+  if(lv1 > lv0){ showToast(`🎉 ${cat.name} naik ke Level ${lv1}!`); sfx('level'); }
+  if(st1 > st0){
+    setTimeout(()=>{ showToast(`✨ ${cat.name} tumbuh jadi ${CAT_STAGES[st1].n}!`); sfx('grow'); catFx('✨', 6); }, 900);
+  }
 }
+
+// ---------- Suara kucing (Web Audio, tanpa file) ----------
+let actx = null, soundOn = true;
+try{ soundOn = localStorage.getItem('catSound') !== 'off'; }catch(e){}
+function audio(){
+  if(!soundOn) return null;
+  try{
+    if(!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if(actx.state === 'suspended') actx.resume();
+    return actx;
+  }catch(e){ return null; }
+}
+function noiseBuf(c, sec){
+  const b = c.createBuffer(1, Math.floor(c.sampleRate*sec), c.sampleRate), d = b.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i] = Math.random()*2 - 1;
+  return b;
+}
+function sfxMeow(kind){
+  const c = audio(); if(!c) return;
+  const pitch = [1.6, 1.3, 1, .8][stageIdx(catLevel())];
+  const shapes = {
+    happy:{ d:.5,  a:.8,  b:1.3, e:.75, f1:900,  f2:2300 },
+    sad:{ d:.85, a:1.1, b:.9,  e:.55, f1:700,  f2:1200 },
+    grumpy:{ d:.55, a:.7,  b:.75, e:.5,  f1:600,  f2:900 },
+    squeak:{ d:.22, a:1.3, b:1.9, e:1.5, f1:1500, f2:2800 }
+  };
+  const s = shapes[kind] || shapes.happy, base = 480*pitch, t = c.currentTime;
+  const o = c.createOscillator(), o2 = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
+  o.type = 'sawtooth'; o2.type = 'triangle';
+  [o, o2].forEach((x,i)=>{
+    const m = i ? .5 : 1;
+    x.frequency.setValueAtTime(base*s.a*m, t);
+    x.frequency.linearRampToValueAtTime(base*s.b*m, t + s.d*.35);
+    x.frequency.linearRampToValueAtTime(base*s.e*m, t + s.d);
+  });
+  f.type = 'bandpass'; f.Q.value = 4;
+  f.frequency.setValueAtTime(s.f1, t);
+  f.frequency.linearRampToValueAtTime(s.f2, t + s.d*.35);
+  f.frequency.linearRampToValueAtTime(s.f1*1.1, t + s.d);
+  g.gain.setValueAtTime(.0001, t);
+  g.gain.exponentialRampToValueAtTime(.5, t + .05);
+  g.gain.exponentialRampToValueAtTime(.0001, t + s.d + .05);
+  o.connect(f); o2.connect(f); f.connect(g); g.connect(c.destination);
+  o.start(t); o2.start(t); o.stop(t + s.d + .1); o2.stop(t + s.d + .1);
+}
+function sfxPurr(){
+  const c = audio(); if(!c) return;
+  const t = c.currentTime, n = c.createBufferSource(), lp = c.createBiquadFilter(), g = c.createGain(), lfo = c.createOscillator(), lg = c.createGain();
+  n.buffer = noiseBuf(c, 1.4); lp.type = 'lowpass'; lp.frequency.value = 260;
+  lfo.frequency.value = 24; lg.gain.value = .25;
+  g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.35, t + .2); g.gain.linearRampToValueAtTime(.0001, t + 1.4);
+  lfo.connect(lg); lg.connect(g.gain); n.connect(lp); lp.connect(g); g.connect(c.destination);
+  n.start(t); lfo.start(t); n.stop(t + 1.45); lfo.stop(t + 1.45);
+}
+function sfxCrunch(){
+  const c = audio(); if(!c) return;
+  for(let i=0;i<4;i++){
+    const t = c.currentTime + i*.1, n = c.createBufferSource(), hp = c.createBiquadFilter(), g = c.createGain();
+    n.buffer = noiseBuf(c, .06); hp.type = 'highpass'; hp.frequency.value = 1800;
+    g.gain.setValueAtTime(.3, t); g.gain.exponentialRampToValueAtTime(.0001, t + .06);
+    n.connect(hp); hp.connect(g); g.connect(c.destination); n.start(t);
+  }
+}
+function sfxNotes(freqs, type, gap){
+  const c = audio(); if(!c) return;
+  freqs.forEach((fr, i)=>{
+    const t = c.currentTime + i*(gap||.11), o = c.createOscillator(), g = c.createGain();
+    o.type = type || 'sine'; o.frequency.value = fr;
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.25, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + .28);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + .3);
+  });
+}
+function moodNow(){
+  const s = catNow(), avg = (s.hunger + s.happy + s.clean) / 3;
+  return avg >= 70 ? 'happy' : avg >= 40 ? 'ok' : avg >= 20 ? 'sad' : 'grumpy';
+}
+function sfx(kind){
+  if(!soundOn) return;
+  if(kind === 'feed'){ sfxCrunch(); setTimeout(()=>sfxMeow('happy'), 450); }
+  else if(kind === 'play'){ sfxMeow('squeak'); setTimeout(()=>sfxMeow('squeak'), 260); }
+  else if(kind === 'bath'){ sfxMeow('sad'); setTimeout(sfxPurr, 700); }
+  else if(kind === 'pet'){
+    const m = moodNow();
+    if(m === 'grumpy') sfxMeow('grumpy'); else if(m === 'sad') sfxMeow('sad');
+    else if(Math.random() < .5) sfxPurr(); else sfxMeow('happy');
+  }
+  else if(kind === 'claim' || kind === 'buy') sfxNotes([660, 880, 1100]);
+  else if(kind === 'level') sfxNotes([523, 659, 784, 1047], 'triangle');
+  else if(kind === 'grow'){ sfxNotes([392, 523, 659, 784, 1047], 'triangle', .13); setTimeout(()=>sfxMeow('happy'), 700); }
+  else if(kind === 'go') sfxMeow('happy');
+  else if(kind === 'no') sfxMeow('sad');
+}
+
 function catSay(text){
   bubbleUntil = Date.now() + 3500;
   document.getElementById('catBubble').textContent = text;
   setTimeout(renderCat, 3600);
 }
-function catFx(emoji, n){
+function catFx(emoji, n, cls){
   const box = document.getElementById('catFx');
   for(let i=0;i<(n||3);i++){
     const s = document.createElement('span');
     s.textContent = emoji;
+    if(cls) s.className = cls;
     s.style.left = (30 + Math.random()*40) + '%';
     s.style.animationDelay = (i*0.12) + 's';
     box.appendChild(s);
@@ -3388,27 +3595,37 @@ function catFx(emoji, n){
   const st = document.getElementById('catStage');
   st.classList.remove('jump'); void st.offsetWidth; st.classList.add('jump');
 }
-function catAct(kind){
+function catAct(kind, foodId){
   if(!cat) return;
+  if(isAway()){ catSay('Aku lagi pergi berburu… 🐾'); return; }
   const s = catNow(), d = { ...catDaily(), claimed:[...catDaily().claimed] };
   const p = { hunger:s.hunger, happy:s.happy, clean:s.clean };
   let xp = 0, fx = '', say = '';
   if(kind === 'feed'){
-    if(s.hunger >= 90){ catSay('Aku masih kenyang banget 😸'); return; }
-    p.hunger = Math.min(100, s.hunger+30); p.happy = Math.min(100, s.happy+3); d.feed++; xp = 3; fx = '🍖'; say = 'Nyam nyam! Enak banget~ 😋';
+    const fd = FOODS[foodId];
+    if(!fd) return;
+    if((cat.food[foodId]||0) < 1){ showToast('Stok habis — beli atau cari lewat misi!', true); return; }
+    if(s.hunger >= 90){ catSay('Aku masih kenyang banget 😸'); sfx('no'); closeModal('modalFeed'); return; }
+    cat.food = { ...cat.food, [foodId]: cat.food[foodId] - 1 };
+    p.hunger = Math.min(100, s.hunger + fd.h); p.happy = Math.min(100, s.happy + fd.hp);
+    d.feed++; xp = fd.xp; fx = fd.e; say = 'Nyam nyam! Enak banget~ 😋';
+    closeModal('modalFeed');
   }else if(kind === 'play'){
-    if(s.hunger < 15){ catSay('Terlalu lapar buat main… 🥺'); return; }
-    p.happy = Math.min(100, s.happy+25); p.hunger = Math.max(0, s.hunger-8); p.clean = Math.max(0, s.clean-5); d.play++; xp = 4; fx = '🧶'; say = 'Hehe seru! Kejar benangnya! 🧶';
+    if(s.hunger < 15){ catSay('Terlalu lapar buat main… 🥺'); sfx('no'); return; }
+    p.happy = Math.min(100, s.happy + 25); p.hunger = Math.max(0, s.hunger - 8); p.clean = Math.max(0, s.clean - 5);
+    d.play++; xp = 10; fx = '🧶'; say = 'Hehe seru! Kejar benangnya! 🧶';
   }else if(kind === 'bath'){
-    if(s.clean >= 90){ catSay('Aku sudah wangi kok 😽'); return; }
-    p.clean = 100; p.happy = Math.max(0, s.happy-5); d.bath++; xp = 3; fx = '🫧'; say = 'Brrr… tapi jadi wangi! ✨';
+    if(s.clean >= 90){ catSay('Aku sudah wangi kok 😽'); sfx('no'); return; }
+    p.clean = 100; p.happy = Math.max(0, s.happy - 5); d.bath++; xp = 4; fx = '🫧'; say = 'Brrr… tapi jadi wangi! ✨';
   }else{
-    p.happy = Math.min(100, s.happy+4); d.pet++; xp = 1; fx = '💗'; say = ['Purr purr… 😽','Mmm enak dielus~ 💕','Meow! 🐾'][Math.floor(Math.random()*3)];
+    p.happy = Math.min(100, s.happy + 4); d.pet++; xp = 1; fx = '💗'; say = ['Purr purr… 😽','Mmm enak dielus~ 💕','Meow! 🐾'][Math.floor(Math.random()*3)];
   }
   Object.assign(cat, p, { t: Date.now(), daily: d });
   addXp(xp);
   catFx(fx, kind === 'pet' ? 1 : 4);
+  if(kind !== 'pet') catFx('+' + xp + ' XP', 1, 'xp');
   catSay(say);
+  sfx(kind);
   catCommit();
   renderCat();
 }
@@ -3417,14 +3634,19 @@ function claimQuest(id){
   const d = { ...catDaily(), claimed:[...catDaily().claimed] };
   if(d.claimed.includes(id) || q.get() < q.goal) return;
   d.claimed.push(id); cat.daily = d;
-  cat.coins = (cat.coins||0) + q.fish; addXp(q.xp);
+  cat.coins = (cat.coins||0) + q.fish;
+  const food = { ...cat.food };
+  Object.entries(q.food).forEach(([k,v])=>{ food[k] = Math.min(99, (food[k]||0) + v); });
+  cat.food = food;
+  addXp(q.xp);
   const today = todayISO();
   if(cat.lastClaim !== today){
     const y = dateToLocalISO(new Date(Date.now() - 86400000));
     cat.streak = cat.lastClaim === y ? (cat.streak||0) + 1 : 1;
     cat.lastClaim = today;
   }
-  showToast(`Quest selesai! +${q.xp} XP, +${q.fish} 🐟`);
+  showToast(`Quest selesai! +${q.xp} XP, +${q.fish} 🐟, +${foodText(q.food)}`);
+  sfx('claim');
   if(dayQuests().every(x=>d.claimed.includes(x)) && cat.bonusDate !== today){
     cat.bonusDate = today; cat.coins += 20; addXp(20);
     setTimeout(()=>showToast('🎁 Semua quest selesai! Bonus +20 🐟 & +20 XP'), 1200);
@@ -3432,21 +3654,70 @@ function claimQuest(id){
   }else catFx('⭐', 3);
   catCommit(); renderCat();
 }
+
+// ---------- Misi makanan ----------
+function startMission(id){
+  const m = MISSIONS.find(x=>x.id===id);
+  if(!m || !cat) return;
+  if(cat.mission){ showToast('Kucing masih dalam misi lain', true); return; }
+  if(catLevel() < m.lv){ showToast(`Butuh Level ${m.lv}`, true); return; }
+  cat.mission = { id, endsAt: Date.now() + m.sec*1000 };
+  sfx('go'); catSay(`Aku berangkat: ${m.t}! ${m.e}`);
+  catCommit(); renderCat();
+}
+function claimMission(id){
+  const m = MISSIONS.find(x=>x.id===id);
+  if(!m || !cat || !cat.mission || cat.mission.id !== id || Date.now() < cat.mission.endsAt) return;
+  const food = { ...cat.food };
+  Object.entries(m.reward).forEach(([k,v])=>{ food[k] = Math.min(99, (food[k]||0) + v); });
+  cat.food = food; cat.mission = null;
+  addXp(m.xp);
+  showToast(`Misi selesai! +${foodText(m.reward)} +${m.xp} XP`);
+  sfx('claim'); catFx(m.e, 4); catFx('+' + m.xp + ' XP', 1, 'xp');
+  catCommit(); renderCat();
+}
+function buyFood(id){
+  const fd = FOODS[id]; if(!fd || !cat) return;
+  if((cat.coins||0) < fd.p){ showToast('Ikanmu belum cukup 🐟', true); return; }
+  cat.coins -= fd.p; cat.food = { ...cat.food, [id]: Math.min(99, (cat.food[id]||0) + 1) };
+  sfx('buy'); catCommit(); renderCat(); renderFeedList();
+}
+function renderFeedList(){
+  if(!cat) return;
+  document.getElementById('feedList').innerHTML = Object.entries(FOODS).map(([id, f])=>{
+    const n = cat.food[id] || 0;
+    return `<div class="feed-row"><div class="e">${f.e}</div>
+      <div class="b"><div class="n">${f.n} <span class="badge">x${n}</span></div><div class="s">+${f.h} kenyang${f.hp ? ' · +' + f.hp + ' senang' : ''} · +${f.xp} XP</div></div>
+      <div class="acts"><button class="go" data-feed="${id}" ${n<1?'disabled':''}>Beri</button><button data-buyfood="${id}">Beli ${f.p}🐟</button></div></div>`;
+  }).join('');
+}
+
+// ---------- Aksesoris ----------
 function buyOrEquip(id){
-  const a = CAT_ACC.find(x=>x.id===id); if(!a || !cat) return;
-  cat.owned = cat.owned || [];
+  const a = CAT_ITEMS.find(x=>x.id === id); if(!a || !cat) return;
   if(cat.owned.includes(id)){
-    cat.equip = cat.equip === id ? '' : id;
+    cat.equip = { ...cat.equip, [a.slot]: cat.equip[a.slot] === id ? '' : id };
+    sfx('buy');
   }else{
+    if(catLevel() < a.lv){ showToast(`Butuh Level ${a.lv}`, true); return; }
     if((cat.coins||0) < a.p){ showToast('Ikanmu belum cukup 🐟', true); return; }
-    cat.coins -= a.p; cat.owned = [...cat.owned, id]; cat.equip = id;
-    catFx(a.e, 3); catSay(`Wah, ${a.n} baru! Aku keren ya? 😎`);
+    cat.coins -= a.p; cat.owned = [...cat.owned, id]; cat.equip = { ...cat.equip, [a.slot]: id };
+    catFx(a.e, 3); catSay(`Wah, ${a.n} baru! Aku keren ya? 😎`); sfx('buy'); sfxMeow('happy');
   }
   catCommit(); renderCat();
 }
 
-function catSvg(mood, equip){
-  const O='#FFB45A', D='#E8913A', L='#FFE3BD', P='#FF8FA3', K='#2B2140';
+function accSvg(eq){
+  const out = { head:'', face:'', neck:'', side:'' };
+  Object.keys(out).forEach(sl=>{
+    const it = CAT_ITEMS.find(i=>i.id === eq[sl]); if(!it) return;
+    const p = { ...SLOT_POS[sl], ...(it.o||{}) };
+    out[sl] = `<text x="${p.x}" y="${p.y}" font-size="${p.s}" text-anchor="middle">${it.e}</text>`;
+  });
+  return out;
+}
+function catSvg(mood, eq, st){
+  const O='#FFB45A', D='#E8913A', L='#FFE3BD', P='#FF8FA3', K='#2B2140', S = CAT_STAGES[st];
   const eyes = {
     happy: `<path d="M71 85 q9 -12 18 0 M111 85 q9 -12 18 0" stroke="${K}" stroke-width="4" fill="none" stroke-linecap="round"/>`,
     ok: `<g class="blink"><ellipse cx="80" cy="84" rx="7" ry="9" fill="${K}"/><ellipse cx="120" cy="84" rx="7" ry="9" fill="${K}"/><circle cx="82.5" cy="80.5" r="2.6" fill="#fff"/><circle cx="122.5" cy="80.5" r="2.6" fill="#fff"/></g>`,
@@ -3455,14 +3726,16 @@ function catSvg(mood, equip){
   }[mood];
   const mouth = { happy:'M90 102 q10 12 20 0 z', ok:'M92 103 q4 6 8 0 q4 6 8 0', sad:'M92 111 q8 -9 16 0', grumpy:'M92 110 q8 -7 16 0' }[mood];
   const mouthStyle = mood === 'happy' ? `fill="${P}" stroke="${K}" stroke-width="2.5" stroke-linejoin="round"` : `fill="none" stroke="${K}" stroke-width="2.8" stroke-linecap="round"`;
-  const acc = { bow:`<text x="136" y="56" font-size="34" text-anchor="middle">🎀</text>`, glasses:`<text x="100" y="98" font-size="58" text-anchor="middle">🕶️</text>`,
-                hat:`<text x="100" y="40" font-size="52" text-anchor="middle">🎩</text>`, crown:`<text x="100" y="38" font-size="46" text-anchor="middle">👑</text>` }[equip] || '';
-  return `<svg viewBox="0 0 200 195" xmlns="http://www.w3.org/2000/svg">
+  const a = accSvg(eq);
+  return `<svg viewBox="0 0 200 195" xmlns="http://www.w3.org/2000/svg" style="transform:scale(${S.sc});transform-origin:50% 96%">
+    ${a.side}
     <ellipse cx="100" cy="186" rx="60" ry="8" fill="rgba(0,0,0,.14)"/>
-    <path class="tail" d="M140 160 q42 -8 32 -52" stroke="${O}" stroke-width="15" fill="none" stroke-linecap="round"/>
-    <ellipse cx="100" cy="150" rx="46" ry="34" fill="${O}"/>
-    <ellipse cx="100" cy="158" rx="26" ry="22" fill="${L}"/>
-    <ellipse cx="78" cy="181" rx="15" ry="8" fill="${L}"/><ellipse cx="122" cy="181" rx="15" ry="8" fill="${L}"/>
+    <g transform="translate(100 185) scale(${S.bs}) translate(-100 -185)">
+      <path class="tail" d="M140 160 q42 -8 32 -52" stroke="${O}" stroke-width="15" fill="none" stroke-linecap="round"/>
+      <ellipse cx="100" cy="150" rx="46" ry="34" fill="${O}"/>
+      <ellipse cx="100" cy="158" rx="26" ry="22" fill="${L}"/>
+      <ellipse cx="78" cy="181" rx="15" ry="8" fill="${L}"/><ellipse cx="122" cy="181" rx="15" ry="8" fill="${L}"/>
+    </g>
     <polygon points="60,62 64,16 98,44" fill="${O}"/><polygon points="140,62 136,16 102,44" fill="${O}"/>
     <polygon points="69,52 71,30 88,44" fill="${P}"/><polygon points="131,52 129,30 112,44" fill="${P}"/>
     <circle cx="100" cy="86" r="47" fill="${O}"/>
@@ -3472,31 +3745,40 @@ function catSvg(mood, equip){
     <polygon points="95,94 105,94 100,100" fill="${P}"/>
     <path d="${mouth}" ${mouthStyle}/>
     <path d="M62 97 l-24 -5 M62 104 l-24 4 M138 97 l24 -5 M138 104 l24 4" stroke="${K}" stroke-width="1.8" stroke-linecap="round" opacity=".55"/>
-    ${acc}
+    ${a.neck}${a.face}${a.head}
   </svg>`;
 }
 
 function renderCat(){
   if(!cat) return;
-  const s = catNow(), avg = (s.hunger + s.happy + s.clean) / 3;
-  const mood = avg >= 70 ? 'happy' : avg >= 40 ? 'ok' : avg >= 20 ? 'sad' : 'grumpy';
-  const key = mood + '|' + (cat.equip || '');
-  if(key !== catKey){ catKey = key; document.getElementById('catStage').innerHTML = catSvg(mood, cat.equip); }
-  const hr = new Date().getHours(), night = hr >= 18 || hr < 5;
+  const lv = catLevel(), st = stageIdx(lv), away = isAway(), mood = moodNow();
+  const key = [mood, st, JSON.stringify(cat.equip), away ? 'away' : ''].join('|');
+  if(key !== catKey){
+    catKey = key;
+    document.getElementById('catStage').innerHTML = away
+      ? `<div class="cat-away"><div class="big">🐾</div><div>${escapeHtml(cat.name)} sedang ${MISSIONS.find(m=>m.id===cat.mission.id)?.e || ''} berburu…</div><div id="awayTimer">⏳ ${fmtTime(cat.mission.endsAt - Date.now())}</div></div>`
+      : catSvg(mood, cat.equip, st);
+  }
+  document.querySelector('.cat-room').style.height = [190, 212, 236, 252][st] + 'px';
+  const s = catNow(), hr = new Date().getHours(), night = hr >= 18 || hr < 5;
   document.getElementById('catScene').classList.toggle('night', night);
   document.getElementById('catSky').textContent = night ? '🌙' : '☀️';
   document.getElementById('catName').textContent = cat.name + ' ✏️';
-  document.getElementById('catLevel').textContent = 'Lv ' + catLevel();
+  document.getElementById('catLevel').textContent = `Lv ${lv} · ${CAT_STAGES[st].n}`;
   document.getElementById('catCoins').textContent = '🐟 ' + (cat.coins||0);
+  document.getElementById('catSound').textContent = soundOn ? '🔊' : '🔇';
   const y = dateToLocalISO(new Date(Date.now() - 86400000));
   document.getElementById('catStreak').textContent = '🔥 ' + ((cat.lastClaim === todayISO() || cat.lastClaim === y) ? (cat.streak||0) : 0) + ' hari';
   document.getElementById('catXpFill').style.width = ((cat.xp||0) % 100) + '%';
+  const nx = CAT_STAGES[st + 1];
+  document.getElementById('stageSub').textContent = `${CAT_STAGES[st].e} ${((cat.xp||0) % 100)}/100 XP` + (nx ? ` · tumbuh jadi ${nx.n} di Lv ${nx.min}` : ' · sudah sebesar-besarnya! 🎉');
   document.getElementById('barHunger').style.width = s.hunger + '%';
   document.getElementById('barHappy').style.width = s.happy + '%';
   document.getElementById('barClean').style.width = s.clean + '%';
   if(Date.now() > bubbleUntil){
     let line;
-    if(s.hunger < 25) line = 'Perutku keroncongan… kasih makan dong 🥺';
+    if(away) line = 'Zzz… lagi berburu, tunggu ya 🐾';
+    else if(s.hunger < 25) line = 'Perutku keroncongan… kasih makan dong 🥺';
     else if(s.clean < 25) line = 'Bulu-buluku kusut… mandi yuk 🫧';
     else if(s.happy < 25) line = 'Aku bosan… main yuk? 🧶';
     else line = ['Meow~ makasih sudah merawatku bareng! 💕','Purr purr… hari ini seru ya 🐾','Ayo selesaikan quest hari ini! ⭐'][hr % 3];
@@ -3509,18 +3791,33 @@ function renderCat(){
     if(claimed) done++;
     const ready = !claimed && v >= q.goal;
     return `<div class="quest ${claimed?'done':''}"><div class="q-ic">${q.e}</div>
-      <div class="q-body"><div class="q-t">${q.t}</div><div class="q-sub">${v}/${q.goal} · +${q.xp} XP · +${q.fish} 🐟</div>
+      <div class="q-body"><div class="q-t">${q.t}</div><div class="q-sub">${v}/${q.goal} · +${q.xp} XP · +${q.fish} 🐟 · +${foodText(q.food)}</div>
       <div class="prog-track" style="height:6px;margin-top:6px;"><div class="prog-fill" style="width:${v/q.goal*100}%;--accent:var(--amber)"></div></div></div>
       ${claimed ? '<span class="badge ok">Selesai ✅</span>' : ready ? `<button class="link-btn teal" data-claim="${id}">Ambil 🎁</button>` : '<span class="badge">Belum</span>'}</div>`;
   }).join('');
   document.getElementById('questTitle').textContent = `🎯 Quest hari ini (${done}/${ids.length})`;
   document.getElementById('questBonus').textContent = done === ids.length ? '🎉 Hebat! Semua quest hari ini selesai. Sampai jumpa besok!' : 'Selesaikan semua quest untuk bonus +20 🐟. Quest berganti setiap hari.';
+  // misi
+  document.getElementById('stockLine').textContent = 'Persediaan: ' + Object.entries(FOODS).map(([k,f])=>`${f.e}${cat.food[k]||0}`).join('  ');
+  document.getElementById('missionList').innerHTML = MISSIONS.map(m=>{
+    const act = cat.mission && cat.mission.id === m.id, left = act ? cat.mission.endsAt - Date.now() : 0;
+    const ready = act && left <= 0, busy = cat.mission && !act, locked = lv < m.lv;
+    const btn = ready ? `<button class="link-btn teal" data-mclaim="${m.id}">Ambil 🎁</button>`
+      : act ? `<span class="badge soon mtimer">⏳ ${fmtTime(left)}</span>`
+      : locked ? `<span class="badge">🔒 Lv ${m.lv}</span>`
+      : `<button data-mgo="${m.id}" ${busy?'disabled':''}>Berangkat</button>`;
+    return `<div class="mission-row"><div class="q-ic">${m.e}</div><div class="q-body"><div class="q-t">${m.t}</div>
+      <div class="q-sub">${Math.round(m.sec/60)} menit · hadiah ${foodText(m.reward)} · +${m.xp} XP</div></div>${btn}</div>`;
+  }).join('');
+  missionState = cat.mission ? cat.mission.id + ':' + (cat.mission.endsAt <= Date.now() ? 'done' : 'run') : '';
   // toko
-  const owned = cat.owned || [];
-  document.getElementById('catShop').innerHTML = CAT_ACC.map(a=>{
-    const has = owned.includes(a.id), on = cat.equip === a.id;
+  const slots = Object.keys(SLOT_LABEL);
+  document.getElementById('shopTabs').innerHTML = slots.map(sl=>`<button class="chip ${sl===shopSlot?'active':''}" data-slot="${sl}">${SLOT_LABEL[sl]}</button>`).join('');
+  document.getElementById('shopTitle').textContent = `🛍️ Toko aksesoris (${CAT_ITEMS.length} item)`;
+  document.getElementById('catShop').innerHTML = CAT_ITEMS.filter(a=>a.slot === shopSlot).map(a=>{
+    const has = cat.owned.includes(a.id), on = cat.equip[a.slot] === a.id, lock = !has && lv < a.lv;
     return `<div class="shop-item ${on?'on':''}"><div class="e">${a.e}</div><div class="n">${a.n}</div>
-      <button data-shop="${a.id}">${has ? (on ? 'Dilepas' : 'Pakai') : a.p + ' 🐟'}</button></div>`;
+      <button data-shop="${a.id}" ${lock?'disabled':''}>${has ? (on ? 'Dilepas' : 'Pakai') : lock ? '🔒 Lv ' + a.lv : a.p + ' 🐟'}</button></div>`;
   }).join('');
   // catatan
   const list = document.getElementById('noteList');
@@ -3529,10 +3826,41 @@ function renderCat(){
     <div class="tx">${escapeHtml(n.text || '')}</div></div>`).join('')
     : '<div class="empty-box"><span class="emoji">📔</span>Belum ada catatan. Tulis cerita pertamamu hari ini!</div>';
 }
+function tickMission(){
+  if(!cat || !cat.mission) return;
+  const left = cat.mission.endsAt - Date.now();
+  if(left <= 0){
+    if(missionState !== cat.mission.id + ':done'){
+      catKey = ''; renderCat(); sfx('go'); catSay('Aku pulang! Bawa oleh-oleh 🎁');
+    }
+    return;
+  }
+  const t = fmtTime(left);
+  document.querySelectorAll('.mtimer').forEach(el=>{ el.textContent = '⏳ ' + t; });
+  const at = document.getElementById('awayTimer'); if(at) at.textContent = '⏳ ' + t;
+}
 
 // ---------- Kucing: event ----------
-document.getElementById('catStage').addEventListener('click', ()=>catAct('pet'));
-document.querySelectorAll('[data-cat]').forEach(b=>b.addEventListener('click', ()=>catAct(b.dataset.cat)));
+document.getElementById('catStage').addEventListener('click', ()=>{
+  if(Date.now() - lastTap < 350) return;
+  lastTap = Date.now();
+  catAct('pet');
+});
+document.querySelector('[data-cat="feed"]').addEventListener('click', ()=>{
+  if(isAway()){ catSay('Aku lagi pergi berburu… 🐾'); return; }
+  renderFeedList(); openModal('modalFeed');
+});
+document.querySelectorAll('[data-cat="play"],[data-cat="bath"]').forEach(b=>b.addEventListener('click', ()=>catAct(b.dataset.cat)));
+document.getElementById('feedList').addEventListener('click', (e)=>{
+  const f = e.target.closest('[data-feed]'); if(f){ catAct('feed', f.dataset.feed); return; }
+  const b = e.target.closest('[data-buyfood]'); if(b) buyFood(b.dataset.buyfood);
+});
+document.getElementById('catSound').addEventListener('click', ()=>{
+  soundOn = !soundOn;
+  try{ localStorage.setItem('catSound', soundOn ? 'on' : 'off'); }catch(e){}
+  renderCat();
+  if(soundOn) sfxMeow('happy');
+});
 document.getElementById('catName').addEventListener('click', ()=>{
   if(!cat) return;
   const n = prompt('Nama kucingnya?', cat.name);
@@ -3540,6 +3868,13 @@ document.getElementById('catName').addEventListener('click', ()=>{
 });
 document.getElementById('questList').addEventListener('click', (e)=>{
   const b = e.target.closest('[data-claim]'); if(b) claimQuest(b.dataset.claim);
+});
+document.getElementById('missionList').addEventListener('click', (e)=>{
+  const g = e.target.closest('[data-mgo]'); if(g){ startMission(g.dataset.mgo); return; }
+  const c = e.target.closest('[data-mclaim]'); if(c) claimMission(c.dataset.mclaim);
+});
+document.getElementById('shopTabs').addEventListener('click', (e)=>{
+  const b = e.target.closest('[data-slot]'); if(b){ shopSlot = b.dataset.slot; renderCat(); }
 });
 document.getElementById('catShop').addEventListener('click', (e)=>{
   const b = e.target.closest('[data-shop]'); if(b) buyOrEquip(b.dataset.shop);
@@ -3555,7 +3890,7 @@ document.getElementById('btnSaveNote').addEventListener('click', async ()=>{
   try{
     await addDoc(petNotesColRef(), { date: todayISO(), text, mood: noteMood, createdAt: serverTimestamp() });
     ta.value = '';
-    catSay('Meow~ catatan tersimpan! 📔');
+    catSay('Meow~ catatan tersimpan! 📔'); sfx('claim');
     showToast('Catatan tersimpan 🐾');
   }catch(e){ console.error('simpan catatan', e); showToast(errorMessage(e), true); }
 });
@@ -3565,6 +3900,7 @@ document.getElementById('noteList').addEventListener('click', async (e)=>{
   try{ await deleteDoc(doc(petNotesColRef(), b.dataset.delnote)); }catch(err){ showToast(errorMessage(err), true); }
 });
 setInterval(()=>renderCat(), 60000);
+setInterval(tickMission, 1000);
 
 // ---------- Saran finansial AI ----------
 // Analisis lokal (rule-based) selalu jalan tanpa internet/API key. Jika API key diisi di
