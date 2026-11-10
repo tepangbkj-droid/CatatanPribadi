@@ -332,7 +332,9 @@
     display:flex;flex-direction:column;align-items:center;gap:2px;
     padding:7px 0 5px;font-size:10.5px;font-weight:600;color:var(--ink-soft);min-width:0;
   }
-  .tab-btn .tab-ic{font-size:20px;}
+  .tab-btn .tab-ic{font-size:19px;}
+  .tabbar-inner{gap:2px !important;}
+  .tab-btn{font-size:9.5px !important;letter-spacing:-.1px;}
   .tab-btn.active{color:var(--violet-dark);background:var(--violet-soft);}
   .tab-btn.active.tab-emas{color:var(--amber-dark);background:var(--amber-soft);}
 
@@ -537,6 +539,62 @@
   .update-banner span{flex:1;line-height:1.35;}
   .update-banner .ub-go{border:none;border-radius:var(--radius-pill);padding:8px 14px;font-weight:700;font-size:13px;background:linear-gradient(135deg,var(--violet),var(--blue));color:#fff;}
   .update-banner .ub-x{border:none;background:transparent;color:rgba(255,255,255,0.7);font-size:16px;padding:6px 8px;}
+
+  /* ===== Kucing Kita (mini game) ===== */
+  .tab-btn.active.tab-cat{color:#C2620A;background:#FFEBD2;}
+  .cat-scene{position:relative;border-radius:28px;padding:14px 14px 16px;background:linear-gradient(180deg,#BFE3FF 0%,#FFE9D6 75%);overflow:hidden;box-shadow:0 16px 34px -16px rgba(80,120,200,.5);}
+  .cat-scene.night{background:linear-gradient(180deg,#26255A 0%,#5B4B8C 80%);color:#fff;}
+  .cat-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:relative;z-index:2;}
+  .cat-name{border:none;background:rgba(255,255,255,.75);color:var(--ink);font-family:var(--font-head);font-weight:700;font-size:16px;padding:6px 12px;border-radius:999px;}
+  .chip-mini{background:rgba(255,255,255,.75);color:var(--ink);font-weight:700;font-size:12px;padding:6px 10px;border-radius:999px;}
+  .cat-xp{height:7px;border-radius:99px;background:rgba(255,255,255,.55);margin:10px 0 2px;overflow:hidden;}
+  .cat-xp>div{height:100%;width:0;background:linear-gradient(90deg,#FFB45A,#FF7A9C);border-radius:99px;transition:width .5s;}
+  .cat-bubble{position:relative;z-index:2;margin:10px auto 0;max-width:260px;text-align:center;background:#fff;color:var(--ink);font-size:13px;font-weight:600;padding:8px 12px;border-radius:16px;box-shadow:0 6px 14px -8px rgba(0,0,0,.35);}
+  .cat-bubble:after{content:"";position:absolute;left:50%;bottom:-6px;width:12px;height:12px;background:#fff;transform:translateX(-50%) rotate(45deg);}
+  .cat-room{position:relative;height:236px;margin-top:4px;}
+  .cat-floor{position:absolute;left:-14px;right:-14px;bottom:0;height:62px;background:linear-gradient(180deg,#F3C697,#E7AB74);border-radius:50% 50% 0 0/22px 22px 0 0;}
+  .cat-sky{position:absolute;right:6px;top:2px;font-size:34px;}
+  .cat-decor{position:absolute;bottom:14px;font-size:30px;}
+  .cat-stage{position:absolute;left:50%;bottom:8px;width:200px;height:195px;margin-left:-100px;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;}
+  .cat-stage svg{width:100%;height:100%;overflow:visible;}
+  .cat-stage.jump{animation:catJump .55s ease;}
+  .cat-stage .tail{transform-origin:142px 160px;animation:tailWag 1.8s ease-in-out infinite;}
+  .cat-stage .blink{transform-origin:100px 84px;animation:catBlink 4.5s infinite;}
+  .cat-fx{position:absolute;inset:0;pointer-events:none;z-index:3;overflow:hidden;}
+  .cat-fx span{position:absolute;bottom:90px;font-size:24px;animation:riseFx 1.3s ease-out forwards;}
+  @keyframes tailWag{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(14deg)}}
+  @keyframes catBlink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+  @keyframes catJump{0%{transform:translateY(0)}35%{transform:translateY(-22px) scale(1.04)}70%{transform:translateY(0) scale(.97)}100%{transform:none}}
+  @keyframes riseFx{0%{opacity:0;transform:translateY(0) scale(.6)}20%{opacity:1}100%{opacity:0;transform:translateY(-120px) scale(1.2)}}
+  .cat-bars{display:grid;gap:7px;margin-top:12px;position:relative;z-index:2;}
+  .cat-bar{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;}
+  .cat-bar .l{width:74px;}
+  .cat-bar .t{flex:1;height:10px;border-radius:99px;background:rgba(255,255,255,.6);overflow:hidden;}
+  .cat-bar .t>div{height:100%;border-radius:99px;transition:width .5s;}
+  .cat-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;position:relative;z-index:2;}
+  .cat-actions button{border:none;border-radius:18px;padding:10px 4px;background:#fff;color:var(--ink);font-weight:700;font-size:12.5px;box-shadow:0 8px 16px -10px rgba(0,0,0,.4);}
+  .cat-actions button b{display:block;font-size:24px;}
+  .cat-actions button:active{transform:scale(.94);}
+  .cat-hint{font-size:11.5px;text-align:center;margin-top:10px;opacity:.8;position:relative;z-index:2;}
+  .quest{display:flex;align-items:center;gap:11px;padding:12px;border:1px solid var(--line);border-radius:16px;background:var(--card);margin-bottom:8px;}
+  .quest.done{opacity:.62;}
+  .q-ic{width:40px;height:40px;border-radius:13px;background:#FFF2DE;display:flex;align-items:center;justify-content:center;font-size:20px;flex:0 0 auto;}
+  .q-body{flex:1;min-width:0;}
+  .q-t{font-weight:700;font-size:14px;}
+  .q-sub{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+  .shop{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;}
+  .shop-item{flex:0 0 auto;min-width:84px;text-align:center;padding:10px 8px;border:1px solid var(--line);border-radius:16px;background:var(--card);}
+  .shop-item.on{border-color:var(--amber);background:#FFF6E6;}
+  .shop-item .e{font-size:26px;}
+  .shop-item .n{font-size:11.5px;font-weight:700;margin-top:2px;}
+  .shop-item button{margin-top:6px;border:none;border-radius:99px;padding:5px 10px;font-size:11.5px;font-weight:700;background:var(--amber-soft);color:var(--amber-dark);}
+  .mood-row{display:flex;gap:6px;margin:8px 0;}
+  .mood-row button{border:1px solid var(--line);background:#fff;border-radius:12px;padding:6px 10px;font-size:20px;}
+  .mood-row button.on{border-color:var(--violet);background:#F1EBFF;}
+  .note-card{padding:12px 14px;border:1px solid var(--line);border-radius:16px;background:var(--card);margin-bottom:8px;}
+  .note-card .d{font-size:11.5px;color:var(--ink-soft);display:flex;justify-content:space-between;align-items:center;}
+  .note-card .tx{margin-top:4px;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere;}
+  textarea.note-in{width:100%;border:1.5px solid var(--line);border-radius:14px;padding:10px 12px;font:inherit;font-size:14px;resize:none;background:#fff;}
 </style>
 </head>
 <body>
@@ -662,7 +720,7 @@
     <!-- ===== VIEW: TABUNGAN ===== -->
     <div id="viewTabungan" class="view-pane">
       <div class="hero hero-tab fade-up">
-        <div class="hero-label">🐷 Total tabungan</div>
+        <div class="hero-label">🐓 Total tabungan</div>
         <div class="hero-number" id="svTotal">Rp0</div>
         <div class="hero-meta">
           <div class="hero-meta-item">
@@ -719,6 +777,60 @@
       </div>
     </div>
 
+    <!-- ===== VIEW: KUCING ===== -->
+    <div id="viewKucing" class="view-pane">
+      <div class="cat-scene fade-up" id="catScene">
+        <div class="cat-top">
+          <button class="cat-name" id="catName">Mochi ✏️</button>
+          <span class="chip-mini" id="catLevel">Lv 1</span>
+          <span class="chip-mini" id="catCoins">🐟 0</span>
+          <span class="chip-mini" id="catStreak">🔥 0</span>
+        </div>
+        <div class="cat-xp"><div id="catXpFill"></div></div>
+        <div class="cat-bubble" id="catBubble">Meow~</div>
+        <div class="cat-room">
+          <div class="cat-sky" id="catSky">☀️</div>
+          <div class="cat-floor"></div>
+          <div class="cat-decor" style="left:4px;">🪴</div>
+          <div class="cat-decor" style="right:10px;">🧶</div>
+          <div class="cat-stage" id="catStage"></div>
+          <div class="cat-fx" id="catFx"></div>
+        </div>
+        <div class="cat-bars">
+          <div class="cat-bar"><span class="l">🍖 Kenyang</span><span class="t"><div id="barHunger" style="background:#FF9F43"></div></span></div>
+          <div class="cat-bar"><span class="l">💖 Senang</span><span class="t"><div id="barHappy" style="background:#FF6B9A"></div></span></div>
+          <div class="cat-bar"><span class="l">🫧 Bersih</span><span class="t"><div id="barClean" style="background:#4DABF7"></div></span></div>
+        </div>
+        <div class="cat-actions">
+          <button data-cat="feed"><b>🍖</b>Makan</button>
+          <button data-cat="play"><b>🧶</b>Main</button>
+          <button data-cat="bath"><b>🛁</b>Mandi</button>
+        </div>
+        <div class="cat-hint">👆 Tap kucingnya untuk mengelus. Dirawat bareng — semua pengguna melihat kucing yang sama!</div>
+      </div>
+
+      <div class="section" style="margin-top:22px;">
+        <div class="section-head"><div class="section-title" id="questTitle">🎯 Quest hari ini</div></div>
+        <div id="questList"></div>
+        <div class="field-hint" id="questBonus"></div>
+      </div>
+
+      <div class="section" style="margin-top:18px;">
+        <div class="section-head"><div class="section-title">🛍️ Toko aksesoris</div></div>
+        <div class="shop" id="catShop"></div>
+      </div>
+
+      <div class="section" style="margin-top:18px;">
+        <div class="section-head"><div class="section-title">📔 Catatan harian</div></div>
+        <textarea class="note-in" id="noteText" rows="2" maxlength="300" placeholder="Hari ini kucingnya ngapain? Atau cerita apa saja…"></textarea>
+        <div class="mood-row" id="noteMoods">
+          <button data-m="😊" class="on">😊</button><button data-m="🤩">🤩</button><button data-m="😴">😴</button><button data-m="😢">😢</button><button data-m="😡">😡</button>
+        </div>
+        <button class="btn btn-primary" id="btnSaveNote">Simpan catatan 🐾</button>
+        <div id="noteList" style="margin-top:14px;"></div>
+      </div>
+    </div>
+
     <!-- ===== VIEW: SARAN AI ===== -->
     <div id="viewAI" class="view-pane">
       <div class="hero hero-ai fade-up">
@@ -742,8 +854,9 @@
     <div class="tabbar-inner">
       <button class="tab-btn active" id="btnTabKas" data-tab="kas"><span class="tab-ic">💰</span>Kas</button>
       <button class="tab-btn" id="btnTabEmas" data-tab="emas"><span class="tab-ic">🪙</span>Emas</button>
-      <button class="tab-btn" id="btnTabTabungan" data-tab="tabungan"><span class="tab-ic">🐷</span>Tabungan</button>
+      <button class="tab-btn" id="btnTabTabungan" data-tab="tabungan"><span class="tab-ic">🐓</span>Tabungan</button>
       <button class="tab-btn" id="btnTabHutang" data-tab="hutang"><span class="tab-ic">📒</span>Hutang</button>
+      <button class="tab-btn" id="btnTabKucing" data-tab="kucing"><span class="tab-ic">🐱</span>Kucing</button>
       <button class="tab-btn" id="btnTabAI" data-tab="ai"><span class="tab-ic">🤖</span>AI</button>
     </div>
   </div>
@@ -848,7 +961,7 @@
 <div class="modal-overlay hidden" id="modalGoal">
   <div class="modal-sheet">
     <div class="modal-head">
-      <div class="modal-title">🐷 Target tabungan baru</div>
+      <div class="modal-title">🐓 Target tabungan baru</div>
       <button class="icon-btn" data-close="modalGoal">✕</button>
     </div>
     <div class="field">
@@ -1109,7 +1222,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.1.0';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -1139,7 +1252,7 @@ let closingInitFlags = { meta:false, categories:false, transactions:false };
 let closingChecked = false;
 let closingRunning = false;
 
-const CATEGORY_ICONS = ['🍽️','🚗','🏠','🛒','💊','🎓','🎁','🧾','📱','💡','🐾','✈️','🎉','🧴','🏦','💼','🐷','☕'];
+const CATEGORY_ICONS = ['🍽️','🚗','🏠','🛒','💊','🎓','🎁','🧾','📱','💡','🐾','✈️','🎉','🧴','🏦','💼','🐓','☕'];
 const CATEGORY_COLORS = [
   { solid:'#6D4AFF', soft:'#ECE6FF' }, // violet
   { solid:'#F0355A', soft:'#FFE2E9' }, // rose
@@ -1393,6 +1506,20 @@ function attachListeners(){
     }
     debtPayments = snap.docs.map(d=>({ id:d.id, ...d.data() }));
     debtPaymentsReady = true;
+    render();
+  });
+  onSnapshot(catDocRef(), (snap)=>{
+    if(catDirty) return;   // jangan timpa perubahan lokal yang belum tersimpan
+    if(!snap.exists()){
+      cat = { ...CAT_DEFAULT, t: Date.now() };
+      catCommit();
+    }else{
+      cat = { ...CAT_DEFAULT, ...snap.data() };
+    }
+    render();
+  });
+  onSnapshot(query(petNotesColRef(), orderBy('createdAt','desc')), (snap)=>{
+    petNotes = snap.docs.map(d=>({ id:d.id, ...d.data() }));
     render();
   });
 }
@@ -1713,6 +1840,7 @@ function render(){
   renderPeriods();
   renderSavings();
   renderDebts();
+  renderCat();
 }
 
 function renderPeriodRuleHint(curStart, curEnd){
@@ -2250,7 +2378,7 @@ function fillGoldAutoSettings(){
 // =====================================================================
 // TABUNGAN (target tabungan) & HUTANG / PIUTANG
 // =====================================================================
-const SAVINGS_ICONS = ['🐷','🏠','🚗','✈️','🎓','💍','📱','🏥','🎁','💼','🏖️','👶'];
+const SAVINGS_ICONS = ['🐓','🏠','🚗','✈️','🎓','💍','📱','🏥','🎁','💼','🏖️','👶'];
 let selectedGoalIcon = SAVINGS_ICONS[0];
 let svEntryType = 'deposit';
 let svEntryGoalId = null;
@@ -2315,7 +2443,7 @@ function renderSavings(){
     : 'Belum ada target tabungan';
 
   if(!rows.length){
-    area.innerHTML = `<div class="empty-box"><span class="emoji">🐷</span>Belum ada target tabungan. Buat target (mis. Dana darurat, Liburan, DP rumah) lalu catat setoran secara berkala.<br><button class="link-btn teal" data-act="add-goal">+ Buat target pertama</button></div>`;
+    area.innerHTML = `<div class="empty-box"><span class="emoji">🐓</span>Belum ada target tabungan. Buat target (mis. Dana darurat, Liburan, DP rumah) lalu catat setoran secara berkala.<br><button class="link-btn teal" data-act="add-goal">+ Buat target pertama</button></div>`;
     return;
   }
   const today = todayISO();
@@ -2357,7 +2485,7 @@ function renderSavings(){
       <div class="fin-row fade-up" style="--accent:var(--teal);--accent-soft:var(--teal-soft);animation-delay:${i*40}ms">
         <div class="fin-top">
           <div class="fin-name-wrap">
-            <div class="fin-icon">${escapeHtml(g.icon || '🐷')}</div>
+            <div class="fin-icon">${escapeHtml(g.icon || '🐓')}</div>
             <div>
               <div class="fin-name">${escapeHtml(g.name || 'Target')}</div>
               <div class="fin-sub">Target ${formatRupiah(target)}</div>
@@ -2519,7 +2647,7 @@ async function saveSavingsGoal(data){
     }
     showToast('Target tabungan dibuat');
     sendTelegramMessage([
-      `🐷 <b>Target tabungan baru</b>`,
+      `🐓 <b>Target tabungan baru</b>`,
       `Nama: ${escapeHtml(data.name)}`,
       `Target: ${formatRupiah(data.target)}`,
       data.targetDate ? `Tercapai pada: ${formatDateHuman(data.targetDate)}` : null
@@ -2748,6 +2876,7 @@ const TAB_DEFS = {
   emas:     { view:'viewEmas',      btn:'btnTabEmas',      tag:'Tabungan emas bersama',       fab:'mode-emas',   cls:'tab-emas' },
   tabungan: { view:'viewTabungan',  btn:'btnTabTabungan',  tag:'Target tabungan bersama',     fab:'mode-tab',    cls:'tab-tab' },
   hutang:   { view:'viewHutang',    btn:'btnTabHutang',    tag:'Catatan hutang & piutang',    fab:'mode-hutang', cls:'tab-hutang' },
+  kucing:   { view:'viewKucing',     btn:'btnTabKucing',    tag:'Rawat kucing bareng 🐾',       cls:'tab-cat' },
   ai:       { view:'viewAI',        btn:'btnTabAI',        tag:'Saran finansial dari AI',     cls:'tab-ai' }
 };
 function setActiveTab(tab){
@@ -2762,7 +2891,7 @@ function setActiveTab(tab){
   const fab = document.getElementById('btnFab');
   ['mode-kas','mode-emas','mode-tab','mode-hutang'].forEach(c=>fab.classList.remove(c));
   if(TAB_DEFS[tab].fab) fab.classList.add(TAB_DEFS[tab].fab);
-  fab.classList.toggle('hidden', tab === 'ai');
+  fab.classList.toggle('hidden', !TAB_DEFS[tab].fab);
   document.getElementById('topbarTag').textContent = TAB_DEFS[tab].tag;
   if(tab === 'ai') renderAIHeader();
   window.scrollTo({ top:0 });
@@ -2993,7 +3122,7 @@ function setSvType(type){
     b.classList.remove('active-income','active-expense');
     if(b.dataset.type === type) b.classList.add(type === 'deposit' ? 'active-income' : 'active-expense');
   });
-  document.getElementById('svEntryTitle').textContent = type === 'deposit' ? '🐷 Setor tabungan' : '🐷 Tarik tabungan';
+  document.getElementById('svEntryTitle').textContent = type === 'deposit' ? '🐓 Setor tabungan' : '🐓 Tarik tabungan';
   document.getElementById('svMirrorLabel').textContent = type === 'deposit'
     ? 'Catat juga sebagai pengeluaran di Kas (uang keluar dari dana kas)'
     : 'Catat juga sebagai pemasukan di Kas (uang kembali ke dana kas)';
@@ -3031,7 +3160,7 @@ document.getElementById('btnSaveSvEntry').addEventListener('click', async ()=>{
   btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Menyimpan…';
   try{
     await addSavingsEntry({ goalId: g.id, goalName: g.name, type: svEntryType, amount, note, date, mirror });
-    showToast(svEntryType === 'deposit' ? 'Setoran disimpan 🐷' : 'Penarikan disimpan');
+    showToast(svEntryType === 'deposit' ? 'Setoran disimpan 🐓' : 'Penarikan disimpan');
     closeModal('modalSvEntry');
   }catch(e){
     console.error('addSavingsEntry', e);
@@ -3193,6 +3322,249 @@ document.getElementById('btnCheckUpdate').addEventListener('click', async ()=>{
   btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Memeriksa…';
   try{ await checkForUpdate(true); }finally{ btn.disabled = false; btn.textContent = orig; }
 });
+
+// =====================================================================
+// KUCING KITA — mini game rawat kucing bersama (data bersama di Firestore)
+// =====================================================================
+const CAT_DEFAULT = { name:'Mochi', hunger:80, happy:80, clean:80, t:0, xp:0, coins:20, owned:[], equip:'',
+  streak:0, lastClaim:'', bonusDate:'', daily:{ date:'', feed:0, play:0, bath:0, pet:0, claimed:[] } };
+const CAT_ACC = [ {id:'bow',e:'🎀',n:'Pita',p:30}, {id:'glasses',e:'🕶️',n:'Kacamata',p:50}, {id:'hat',e:'🎩',n:'Topi',p:70}, {id:'crown',e:'👑',n:'Mahkota',p:120} ];
+const CAT_DECAY = { hunger:5, happy:3, clean:2 };   // turun per jam
+let cat = null, catDirty = false, catTimer = null, catKey = '', bubbleUntil = 0, noteMood = '😊';
+let petNotes = [];
+function catDocRef(){ return doc(db, 'bukukas_shared', SHARED_SPACE_ID, 'pet', 'cat'); }
+function petNotesColRef(){ return collection(db, 'bukukas_shared', SHARED_SPACE_ID, 'petNotes'); }
+
+const QUEST_POOL = {
+  feed1:{ t:'Beri makan kucing', e:'🍖', goal:1, xp:12, fish:8, get:()=>catDaily().feed },
+  play2:{ t:'Ajak main 2x', e:'🧶', goal:2, xp:15, fish:10, get:()=>catDaily().play },
+  bath1:{ t:'Mandikan kucing', e:'🛁', goal:1, xp:12, fish:8, get:()=>catDaily().bath },
+  pet5:{ t:'Elus kucing 5x', e:'💗', goal:5, xp:12, fish:8, get:()=>catDaily().pet },
+  note1:{ t:'Tulis catatan harian', e:'📔', goal:1, xp:15, fish:10, get:()=>petNotes.filter(n=>n.date===todayISO()).length },
+  tx1:{ t:'Catat 1 transaksi hari ini', e:'💰', goal:1, xp:20, fish:12, get:()=>transactions.filter(t=>t.date===todayISO()).length },
+  save1:{ t:'Setor ke tabungan ayam', e:'🐓', goal:1, xp:25, fish:15, get:()=>savingsEntries.filter(e=>e.type==='deposit' && e.date===todayISO()).length }
+};
+function dayQuests(){
+  let h = 0; for(const c of todayISO()) h = (h*31 + c.charCodeAt(0)) >>> 0;
+  return [ ['tx1','save1'][h%2], 'note1', ['feed1','play2'][(h>>1)%2], ['bath1','pet5'][(h>>2)%2] ];
+}
+function catDaily(){
+  const d = cat && cat.daily;
+  return (d && d.date === todayISO()) ? d : { date: todayISO(), feed:0, play:0, bath:0, pet:0, claimed:[] };
+}
+function catNow(){
+  const hrs = Math.max(0, (Date.now() - (cat.t || Date.now())) / 3600000);
+  const f = (k)=>Math.max(0, Math.min(100, Math.round(cat[k] - CAT_DECAY[k]*hrs)));
+  return { hunger:f('hunger'), happy:f('happy'), clean:f('clean') };
+}
+function catLevel(){ return Math.floor((cat.xp||0)/100) + 1; }
+function catCommit(){
+  catDirty = true;
+  clearTimeout(catTimer);
+  catTimer = setTimeout(()=>{
+    setDoc(catDocRef(), cat).catch(e=>console.warn('simpan kucing gagal', e)).finally(()=>{ catDirty = false; });
+  }, 400);
+}
+function addXp(n){
+  const before = catLevel();
+  cat.xp = (cat.xp||0) + n;
+  if(catLevel() > before) showToast(`🎉 ${cat.name} naik ke Level ${catLevel()}!`);
+}
+function catSay(text){
+  bubbleUntil = Date.now() + 3500;
+  document.getElementById('catBubble').textContent = text;
+  setTimeout(renderCat, 3600);
+}
+function catFx(emoji, n){
+  const box = document.getElementById('catFx');
+  for(let i=0;i<(n||3);i++){
+    const s = document.createElement('span');
+    s.textContent = emoji;
+    s.style.left = (30 + Math.random()*40) + '%';
+    s.style.animationDelay = (i*0.12) + 's';
+    box.appendChild(s);
+    setTimeout(()=>s.remove(), 1700);
+  }
+  const st = document.getElementById('catStage');
+  st.classList.remove('jump'); void st.offsetWidth; st.classList.add('jump');
+}
+function catAct(kind){
+  if(!cat) return;
+  const s = catNow(), d = { ...catDaily(), claimed:[...catDaily().claimed] };
+  const p = { hunger:s.hunger, happy:s.happy, clean:s.clean };
+  let xp = 0, fx = '', say = '';
+  if(kind === 'feed'){
+    if(s.hunger >= 90){ catSay('Aku masih kenyang banget 😸'); return; }
+    p.hunger = Math.min(100, s.hunger+30); p.happy = Math.min(100, s.happy+3); d.feed++; xp = 3; fx = '🍖'; say = 'Nyam nyam! Enak banget~ 😋';
+  }else if(kind === 'play'){
+    if(s.hunger < 15){ catSay('Terlalu lapar buat main… 🥺'); return; }
+    p.happy = Math.min(100, s.happy+25); p.hunger = Math.max(0, s.hunger-8); p.clean = Math.max(0, s.clean-5); d.play++; xp = 4; fx = '🧶'; say = 'Hehe seru! Kejar benangnya! 🧶';
+  }else if(kind === 'bath'){
+    if(s.clean >= 90){ catSay('Aku sudah wangi kok 😽'); return; }
+    p.clean = 100; p.happy = Math.max(0, s.happy-5); d.bath++; xp = 3; fx = '🫧'; say = 'Brrr… tapi jadi wangi! ✨';
+  }else{
+    p.happy = Math.min(100, s.happy+4); d.pet++; xp = 1; fx = '💗'; say = ['Purr purr… 😽','Mmm enak dielus~ 💕','Meow! 🐾'][Math.floor(Math.random()*3)];
+  }
+  Object.assign(cat, p, { t: Date.now(), daily: d });
+  addXp(xp);
+  catFx(fx, kind === 'pet' ? 1 : 4);
+  catSay(say);
+  catCommit();
+  renderCat();
+}
+function claimQuest(id){
+  const q = QUEST_POOL[id]; if(!q || !cat) return;
+  const d = { ...catDaily(), claimed:[...catDaily().claimed] };
+  if(d.claimed.includes(id) || q.get() < q.goal) return;
+  d.claimed.push(id); cat.daily = d;
+  cat.coins = (cat.coins||0) + q.fish; addXp(q.xp);
+  const today = todayISO();
+  if(cat.lastClaim !== today){
+    const y = dateToLocalISO(new Date(Date.now() - 86400000));
+    cat.streak = cat.lastClaim === y ? (cat.streak||0) + 1 : 1;
+    cat.lastClaim = today;
+  }
+  showToast(`Quest selesai! +${q.xp} XP, +${q.fish} 🐟`);
+  if(dayQuests().every(x=>d.claimed.includes(x)) && cat.bonusDate !== today){
+    cat.bonusDate = today; cat.coins += 20; addXp(20);
+    setTimeout(()=>showToast('🎁 Semua quest selesai! Bonus +20 🐟 & +20 XP'), 1200);
+    catFx('🎉', 5);
+  }else catFx('⭐', 3);
+  catCommit(); renderCat();
+}
+function buyOrEquip(id){
+  const a = CAT_ACC.find(x=>x.id===id); if(!a || !cat) return;
+  cat.owned = cat.owned || [];
+  if(cat.owned.includes(id)){
+    cat.equip = cat.equip === id ? '' : id;
+  }else{
+    if((cat.coins||0) < a.p){ showToast('Ikanmu belum cukup 🐟', true); return; }
+    cat.coins -= a.p; cat.owned = [...cat.owned, id]; cat.equip = id;
+    catFx(a.e, 3); catSay(`Wah, ${a.n} baru! Aku keren ya? 😎`);
+  }
+  catCommit(); renderCat();
+}
+
+function catSvg(mood, equip){
+  const O='#FFB45A', D='#E8913A', L='#FFE3BD', P='#FF8FA3', K='#2B2140';
+  const eyes = {
+    happy: `<path d="M71 85 q9 -12 18 0 M111 85 q9 -12 18 0" stroke="${K}" stroke-width="4" fill="none" stroke-linecap="round"/>`,
+    ok: `<g class="blink"><ellipse cx="80" cy="84" rx="7" ry="9" fill="${K}"/><ellipse cx="120" cy="84" rx="7" ry="9" fill="${K}"/><circle cx="82.5" cy="80.5" r="2.6" fill="#fff"/><circle cx="122.5" cy="80.5" r="2.6" fill="#fff"/></g>`,
+    sad: `<ellipse cx="80" cy="86" rx="7" ry="9" fill="${K}"/><ellipse cx="120" cy="86" rx="7" ry="9" fill="${K}"/><circle cx="82.5" cy="82.5" r="2.6" fill="#fff"/><circle cx="122.5" cy="82.5" r="2.6" fill="#fff"/><path d="M68 70 l18 5 M132 70 l-18 5" stroke="${D}" stroke-width="3" stroke-linecap="round"/><ellipse cx="74" cy="102" rx="2.6" ry="4.5" fill="#7CC8FF"/>`,
+    grumpy: `<path d="M70 80 l18 7 M130 80 l-18 7" stroke="${K}" stroke-width="4.5" stroke-linecap="round"/><ellipse cx="80" cy="90" rx="5" ry="3.5" fill="${K}"/><ellipse cx="120" cy="90" rx="5" ry="3.5" fill="${K}"/>`
+  }[mood];
+  const mouth = { happy:'M90 102 q10 12 20 0 z', ok:'M92 103 q4 6 8 0 q4 6 8 0', sad:'M92 111 q8 -9 16 0', grumpy:'M92 110 q8 -7 16 0' }[mood];
+  const mouthStyle = mood === 'happy' ? `fill="${P}" stroke="${K}" stroke-width="2.5" stroke-linejoin="round"` : `fill="none" stroke="${K}" stroke-width="2.8" stroke-linecap="round"`;
+  const acc = { bow:`<text x="136" y="56" font-size="34" text-anchor="middle">🎀</text>`, glasses:`<text x="100" y="98" font-size="58" text-anchor="middle">🕶️</text>`,
+                hat:`<text x="100" y="40" font-size="52" text-anchor="middle">🎩</text>`, crown:`<text x="100" y="38" font-size="46" text-anchor="middle">👑</text>` }[equip] || '';
+  return `<svg viewBox="0 0 200 195" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="100" cy="186" rx="60" ry="8" fill="rgba(0,0,0,.14)"/>
+    <path class="tail" d="M140 160 q42 -8 32 -52" stroke="${O}" stroke-width="15" fill="none" stroke-linecap="round"/>
+    <ellipse cx="100" cy="150" rx="46" ry="34" fill="${O}"/>
+    <ellipse cx="100" cy="158" rx="26" ry="22" fill="${L}"/>
+    <ellipse cx="78" cy="181" rx="15" ry="8" fill="${L}"/><ellipse cx="122" cy="181" rx="15" ry="8" fill="${L}"/>
+    <polygon points="60,62 64,16 98,44" fill="${O}"/><polygon points="140,62 136,16 102,44" fill="${O}"/>
+    <polygon points="69,52 71,30 88,44" fill="${P}"/><polygon points="131,52 129,30 112,44" fill="${P}"/>
+    <circle cx="100" cy="86" r="47" fill="${O}"/>
+    <path d="M100 42 v11 M89 44 l2 9 M111 44 l-2 9" stroke="${D}" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="68" cy="101" r="8" fill="${P}" opacity=".45"/><circle cx="132" cy="101" r="8" fill="${P}" opacity=".45"/>
+    ${eyes}
+    <polygon points="95,94 105,94 100,100" fill="${P}"/>
+    <path d="${mouth}" ${mouthStyle}/>
+    <path d="M62 97 l-24 -5 M62 104 l-24 4 M138 97 l24 -5 M138 104 l24 4" stroke="${K}" stroke-width="1.8" stroke-linecap="round" opacity=".55"/>
+    ${acc}
+  </svg>`;
+}
+
+function renderCat(){
+  if(!cat) return;
+  const s = catNow(), avg = (s.hunger + s.happy + s.clean) / 3;
+  const mood = avg >= 70 ? 'happy' : avg >= 40 ? 'ok' : avg >= 20 ? 'sad' : 'grumpy';
+  const key = mood + '|' + (cat.equip || '');
+  if(key !== catKey){ catKey = key; document.getElementById('catStage').innerHTML = catSvg(mood, cat.equip); }
+  const hr = new Date().getHours(), night = hr >= 18 || hr < 5;
+  document.getElementById('catScene').classList.toggle('night', night);
+  document.getElementById('catSky').textContent = night ? '🌙' : '☀️';
+  document.getElementById('catName').textContent = cat.name + ' ✏️';
+  document.getElementById('catLevel').textContent = 'Lv ' + catLevel();
+  document.getElementById('catCoins').textContent = '🐟 ' + (cat.coins||0);
+  const y = dateToLocalISO(new Date(Date.now() - 86400000));
+  document.getElementById('catStreak').textContent = '🔥 ' + ((cat.lastClaim === todayISO() || cat.lastClaim === y) ? (cat.streak||0) : 0) + ' hari';
+  document.getElementById('catXpFill').style.width = ((cat.xp||0) % 100) + '%';
+  document.getElementById('barHunger').style.width = s.hunger + '%';
+  document.getElementById('barHappy').style.width = s.happy + '%';
+  document.getElementById('barClean').style.width = s.clean + '%';
+  if(Date.now() > bubbleUntil){
+    let line;
+    if(s.hunger < 25) line = 'Perutku keroncongan… kasih makan dong 🥺';
+    else if(s.clean < 25) line = 'Bulu-buluku kusut… mandi yuk 🫧';
+    else if(s.happy < 25) line = 'Aku bosan… main yuk? 🧶';
+    else line = ['Meow~ makasih sudah merawatku bareng! 💕','Purr purr… hari ini seru ya 🐾','Ayo selesaikan quest hari ini! ⭐'][hr % 3];
+    document.getElementById('catBubble').textContent = line;
+  }
+  // quest
+  const d = catDaily(), ids = dayQuests(); let done = 0;
+  document.getElementById('questList').innerHTML = ids.map(id=>{
+    const q = QUEST_POOL[id], v = Math.min(q.get(), q.goal), claimed = d.claimed.includes(id);
+    if(claimed) done++;
+    const ready = !claimed && v >= q.goal;
+    return `<div class="quest ${claimed?'done':''}"><div class="q-ic">${q.e}</div>
+      <div class="q-body"><div class="q-t">${q.t}</div><div class="q-sub">${v}/${q.goal} · +${q.xp} XP · +${q.fish} 🐟</div>
+      <div class="prog-track" style="height:6px;margin-top:6px;"><div class="prog-fill" style="width:${v/q.goal*100}%;--accent:var(--amber)"></div></div></div>
+      ${claimed ? '<span class="badge ok">Selesai ✅</span>' : ready ? `<button class="link-btn teal" data-claim="${id}">Ambil 🎁</button>` : '<span class="badge">Belum</span>'}</div>`;
+  }).join('');
+  document.getElementById('questTitle').textContent = `🎯 Quest hari ini (${done}/${ids.length})`;
+  document.getElementById('questBonus').textContent = done === ids.length ? '🎉 Hebat! Semua quest hari ini selesai. Sampai jumpa besok!' : 'Selesaikan semua quest untuk bonus +20 🐟. Quest berganti setiap hari.';
+  // toko
+  const owned = cat.owned || [];
+  document.getElementById('catShop').innerHTML = CAT_ACC.map(a=>{
+    const has = owned.includes(a.id), on = cat.equip === a.id;
+    return `<div class="shop-item ${on?'on':''}"><div class="e">${a.e}</div><div class="n">${a.n}</div>
+      <button data-shop="${a.id}">${has ? (on ? 'Dilepas' : 'Pakai') : a.p + ' 🐟'}</button></div>`;
+  }).join('');
+  // catatan
+  const list = document.getElementById('noteList');
+  list.innerHTML = petNotes.length ? petNotes.slice(0, 40).map(n=>`
+    <div class="note-card"><div class="d"><span>${n.mood || '😊'} ${shortDate(n.date)}</span><button class="tiny-btn" data-delnote="${n.id}" aria-label="Hapus">✕</button></div>
+    <div class="tx">${escapeHtml(n.text || '')}</div></div>`).join('')
+    : '<div class="empty-box"><span class="emoji">📔</span>Belum ada catatan. Tulis cerita pertamamu hari ini!</div>';
+}
+
+// ---------- Kucing: event ----------
+document.getElementById('catStage').addEventListener('click', ()=>catAct('pet'));
+document.querySelectorAll('[data-cat]').forEach(b=>b.addEventListener('click', ()=>catAct(b.dataset.cat)));
+document.getElementById('catName').addEventListener('click', ()=>{
+  if(!cat) return;
+  const n = prompt('Nama kucingnya?', cat.name);
+  if(n && n.trim()){ cat.name = n.trim().slice(0, 14); catCommit(); renderCat(); }
+});
+document.getElementById('questList').addEventListener('click', (e)=>{
+  const b = e.target.closest('[data-claim]'); if(b) claimQuest(b.dataset.claim);
+});
+document.getElementById('catShop').addEventListener('click', (e)=>{
+  const b = e.target.closest('[data-shop]'); if(b) buyOrEquip(b.dataset.shop);
+});
+document.querySelectorAll('#noteMoods button').forEach(b=>b.addEventListener('click', ()=>{
+  noteMood = b.dataset.m;
+  document.querySelectorAll('#noteMoods button').forEach(x=>x.classList.toggle('on', x === b));
+}));
+document.getElementById('btnSaveNote').addEventListener('click', async ()=>{
+  const ta = document.getElementById('noteText'), text = ta.value.trim();
+  if(!text){ showToast('Tulis dulu catatannya ya', true); return; }
+  if(!uid){ showToast('Belum terhubung ke Firebase, coba lagi sebentar.', true); return; }
+  try{
+    await addDoc(petNotesColRef(), { date: todayISO(), text, mood: noteMood, createdAt: serverTimestamp() });
+    ta.value = '';
+    catSay('Meow~ catatan tersimpan! 📔');
+    showToast('Catatan tersimpan 🐾');
+  }catch(e){ console.error('simpan catatan', e); showToast(errorMessage(e), true); }
+});
+document.getElementById('noteList').addEventListener('click', async (e)=>{
+  const b = e.target.closest('[data-delnote]'); if(!b) return;
+  if(!confirm('Hapus catatan ini?')) return;
+  try{ await deleteDoc(doc(petNotesColRef(), b.dataset.delnote)); }catch(err){ showToast(errorMessage(err), true); }
+});
+setInterval(()=>renderCat(), 60000);
 
 // ---------- Saran finansial AI ----------
 // Analisis lokal (rule-based) selalu jalan tanpa internet/API key. Jika API key diisi di
