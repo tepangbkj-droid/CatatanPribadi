@@ -616,6 +616,26 @@
   .shop-tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
   .shop-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
   .shop-grid .shop-item{min-width:0;}
+  /* ===== Lokasi (cek lokasi bersama) ===== */
+  .tab-btn.active.tab-loc{color:#0A7FB0;background:var(--blue-soft);}
+  .hero.hero-loc{background:linear-gradient(150deg,#0C8F83 0%,#14B8A6 45%,#2E8BFF 100%);box-shadow:0 16px 34px -14px rgba(20,184,166,0.55);}
+  .loc-card{padding:16px;border:1px solid var(--line);border-radius:var(--radius-m);background:var(--card);box-shadow:0 8px 18px -14px rgba(34,26,61,0.4);margin-top:16px;}
+  .loc-card .field{margin-bottom:10px;}
+  .loc-status{font-size:12.5px;color:var(--ink-soft);margin-top:10px;line-height:1.45;}
+  .loc-mapbox{margin-top:16px;border-radius:var(--radius-m);overflow:hidden;border:1px solid var(--line);background:var(--blue-soft);position:relative;}
+  #locMap{height:280px;width:100%;z-index:0;}
+  .loc-map-empty{padding:26px 16px;text-align:center;color:var(--ink-soft);font-size:13px;}
+  .loc-pin{width:34px;height:34px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,.35);}
+  .loc-pin span{transform:rotate(45deg);color:#fff;font-weight:700;font-size:14px;font-family:var(--font-head);}
+  .loc-row{padding:14px;border:1px solid var(--line);border-radius:var(--radius-m);background:var(--card);box-shadow:0 8px 18px -14px rgba(34,26,61,0.4);}
+  .loc-row.sel{border-color:var(--teal);box-shadow:0 0 0 2px var(--teal-soft);}
+  .loc-top{display:flex;align-items:center;gap:12px;}
+  .loc-ava{width:42px;height:42px;border-radius:50%;flex:0 0 auto;color:#fff;font-weight:700;font-family:var(--font-head);display:flex;align-items:center;justify-content:center;font-size:17px;}
+  .loc-name{font-weight:700;font-size:15px;overflow-wrap:anywhere;}
+  .loc-sub{font-size:12.5px;color:var(--ink-soft);margin-top:2px;line-height:1.4;}
+  .loc-sub.live{color:#0A8C5A;}
+  .loc-acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .loc-acts .link-btn{text-decoration:none;}
 </style>
 </head>
 <body>
@@ -863,6 +883,37 @@
     </div>
 
     <!-- ===== VIEW: SARAN AI ===== -->
+    <!-- ===== VIEW: LOKASI ===== -->
+    <div id="viewLokasi" class="view-pane">
+      <div class="hero hero-loc fade-up">
+        <div class="hero-label">📍 Cek lokasi bersama</div>
+        <div class="hero-number" style="font-size:24px;" id="locHeroTitle">Belum ada yang berbagi</div>
+        <div class="hero-sub">Masing-masing bebas memilih mau berbagi lokasi atau tidak.</div>
+      </div>
+
+      <div class="loc-card">
+        <div class="field">
+          <label>Nama saya di peta</label>
+          <input type="text" id="locNameInput" maxlength="20" placeholder="mis. Aku, Ayah, Ibu">
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-teal" id="btnLocToggle">📍 Bagikan lokasi saya</button>
+        </div>
+        <div class="loc-status" id="locMyStatus">Lokasi hanya dibagikan setelah kamu menekan tombol di atas, dan bisa dimatikan kapan saja.</div>
+      </div>
+
+      <div class="loc-mapbox"><div id="locMap"></div></div>
+
+      <div class="section" style="margin-top:22px;">
+        <div class="section-head">
+          <div class="section-title">👥 Anggota</div>
+          <button class="link-btn teal" id="btnLocRefresh">🔄 Muat ulang</button>
+        </div>
+        <div class="fin-list" id="locList"></div>
+      </div>
+      <div class="field-hint" style="margin-top:14px;">ℹ️ Lokasi diperbarui otomatis selama aplikasi terbuka di HP masing-masing. Kalau aplikasi ditutup, yang terlihat adalah lokasi terakhir beserta waktunya. Tombol “Minta update” akan memicu HP orang itu memperbarui lokasi bila aplikasinya sedang terbuka.</div>
+    </div>
+
     <div id="viewAI" class="view-pane">
       <div class="hero hero-ai fade-up">
         <div class="hero-label">🤖 Ringkasan saran finansial</div>
@@ -888,6 +939,7 @@
       <button class="tab-btn" id="btnTabTabungan" data-tab="tabungan"><span class="tab-ic">🐓</span>Tabungan</button>
       <button class="tab-btn" id="btnTabHutang" data-tab="hutang"><span class="tab-ic">📒</span>Hutang</button>
       <button class="tab-btn" id="btnTabKucing" data-tab="kucing"><span class="tab-ic">🐱</span>Kucing</button>
+      <button class="tab-btn" id="btnTabLokasi" data-tab="lokasi"><span class="tab-ic">📍</span>Lokasi</button>
       <button class="tab-btn" id="btnTabAI" data-tab="ai"><span class="tab-ic">🤖</span>AI</button>
     </div>
   </div>
@@ -1221,6 +1273,8 @@
 
 <div class="toast" id="toast"></div>
 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script type="module">
@@ -1265,7 +1319,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.2.0';
+const APP_VERSION = '2.3.0';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -1565,7 +1619,327 @@ function attachListeners(){
     petNotes = snap.docs.map(d=>({ id:d.id, ...d.data() }));
     render();
   });
+  attachLokasiListener();
 }
+
+// ---------- Lokasi (cek lokasi bersama, ala Life360) ----------
+// Tiap perangkat punya ID sendiri. Lokasi hanya ditulis ke Firestore bila pemilik perangkat
+// menyalakan "Bagikan lokasi saya". Semua orang di ruang data bersama bisa melihat daftar & peta.
+const LOC_COLORS = ['#6D4AFF','#0FAE73','#F0355A','#F5A324','#2E8BFF','#EC4899','#14B8A6'];
+const LOC_STALE_MS = 10 * 60 * 1000;     // >10 menit tanpa update = "terakhir terlihat"
+const LOC_MIN_INTERVAL = 30 * 1000;      // jarak minimal antar penulisan saat bergerak
+const LOC_HEARTBEAT = 3 * 60 * 1000;     // tetap tulis tiap 3 menit walau diam
+const LOC_MIN_MOVE_M = 25;               // gerak minimal (meter) untuk memicu penulisan
+let locMembers = [];
+let locMap = null, locMarkers = {}, locMapFitted = false;
+let locWatchId = null, locLastWrite = 0, locLastPos = null, locSelectedId = null;
+let locHandledPing = null, locListenerOn = false, locTick = null;
+
+function locStore(key, val){
+  try{
+    if(val === undefined) return localStorage.getItem(key);
+    if(val === null) localStorage.removeItem(key); else localStorage.setItem(key, val);
+  }catch(e){}
+  return null;
+}
+function locDeviceId(){
+  let id = locStore('loc_device_id');
+  if(!id){ id = 'dev_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36); locStore('loc_device_id', id); }
+  return id;
+}
+function locColorFor(id){
+  let h = 0; for(const ch of String(id)) h = (h*31 + ch.charCodeAt(0)) >>> 0;
+  return LOC_COLORS[h % LOC_COLORS.length];
+}
+function locColRef(){ return collection(db, 'bukukas_shared', SHARED_SPACE_ID, 'locations'); }
+function locDocRef(id){ return doc(db, 'bukukas_shared', SHARED_SPACE_ID, 'locations', id || locDeviceId()); }
+function locMyName(){ return (locStore('loc_name') || '').trim(); }
+function locIsSharing(){ return locStore('loc_sharing') === 'on'; }
+
+function locDistanceM(a, b){
+  const R = 6371000, rad = x => x*Math.PI/180;
+  const dLat = rad(b.lat-a.lat), dLng = rad(b.lng-a.lng);
+  const h = Math.sin(dLat/2)**2 + Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+function locFmtDist(m){ return m < 1000 ? `${Math.round(m/10)*10} m` : `${(m/1000).toFixed(m<10000?1:0)} km`; }
+function locRel(ms){
+  if(!ms) return 'belum ada data';
+  const s = Math.max(0, Math.round((Date.now()-ms)/1000));
+  if(s < 60) return 'baru saja';
+  const m = Math.round(s/60); if(m < 60) return `${m} menit lalu`;
+  const h = Math.round(m/60); if(h < 24) return `${h} jam lalu`;
+  return `${Math.round(h/24)} hari lalu`;
+}
+
+function attachLokasiListener(){
+  if(locListenerOn) return;
+  locListenerOn = true;
+  onSnapshot(locColRef(), (snap)=>{
+    locMembers = snap.docs.map(d=>{
+      const x = d.data({ serverTimestamps:'estimate' });
+      return { id:d.id, ...x, updatedMs: x.updatedAt && x.updatedAt.toMillis ? x.updatedAt.toMillis() : null };
+    });
+    // permintaan "minta update" untuk perangkat ini
+    const me = locMembers.find(m=>m.id===locDeviceId());
+    if(me){
+      if(locHandledPing === null){ locHandledPing = me.pingAt || 0; }
+      else if(me.pingAt && me.pingAt > locHandledPing){
+        locHandledPing = me.pingAt;
+        if(locIsSharing() && Date.now() - me.pingAt < 2*60*1000) locPushNow(true);
+      }
+    }else if(locHandledPing === null){ locHandledPing = 0; }
+    renderLokasi();
+  }, (err)=>console.warn('Listener lokasi gagal', err));
+  // Lanjutkan berbagi otomatis jika sebelumnya sudah dinyalakan di perangkat ini
+  if(locIsSharing() && locMyName()) locStartWatch();
+  locTick = setInterval(()=>{ if(activeTab === 'lokasi') renderLokasi(); }, 30000);
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'visible' && locIsSharing()) locPushNow(true);
+  });
+}
+
+async function locBattery(){
+  try{
+    if(navigator.getBattery){ const b = await navigator.getBattery(); return { battery: Math.round(b.level*100), charging: !!b.charging }; }
+  }catch(e){}
+  return { battery:null, charging:null };
+}
+
+async function locWrite(pos){
+  if(!uid || !pos) return;
+  const bat = await locBattery();
+  try{
+    await setDoc(locDocRef(), {
+      name: locMyName() || 'Tanpa nama',
+      color: locColorFor(locDeviceId()),
+      sharing: true,
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude,
+      accuracy: Math.round(pos.coords.accuracy || 0),
+      battery: bat.battery, charging: bat.charging,
+      updatedAt: serverTimestamp()
+    }, { merge:true });
+    locLastWrite = Date.now();
+    locLastPos = { lat:pos.coords.latitude, lng:pos.coords.longitude };
+  }catch(e){ console.error('locWrite', e); showToast(errorMessage(e), true); }
+}
+
+function locOnPosition(pos){
+  const now = Date.now();
+  const cur = { lat:pos.coords.latitude, lng:pos.coords.longitude };
+  const moved = locLastPos ? locDistanceM(locLastPos, cur) : Infinity;
+  const since = now - locLastWrite;
+  if((moved >= LOC_MIN_MOVE_M && since >= LOC_MIN_INTERVAL) || since >= LOC_HEARTBEAT || !locLastPos){
+    locWrite(pos);
+  }
+}
+function locOnError(err){
+  const msg = err && err.code === 1
+    ? 'Izin lokasi ditolak. Aktifkan izin lokasi untuk aplikasi ini di pengaturan HP.'
+    : err && err.code === 3 ? 'Lokasi belum didapat (timeout), mencoba lagi…' : 'Tidak bisa membaca lokasi perangkat.';
+  if(err && err.code === 1){ locStopSharing(true); }
+  showToast(msg, true);
+}
+function locStartWatch(){
+  if(!navigator.geolocation){ showToast('Perangkat ini tidak mendukung lokasi.', true); return; }
+  if(locWatchId !== null) return;
+  locWatchId = navigator.geolocation.watchPosition(locOnPosition, locOnError,
+    { enableHighAccuracy:true, maximumAge:15000, timeout:30000 });
+}
+function locPushNow(force){
+  if(!navigator.geolocation || !locIsSharing()) return;
+  navigator.geolocation.getCurrentPosition(
+    (pos)=>{ locWrite(pos); },
+    (err)=>{ if(force) locOnError(err); },
+    { enableHighAccuracy:true, maximumAge:0, timeout:20000 }
+  );
+}
+
+async function locStartSharing(){
+  const input = document.getElementById('locNameInput');
+  const name = input.value.trim();
+  if(!name){ showToast('Isi dulu nama kamu', true); input.focus(); return; }
+  if(!navigator.geolocation){ showToast('Perangkat ini tidak mendukung lokasi.', true); return; }
+  locStore('loc_name', name);
+  locStore('loc_sharing', 'on');
+  locLastPos = null; locLastWrite = 0;
+  locStartWatch();
+  locPushNow(true);
+  showToast('Lokasi mulai dibagikan 📍');
+  renderLokasi();
+}
+async function locStopSharing(silent){
+  locStore('loc_sharing', 'off');
+  if(locWatchId !== null){ navigator.geolocation.clearWatch(locWatchId); locWatchId = null; }
+  locLastPos = null;
+  try{
+    if(uid) await setDoc(locDocRef(), {
+      name: locMyName() || 'Tanpa nama', color: locColorFor(locDeviceId()),
+      sharing:false, lat:null, lng:null, accuracy:null, battery:null, charging:null,
+      updatedAt: serverTimestamp()
+    }, { merge:true });
+  }catch(e){ console.error('locStop', e); }
+  if(!silent) showToast('Berbagi lokasi dimatikan');
+  renderLokasi();
+}
+async function locPing(id){
+  const target = locMembers.find(m=>m.id===id);
+  try{
+    await setDoc(locDocRef(id), { pingAt: Date.now(), pingBy: locMyName() || 'Seseorang' }, { merge:true });
+    showToast(`Permintaan update dikirim ke ${target ? target.name : 'dia'}`);
+  }catch(e){ showToast(errorMessage(e), true); }
+}
+async function locRemoveMe(){
+  if(!confirm('Hapus data lokasi dan namamu dari daftar?')) return;
+  if(locWatchId !== null){ navigator.geolocation.clearWatch(locWatchId); locWatchId = null; }
+  locStore('loc_sharing', 'off');
+  try{ await deleteDoc(locDocRef()); showToast('Data lokasimu dihapus'); }
+  catch(e){ showToast(errorMessage(e), true); }
+  renderLokasi();
+}
+
+// ----- Peta -----
+function locEnsureMap(){
+  const el = document.getElementById('locMap');
+  if(locMap || !el) return;
+  if(typeof L === 'undefined'){
+    el.outerHTML = '<div class="loc-map-empty" id="locMap">Peta tidak bisa dimuat (offline?). Daftar anggota di bawah tetap bisa dibuka lewat Google Maps.</div>';
+    return;
+  }
+  locMap = L.map('locMap', { zoomControl:true, attributionControl:true }).setView([-2.5, 118], 4);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom:19, attribution:'&copy; OpenStreetMap'
+  }).addTo(locMap);
+}
+function locPinIcon(m){
+  const initial = escapeHtml((m.name || '?').trim().charAt(0).toUpperCase() || '?');
+  return L.divIcon({
+    className:'', iconSize:[34,34], iconAnchor:[17,34],
+    html:`<div class="loc-pin" style="background:${m.color || '#14B8A6'}"><span>${initial}</span></div>`
+  });
+}
+function locUpdateMap(){
+  if(!locMap) return;
+  const live = locMembers.filter(m=>m.sharing && typeof m.lat === 'number' && typeof m.lng === 'number');
+  const liveIds = new Set(live.map(m=>m.id));
+  Object.keys(locMarkers).forEach(id=>{ if(!liveIds.has(id)){ locMap.removeLayer(locMarkers[id]); delete locMarkers[id]; } });
+  live.forEach(m=>{
+    const ll = [m.lat, m.lng];
+    const tip = `${m.name || 'Tanpa nama'} • ${locRel(m.updatedMs)}`;
+    if(locMarkers[m.id]){
+      locMarkers[m.id].setLatLng(ll).setIcon(locPinIcon(m)).setTooltipContent(tip);
+    }else{
+      locMarkers[m.id] = L.marker(ll, { icon:locPinIcon(m) }).addTo(locMap).bindTooltip(tip, { direction:'top', offset:[0,-30] });
+      locMarkers[m.id].on('click', ()=>locFocus(m.id));
+    }
+  });
+  if(!locMapFitted && live.length){
+    locMapFitted = true;
+    if(live.length === 1) locMap.setView([live[0].lat, live[0].lng], 16);
+    else locMap.fitBounds(live.map(m=>[m.lat, m.lng]), { padding:[40,40], maxZoom:16 });
+  }
+}
+function locFocus(id){
+  const m = locMembers.find(x=>x.id===id);
+  locSelectedId = id;
+  if(m && locMap && typeof m.lat === 'number'){
+    locMap.flyTo([m.lat, m.lng], 17, { duration:.8 });
+    if(locMarkers[id]) locMarkers[id].openTooltip();
+    document.getElementById('locMap').scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+  renderLokasi();
+}
+
+// ----- Render -----
+function renderLokasi(){
+  const list = document.getElementById('locList');
+  if(!list) return;
+  const myId = locDeviceId();
+  const sharing = locIsSharing();
+
+  const nameInput = document.getElementById('locNameInput');
+  if(nameInput && document.activeElement !== nameInput && !nameInput.value) nameInput.value = locMyName();
+  nameInput.disabled = sharing;
+  const tgl = document.getElementById('btnLocToggle');
+  tgl.textContent = sharing ? '⏹️ Hentikan berbagi lokasi' : '📍 Bagikan lokasi saya';
+  tgl.className = 'btn ' + (sharing ? 'btn-danger' : 'btn-teal');
+  document.getElementById('locMyStatus').textContent = sharing
+    ? '🟢 Lokasimu sedang dibagikan ke semua anggota selama aplikasi terbuka.'
+    : 'Lokasi hanya dibagikan setelah kamu menekan tombol di atas, dan bisa dimatikan kapan saja.';
+
+  const liveCount = locMembers.filter(m=>m.sharing && typeof m.lat === 'number').length;
+  document.getElementById('locHeroTitle').textContent = liveCount
+    ? `${liveCount} orang berbagi lokasi` : 'Belum ada yang berbagi';
+
+  const me = locMembers.find(m=>m.id===myId);
+  const myPos = me && me.sharing && typeof me.lat === 'number' ? { lat:me.lat, lng:me.lng } : null;
+  const sorted = [...locMembers].sort((a,b)=>{
+    if(a.id===myId) return -1; if(b.id===myId) return 1;
+    if(!!a.sharing !== !!b.sharing) return a.sharing ? -1 : 1;
+    return (a.name||'').localeCompare(b.name||'');
+  });
+
+  if(!sorted.length){
+    list.innerHTML = '<div class="empty-box">Belum ada anggota. Isi nama dan tekan “Bagikan lokasi saya” — minta yang lain melakukan hal yang sama di HP mereka.</div>';
+  }else{
+    list.innerHTML = sorted.map(m=>{
+      const isMe = m.id === myId;
+      const hasPos = m.sharing && typeof m.lat === 'number' && typeof m.lng === 'number';
+      const fresh = hasPos && m.updatedMs && (Date.now()-m.updatedMs) < LOC_STALE_MS;
+      let sub;
+      if(hasPos){
+        sub = `${fresh ? '📍 Terlihat' : '🕒 Terakhir terlihat'} ${locRel(m.updatedMs)}`;
+        if(m.accuracy) sub += ` • ±${m.accuracy} m`;
+      }else{
+        sub = m.updatedMs ? `Tidak berbagi lokasi • ${locRel(m.updatedMs)}` : 'Tidak berbagi lokasi';
+      }
+      const extras = [];
+      if(typeof m.battery === 'number') extras.push(`${m.charging ? '🔌' : '🔋'} ${m.battery}%`);
+      if(hasPos && myPos && !isMe) extras.push(`↔ ${locFmtDist(locDistanceM(myPos, {lat:m.lat,lng:m.lng}))} darimu`);
+      const maps = hasPos ? `https://www.google.com/maps?q=${m.lat},${m.lng}` : '';
+      return `
+        <div class="loc-row${locSelectedId===m.id?' sel':''}">
+          <div class="loc-top">
+            <div class="loc-ava" style="background:${escapeHtml(m.color || '#14B8A6')}${hasPos?'':';opacity:.45'}">${escapeHtml((m.name||'?').trim().charAt(0).toUpperCase()||'?')}</div>
+            <div style="min-width:0;flex:1;">
+              <div class="loc-name">${escapeHtml(m.name || 'Tanpa nama')}${isMe ? ' <span style="color:var(--ink-soft);font-weight:500;">(kamu)</span>' : ''}</div>
+              <div class="loc-sub${fresh?' live':''}">${escapeHtml(sub)}</div>
+              ${extras.length ? `<div class="loc-sub">${escapeHtml(extras.join(' • '))}</div>` : ''}
+            </div>
+          </div>
+          <div class="loc-acts">
+            ${hasPos ? `<button class="link-btn teal" data-locact="focus" data-id="${escapeHtml(m.id)}">🗺️ Cek lokasi</button>
+            <a class="link-btn" href="${maps}" target="_blank" rel="noopener">↗ Google Maps</a>` : ''}
+            ${!isMe ? `<button class="link-btn amber" data-locact="ping" data-id="${escapeHtml(m.id)}">🔔 Minta update</button>` : `<button class="link-btn rose" data-locact="remove" data-id="${escapeHtml(m.id)}">🗑️ Hapus saya</button>`}
+          </div>
+        </div>`;
+    }).join('');
+  }
+  locUpdateMap();
+}
+
+function onLokasiTabShown(){
+  locEnsureMap();
+  renderLokasi();
+  if(locMap) setTimeout(()=>{ locMap.invalidateSize(); }, 120);
+}
+document.getElementById('btnLocToggle').addEventListener('click', ()=>{
+  if(locIsSharing()) locStopSharing(); else locStartSharing();
+});
+document.getElementById('btnLocRefresh').addEventListener('click', ()=>{
+  if(locIsSharing()) locPushNow(true);
+  renderLokasi();
+  showToast('Daftar lokasi diperbarui');
+});
+document.getElementById('locList').addEventListener('click', (e)=>{
+  const b = e.target.closest('[data-locact]');
+  if(!b) return;
+  const id = b.dataset.id;
+  if(b.dataset.locact === 'focus') locFocus(id);
+  else if(b.dataset.locact === 'ping') locPing(id);
+  else if(b.dataset.locact === 'remove') locRemoveMe();
+});
 
 // ---------- Computation ----------
 function totalIncome(){ return transactions.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0); }
@@ -2920,6 +3294,7 @@ const TAB_DEFS = {
   tabungan: { view:'viewTabungan',  btn:'btnTabTabungan',  tag:'Target tabungan bersama',     fab:'mode-tab',    cls:'tab-tab' },
   hutang:   { view:'viewHutang',    btn:'btnTabHutang',    tag:'Catatan hutang & piutang',    fab:'mode-hutang', cls:'tab-hutang' },
   kucing:   { view:'viewKucing',     btn:'btnTabKucing',    tag:'Rawat kucing bareng 🐾',       cls:'tab-cat' },
+  lokasi:   { view:'viewLokasi',    btn:'btnTabLokasi',   tag:'Cek lokasi bersama',          cls:'tab-loc' },
   ai:       { view:'viewAI',        btn:'btnTabAI',        tag:'Saran finansial dari AI',     cls:'tab-ai' }
 };
 function setActiveTab(tab){
@@ -2937,6 +3312,7 @@ function setActiveTab(tab){
   fab.classList.toggle('hidden', !TAB_DEFS[tab].fab);
   document.getElementById('topbarTag').textContent = TAB_DEFS[tab].tag;
   if(tab === 'ai') renderAIHeader();
+  if(tab === 'lokasi') onLokasiTabShown();
   window.scrollTo({ top:0 });
 }
 Object.entries(TAB_DEFS).forEach(([key, def])=>{
