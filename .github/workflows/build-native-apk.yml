@@ -57,6 +57,11 @@ jobs:
         working-directory: native
         run: python3 scripts/patch_android.py
 
+      - name: Install ImageMagick
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+
       - name: Ikon app dari icon-512.png
         working-directory: native/android/app/src/main/res
         run: |
@@ -64,7 +69,7 @@ jobs:
           for d in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
             n=${d%%:*}; sz=${d##*:}
             mkdir -p mipmap-$n
-            convert "$GITHUB_WORKSPACE/icon-512.png" -resize ${sz}x${sz} mipmap-$n/ic_launcher.png
+            (command -v magick >/dev/null && magick "$GITHUB_WORKSPACE/icon-512.png" -resize ${sz}x${sz} mipmap-$n/ic_launcher.png) || convert "$GITHUB_WORKSPACE/icon-512.png" -resize ${sz}x${sz} mipmap-$n/ic_launcher.png
             cp mipmap-$n/ic_launcher.png mipmap-$n/ic_launcher_round.png
             rm -f mipmap-$n/ic_launcher_foreground.png
           done
