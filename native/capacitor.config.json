@@ -1,0 +1,10 @@
+{
+  "appId": "id.bukukas.app",
+  "appName": "Buku Kas",
+  "webDir": "www",
+  "server": {
+    "url": "https://tepangbkj-droid.github.io/CatatanPribadi/",
+    "cleartext": false,
+    "allowNavigation": ["tepangbkj-droid.github.io"]
+  }
+}
