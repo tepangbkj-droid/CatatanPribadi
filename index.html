@@ -1543,7 +1543,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.6.0';
+const APP_VERSION = '2.6.1';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -1637,16 +1637,45 @@ function errorMessage(e){
 function openModal(id){ document.getElementById(id).classList.remove('hidden'); }
 function closeModal(id){ document.getElementById(id).classList.add('hidden'); }
 
-// ---------- Notifikasi perangkat (muncul saat ada transaksi baru) ----------
-function updateNotifBtn(){
-  const btn = document.getElementById('btnNotif');
-  if(!btn) return;
-  if(!('Notification' in window)){ btn.textContent = '🔕'; return; }
-  btn.textContent = Notification.permission === 'granted' ? '🔔' : '🔕';
+// ---------- Notifikasi perangkat (web & native) ----------
+function appLN(){ try{ return window.Capacitor.registerPlugin('LocalNotifications'); }catch(e){ return null; } }
+let appLNReady = false, appNotifSeq = 0;
+async function appLNChannels(){
+  if(appLNReady || !locNative()) return;
+  appLNReady = true;
+  const ln = appLN(); if(!ln) return;
+  try{
+    await ln.createChannel({ id:'sos', name:'SOS Darurat', description:'Alarm darurat dari anggota', importance:5, visibility:1, vibration:true });
+    await ln.createChannel({ id:'info', name:'Pemberitahuan', description:'Transaksi, lokasi, dan kabar', importance:3, vibration:true });
+  }catch(e){ console.warn('channel notifikasi', e); }
 }
-function showLocalNotification(title, body){
+async function appNotifGranted(){
+  if(locNative()){ try{ return (await appLN().checkPermissions()).display === 'granted'; }catch(e){ return false; } }
+  return 'Notification' in window && Notification.permission === 'granted';
+}
+async function appNotifRequest(){
+  if(locNative()){
+    try{
+      const ok = (await appLN().requestPermissions()).display === 'granted';
+      locStore('notif_native', ok ? 'on' : 'off');
+      if(ok) appLNChannels();
+      return ok;
+    }catch(e){ showToast('Plugin notifikasi belum ada di APK ini — build ulang APK native (lihat PANDUAN-NATIVE).', true); return false; }
+  }
+  if(!('Notification' in window)) return false;
+  const perm = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
+  return perm === 'granted';
+}
+async function appNotify(title, body, urgent){
+  if(locNative()){
+    try{
+      appLNChannels();
+      await appLN().schedule({ notifications:[{ id: (Math.floor(Date.now()/1000) % 1000000)*10 + (appNotifSeq++ % 10), title, body, channelId: urgent ? 'sos' : 'info' }] });
+    }catch(e){ console.warn('notifikasi native', e); }
+    return;
+  }
   if(!('Notification' in window) || Notification.permission !== 'granted') return;
-  const opts = { body, icon: 'icon-192.png', badge: 'icon-192.png', vibrate: [80,40,80] };
+  const opts = { body, icon:'icon-192.png', badge:'icon-192.png', vibrate: urgent ? [500,200,500,200,500] : [80,40,80], requireInteraction: !!urgent };
   if(navigator.serviceWorker && navigator.serviceWorker.ready){
     navigator.serviceWorker.ready.then(reg=>{
       if(reg && reg.showNotification) reg.showNotification(title, opts);
@@ -1655,6 +1684,17 @@ function showLocalNotification(title, body){
   }else{
     try{ new Notification(title, opts); }catch(e){}
   }
+}
+function updateNotifBtn(){
+  const btn = document.getElementById('btnNotif');
+  if(!btn) return;
+  if(locNative()){ btn.textContent = locStore('notif_native') === 'on' ? '🔔' : '🔕'; return; }
+  if(!('Notification' in window)){ btn.textContent = '🔕'; return; }
+  btn.textContent = Notification.permission === 'granted' ? '🔔' : '🔕';
+}
+function showLocalNotification(title, body){
+  if(locNative() && locStore('notif_native') !== 'on') return;
+  appNotify(title, body, false);
 }
 function notifyNewTransaction(tx){
   const emoji = tx.type === 'income' ? '🟢' : '🔴';
@@ -1667,6 +1707,13 @@ function notifyNewGold(item){
   showLocalNotification('🪙 Emas baru ditambahkan', body);
 }
 async function requestNotifPermission(){
+  if(locNative()){
+    if(locStore('notif_native') === 'on' && await appNotifGranted()){ showToast('Notifikasi sudah aktif 🔔'); return; }
+    const ok = await appNotifRequest(); updateNotifBtn();
+    if(ok){ showToast('Notifikasi diaktifkan 🔔'); showLocalNotification('🔔 Notifikasi aktif', 'Kamu akan diberi tahu setiap ada transaksi baru.'); }
+    else showToast('Notifikasi belum aktif. Cek izin Notifikasi app ini di pengaturan HP.', true);
+    return;
+  }
   if(!('Notification' in window)){
     showToast('Browser ini tidak mendukung notifikasi', true);
     return;
@@ -1689,6 +1736,7 @@ async function requestNotifPermission(){
   }
 }
 document.getElementById('btnNotif').addEventListener('click', requestNotifPermission);
+if(locNative()){ appLNChannels(); updateNotifBtn(); }
 
 // ---------- Number input formatting (pemisah ribuan) ----------
 function digitsOnly(s){ return String(s||'').replace(/\D/g,''); }
@@ -1937,6 +1985,7 @@ let locPicking = false, locDraft = null;
 let locPrev = null, locSpeed = 0, locMode = 'diam', locModeSince = Date.now();
 let locModeCand = 'diam', locModeCandN = 0, locAnchor = null, locTrip = null, locLastSampleAt = 0;
 let locFenceCnt = {}, locLowBatSent = false;
+let locAcquiring = false, locAcquireTimer = null;
 
 function locStore(key, val){
   try{
@@ -2003,6 +2052,20 @@ function locPlaceAt(p){
 function locClassify(v){ return v < 0.8 ? 'diam' : v < 2.3 ? 'jalan' : v < 6 ? 'sepeda' : 'kendara'; }
 
 // ----- Listener -----
+// Daftar anggota yang sudah digabung dengan keadaan lokal perangkat ini (respons instan, tanpa menunggu server)
+function locMembersEff(){
+  const myId = locDeviceId();
+  const list = locMembers.map(m=>({ ...m }));
+  if(!locIsSharing()) return list;
+  let me = list.find(m=>m.id === myId);
+  if(!me){ me = { id:myId }; list.push(me); }
+  me.name = locMyName() || me.name || 'Aku'; me.color = locColorFor(myId); me.sharing = true;
+  if(locLastPos){ me.lat = locLastPos.lat; me.lng = locLastPos.lng; me.accuracy = Math.round(locLastPos.acc || 0); me.updatedMs = locLastWrite || Date.now(); }
+  me.mode = locMode; me.modeSince = locModeSince; me.speedKmh = Math.round(locSpeed*3.6);
+  return list;
+}
+const locAll = () => locMembersEff();
+
 function attachLokasiListener(){
   if(locListenerOn) return;
   locListenerOn = true;
@@ -2067,13 +2130,7 @@ function locTickFn(){
   if(activeTab === 'lokasi') renderLokasi();
 }
 
-function locNotify(title, body){
-  try{
-    if(locStore('loc_notif') === 'on' && 'Notification' in window && Notification.permission === 'granted'){
-      new Notification(title, { body, icon:'icon-192.png', tag:'loc-' + Date.now() });
-    }
-  }catch(e){}
-}
+function locNotify(title, body){ if(locStore('loc_notif') === 'on') appNotify(title, body, false); }
 
 // ----- Perangkat: baterai & layar -----
 async function locBattery(){
@@ -2130,6 +2187,7 @@ function locOnPosition(pos){
   const c = pos.coords, t = pos.timestamp || Date.now();
   const acc = c.accuracy || 0;
   if(acc > LOC_MAX_ACC) return;
+  locAcquiring = false; clearTimeout(locAcquireTimer);
   const cur = { lat:c.latitude, lng:c.longitude, t, acc };
   locLastSampleAt = Date.now();
 
@@ -2304,21 +2362,30 @@ function locStartNativeWatch(){
   locBG().addWatcher({
     backgroundTitle: 'Buku Kas — berbagi lokasi',
     backgroundMessage: 'Lokasimu sedang dibagikan ke keluarga.',
-    requestPermissions: true, stale: false, distanceFilter: 10
+    requestPermissions: true, stale: true, distanceFilter: 10
   }, (loc, err)=>{
     if(err){
       if(err.code === 'NOT_AUTHORIZED'){
         showToast('Izinkan lokasi “Sepanjang waktu” agar pelacakan jalan di belakang layar.', true);
         locBG().openSettings().catch(()=>{});
-      }
+      }else showToast('Lokasi gagal: ' + (err.message || err.code || 'tidak diketahui'), true);
       return;
     }
     if(!loc) return;
+    if(loc.time && Date.now() - loc.time > 10*60*1000) return;      // abaikan titik basi
     locOnPosition({ coords:{ latitude:loc.latitude, longitude:loc.longitude, accuracy:loc.accuracy, speed:(typeof loc.speed === 'number' ? loc.speed : null) }, timestamp: loc.time || Date.now() });
   }).then(id=>{ if(locWatchId === 'pending') locWatchId = id; else locBG().removeWatcher({ id }).catch(()=>{}); })
     .catch(e=>{ locWatchId = null; console.error('addWatcher', e); showToast('Gagal memulai pelacakan native', true); });
 }
 function locStartWatch(){
+  locAcquiring = true;
+  clearTimeout(locAcquireTimer);
+  locAcquireTimer = setTimeout(()=>{
+    if(locAcquiring && locIsSharing()){
+      showToast('Lokasi belum didapat. Pastikan GPS aktif dan izin lokasi “Sepanjang waktu”.', true);
+      if(locNative()) locBG().openSettings().catch(()=>{});
+    }
+  }, 25000);
   if(locNative()){
     if(locWatchId !== null) return;
     try{ const saved = JSON.parse(locStore('loc_trip') || 'null'); if(saved && Date.now() - saved.lastPt.t < LOC_GAP_MS) locTrip = saved; }catch(e){}
@@ -2333,7 +2400,9 @@ function locStartWatch(){
   locWakeSet();
 }
 function locPushNow(force){
-  if(!navigator.geolocation || !locIsSharing()) return;
+  if(!locIsSharing()) return;
+  if(locNative()){ if(locLastPos) locWriteState(); return; }     // native: pakai plugin, bukan GPS web
+  if(!navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition(
     (pos)=>{ locOnPosition(pos); },
     (err)=>{ if(force) locOnError(err); },
@@ -2344,13 +2413,15 @@ async function locStartSharing(){
   const input = document.getElementById('locNameInput');
   const name = input.value.trim();
   if(!name){ showToast('Isi dulu nama kamu', true); input.focus(); return; }
-  if(!navigator.geolocation){ showToast('Perangkat ini tidak mendukung lokasi.', true); return; }
+  if(!locNative() && !navigator.geolocation){ showToast('Perangkat ini tidak mendukung lokasi.', true); return; }
   locStore('loc_name', name);
   locStore('loc_sharing', 'on');
   locLastPos = null; locLastWrite = 0; locPrev = null;
+  // Tampil langsung ke semua anggota ("mencari lokasi") tanpa menunggu GPS pertama
+  if(uid) setDocFast(locDocRef(), { name, color:locColorFor(locDeviceId()), sharing:true, mode:'diam', speedKmh:0, updatedAt:serverTimestamp() }, { merge:true });
   locStartWatch();
-  locPushNow(true);
-  showToast('Lokasi mulai dibagikan 📍');
+  if(!locNative()) locPushNow(true);
+  showToast('Berbagi lokasi aktif — mencari sinyal GPS…');
   renderLokasi();
 }
 async function locStopSharing(silent){
@@ -2370,7 +2441,7 @@ async function locStopSharing(silent){
   renderLokasi();
 }
 async function locPing(id){
-  const target = locMembers.find(m=>m.id===id);
+  const target = locAll().find(m=>m.id===id);
   try{
     await setDoc(locDocRef(id), { pingAt: Date.now(), pingBy: locMyName() || 'Seseorang' }, { merge:true });
     showToast(`Permintaan update dikirim ke ${target ? target.name : 'dia'}`);
@@ -2421,7 +2492,7 @@ function locPinIcon(m){
 }
 function locUpdateMap(){
   if(!locMap) return;
-  const live = locMembers.filter(locHasPos);
+  const live = locAll().filter(locHasPos);
   const ids = new Set(live.map(m=>m.id));
   Object.keys(locMarkers).forEach(id=>{ if(!ids.has(id)){ locMap.removeLayer(locMarkers[id]); delete locMarkers[id]; } });
   live.forEach(m=>{
@@ -2453,13 +2524,13 @@ function locUpdateMap(){
 }
 function locFitAll(){
   if(!locMap) return;
-  const pts = locMembers.filter(locHasPos).map(m=>[m.lat, m.lng]);
+  const pts = locAll().filter(locHasPos).map(m=>[m.lat, m.lng]);
   if(!pts.length){ showToast('Belum ada lokasi yang dibagikan'); return; }
   if(pts.length === 1) locMap.setView(pts[0], 16); else locMap.fitBounds(pts, { padding:[44,44], maxZoom:16 });
 }
 function locScrollToMap(){ const el = document.getElementById('locMap'); if(el && el.scrollIntoView) el.scrollIntoView({ behavior:'smooth', block:'center' }); }
 function locFocus(id){
-  const m = locMembers.find(x=>x.id===id);
+  const m = locAll().find(x=>x.id===id);
   locSelectedId = id;
   if(m && locMap && locHasPos(m)){
     locLayerRoute.clearLayers();
@@ -2539,23 +2610,23 @@ function renderLokasi(){
   if(document.activeElement !== nameInput && !nameInput.value) nameInput.value = locMyName();
   nameInput.disabled = sharing;
   const tgl = document.getElementById('btnLocToggle');
-  tgl.textContent = sharing ? '⏹️ Hentikan berbagi lokasi' : '📍 Bagikan lokasi saya';
+  tgl.textContent = sharing ? (locAcquiring ? '⏳ Mencari lokasi… (ketuk untuk berhenti)' : '⏹️ Hentikan berbagi lokasi') : '📍 Bagikan lokasi saya';
   tgl.className = 'btn ' + (sharing ? 'btn-danger' : 'btn-teal');
   document.getElementById('locMyStatus').textContent = sharing
-    ? (locNative() ? '🟢 Lokasimu dibagikan ke semua anggota, termasuk saat app ditutup atau layar terkunci.' : '🟢 Lokasimu dibagikan ke semua anggota selama aplikasi terbuka.')
+    ? (locAcquiring ? '📡 Mencari sinyal GPS… keluar ke tempat terbuka bila lama.' : locNative() ? '🟢 Lokasimu dibagikan ke semua anggota, termasuk saat app ditutup atau layar terkunci.' : '🟢 Lokasimu dibagikan ke semua anggota selama aplikasi terbuka.')
     : 'Lokasi hanya dibagikan setelah kamu menekan tombol di atas, dan bisa dimatikan kapan saja.';
 
-  const live = locMembers.filter(locHasPos);
-  document.getElementById('locHeroTitle').textContent = live.length ? `${live.length} orang berbagi lokasi` : 'Belum ada yang berbagi';
+  const live = locAll().filter(locHasPos);
+  document.getElementById('locHeroTitle').textContent = (n=>n ? `${n} orang berbagi lokasi` : 'Belum ada yang berbagi')(locAll().filter(m=>m.sharing).length);
   const mi = MODE_INFO[locMode];
   document.getElementById('locHeroAct').textContent = sharing ? mi.ic : '📍';
   document.getElementById('locHeroSub').textContent = sharing
     ? `Kamu: ${mi.label}${locMode !== 'diam' ? ' • ' + Math.round(locSpeed*3.6) + ' km/j' : ''}${locTrip ? ' • perjalanan berjalan' : ''}`
     : 'Masing-masing bebas memilih mau berbagi atau tidak.';
 
-  const me = locMembers.find(m=>m.id===myId);
+  const me = locAll().find(m=>m.id===myId);
   const myPos = locHasPos(me) ? { lat:me.lat, lng:me.lng } : null;
-  const sorted = [...locMembers].sort((a,b)=>{
+  const sorted = [...locAll()].sort((a,b)=>{
     if(a.id===myId) return -1; if(b.id===myId) return 1;
     if(!!locHasPos(a) !== !!locHasPos(b)) return locHasPos(a) ? -1 : 1;
     return (a.name||'').localeCompare(b.name||'');
@@ -2581,7 +2652,8 @@ function renderLokasi(){
         if(fresh && m.mode === 'diam' && m.modeSince) l1 += ` • sejak ${locClock(m.modeSince)}`;
         l2 = `${fresh ? '📍 Diperbarui' : '⏱️'} ${locRel(m.updatedMs)}${m.accuracy ? ' • ±' + m.accuracy + ' m' : ''}`;
       }else{
-        l1 = 'Tidak berbagi lokasi'; l2 = m.updatedMs ? locRel(m.updatedMs) : '';
+        if(m.sharing){ l1 = '📡 Mencari sinyal GPS…'; l2 = ''; }
+        else{ l1 = 'Tidak berbagi lokasi'; l2 = m.updatedMs ? locRel(m.updatedMs) : ''; }
       }
       const extra = [];
       if(typeof m.battery === 'number') extra.push(`${m.charging ? '🔌' : (m.battery <= 15 ? '🪫' : '🔋')} ${m.battery}%`);
@@ -2616,7 +2688,7 @@ function renderLokasi(){
 function renderLokasiHistory(){
   const who = document.getElementById('locHistWho');
   if(!who) return;
-  const named = locMembers.filter(m=>m.name);
+  const named = locAll().filter(m=>m.name);
   if(!locHistWho || !named.find(m=>m.id===locHistWho)){
     const pick = named.find(m=>m.id===locDeviceId()) || named[0];
     const nid = pick ? pick.id : null;
@@ -2660,7 +2732,7 @@ function renderLokasiPlaces(){
     return;
   }
   box.innerHTML = locPlaces.map(pl=>{
-    const here = locMembers.filter(m=>locHasPos(m) && locDistanceM(m, pl) <= pl.radius).map(m=>m.name);
+    const here = locAll().filter(m=>locHasPos(m) && locDistanceM(m, pl) <= pl.radius).map(m=>m.name);
     return `<div class="loc-row"><div class="loc-top">
       <div class="loc-trip" style="margin:0;border:none;padding:0;background:none;cursor:default;"><div class="ti">${escapeHtml(pl.icon || '📍')}</div></div>
       <div style="min-width:0;flex:1;">
@@ -2725,15 +2797,14 @@ document.getElementById('btnPlaceHere').addEventListener('click', ()=>{
   const wake = document.getElementById('optWake'), tg = document.getElementById('optTg'), nt = document.getElementById('optNotif');
   wake.checked = locStore('loc_wake') === 'on';
   tg.checked = locStore('loc_tg') !== 'off';
-  nt.checked = locStore('loc_notif') === 'on' && 'Notification' in window && Notification.permission === 'granted';
+  nt.checked = locStore('loc_notif') === 'on' && (locNative() ? locStore('notif_native') === 'on' : ('Notification' in window && Notification.permission === 'granted'));
   wake.addEventListener('change', ()=>{ locStore('loc_wake', wake.checked ? 'on' : 'off'); locWakeSet(); });
   tg.addEventListener('change', ()=>{ locStore('loc_tg', tg.checked ? 'on' : 'off'); });
   nt.addEventListener('change', async ()=>{
     if(!nt.checked){ locStore('loc_notif', 'off'); return; }
-    if(!('Notification' in window)){ showToast('Perangkat tidak mendukung notifikasi', true); nt.checked = false; return; }
-    const perm = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
-    if(perm === 'granted'){ locStore('loc_notif', 'on'); showToast('Notifikasi lokasi aktif 🔔'); }
-    else{ nt.checked = false; locStore('loc_notif', 'off'); showToast('Izin notifikasi ditolak', true); }
+    const ok = await appNotifRequest();
+    if(ok){ locStore('loc_notif', 'on'); updateNotifBtn(); showToast('Notifikasi lokasi aktif 🔔'); }
+    else{ nt.checked = false; locStore('loc_notif', 'off'); showToast('Notifikasi belum bisa diaktifkan. Cek izin Notifikasi app ini di pengaturan HP.', true); }
   });
 })();
 // klik pada daftar/strip/riwayat/tempat
@@ -3116,10 +3187,7 @@ function sosAlertShow(r){
   sosAlertFill(r);
   sosEl('sosAlert').classList.remove('hidden');
   sirenStart();
-  try{
-    if('Notification' in window && Notification.permission === 'granted')
-      new Notification(`🆘 SOS dari ${r.name || 'anggota'}`, { body:'Buka aplikasi untuk melihat lokasi.', requireInteraction:true, tag:'sos-' + r.id });
-  }catch(e){}
+  appNotify(`🆘 SOS dari ${r.name || 'anggota'}`, 'Buka aplikasi untuk melihat lokasi.', true);
 }
 function sosAlertHide(){ sosEl('sosAlert').classList.add('hidden'); sirenStop(); sosAlertId = null; }
 function sosRenderBanner(){
