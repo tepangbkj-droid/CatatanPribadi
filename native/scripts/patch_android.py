@@ -15,8 +15,14 @@ perms = [
     'android.permission.FOREGROUND_SERVICE',
     'android.permission.FOREGROUND_SERVICE_LOCATION',
     'android.permission.POST_NOTIFICATIONS',
+    'android.permission.CAMERA',
+    'android.permission.RECORD_AUDIO',
+    'android.permission.MODIFY_AUDIO_SETTINGS',
+    'android.permission.VIBRATE',
+    'android.permission.WAKE_LOCK',
 ]
 add = ''.join(f'    <uses-permission android:name="{p}" />\n' for p in perms if p not in x)
+add += '    <uses-feature android:name="android.hardware.camera" android:required="false" />\n'
 x = x.replace('<application', add + '    <application', 1)
 mf.write_text(x, encoding='utf-8')
 
