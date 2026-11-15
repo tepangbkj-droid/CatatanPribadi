@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://cdnjs.cloudflare.com; media-src 'self' blob: data:; connect-src 'self' https://*.googleapis.com wss://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://api.telegram.org https://nominatim.openstreetmap.org https://api.gold-api.com https://open.er-api.com https://api.frankfurter.app https://cdn.jsdelivr.net https://*.workers.dev https://api.anthropic.com https://api.groq.com https://openrouter.ai; frame-src https://*.firebaseapp.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="no-referrer">
+<script>if(window.top!==window.self){document.documentElement.style.display="none";try{window.top.location=window.self.location;}catch(e){}}</script>
 <title>Buku Kas — Catatan Keuangan &amp; Tabungan Emas</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#6D4AFF">
@@ -676,13 +679,46 @@
   .loc-feed:last-child{border-bottom:none;}
   .loc-feed .fi{font-size:20px;flex:0 0 auto;}
   .loc-feed .ft{color:var(--ink-soft);font-size:11.5px;margin-top:2px;}
-  .lock-screen{position:fixed;inset:0;z-index:99999;background:linear-gradient(150deg,#4B2FD9,#6D4AFF 55%,#2E8BFF);display:flex;align-items:center;justify-content:center;padding:24px;}
+  .lock-screen{position:fixed;inset:0;z-index:100000;background:linear-gradient(150deg,#4B2FD9,#6D4AFF 55%,#2E8BFF);display:flex;align-items:center;justify-content:center;padding:24px;}
   .lock-card{background:#fff;border-radius:var(--radius-l);padding:28px 22px;max-width:360px;width:100%;text-align:center;box-shadow:0 24px 50px -16px rgba(0,0,0,.5);}
   .lock-card .li{font-size:44px;}
   .lock-card h2{font-family:var(--font-head);margin:8px 0 4px;font-size:21px;}
   .lock-card p{color:var(--ink-soft);font-size:13px;margin:0 0 16px;line-height:1.5;}
   .lock-card input{width:100%;padding:13px 14px;border:1.5px solid var(--line);border-radius:12px;font-size:16px;margin-bottom:12px;text-align:center;}
   #lockMsg{font-size:12.5px;color:var(--rose);margin-top:10px;min-height:16px;}
+/* ===== SOS & keamanan ===== */
+  .sos-fab{position:fixed;left:14px;bottom:calc(88px + env(safe-area-inset-bottom));z-index:900;width:56px;height:56px;border-radius:50%;background:linear-gradient(145deg,#FF3B5C,#D90429);color:#fff;font-weight:800;font-size:15px;letter-spacing:.5px;font-family:var(--font-head);border:3px solid #fff;box-shadow:0 10px 22px -6px rgba(217,4,41,.85);animation:sosPulse 2.4s infinite;}
+  .sos-fab:active{transform:scale(.93);}
+  @keyframes sosPulse{0%{box-shadow:0 0 0 0 rgba(217,4,41,.55),0 10px 22px -6px rgba(217,4,41,.85);}70%{box-shadow:0 0 0 16px rgba(217,4,41,0),0 10px 22px -6px rgba(217,4,41,.85);}100%{box-shadow:0 0 0 0 rgba(217,4,41,0),0 10px 22px -6px rgba(217,4,41,.85);}}
+  @keyframes sosFlash{0%,100%{background:#B0021F;}50%{background:#FF2D4F;}}
+  .sos-ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;}
+  #sosConfirm{z-index:100002;background:rgba(20,8,14,.82);}
+  #sosActive{z-index:100001;background:linear-gradient(160deg,#7A0116,#C1121F);align-items:flex-start;}
+  #sosAlert{z-index:100003;animation:sosFlash 1s infinite;}
+  .sos-card{width:100%;max-width:420px;background:#fff;color:var(--ink);border-radius:24px;padding:24px 20px;text-align:center;box-shadow:0 24px 60px -16px rgba(0,0,0,.6);}
+  .sos-card h2{font-family:var(--font-head);margin:6px 0 4px;font-size:22px;}
+  .sos-card p{color:var(--ink-soft);font-size:13.5px;line-height:1.5;margin:0 0 14px;}
+  .sos-big{font-size:56px;line-height:1;}
+  .sos-count{font-family:var(--font-head);font-weight:800;font-size:64px;color:#D90429;line-height:1;margin:4px 0 10px;}
+  .btn-sos{background:linear-gradient(145deg,#FF3B5C,#D90429);color:#fff;box-shadow:0 10px 22px -10px rgba(217,4,41,.8);}
+  .sos-panel{width:100%;max-width:460px;margin:auto;color:#fff;padding:8px 0 24px;}
+  .sos-panel h2{font-family:var(--font-head);font-size:26px;margin:0;display:flex;align-items:center;gap:8px;}
+  .sos-rec{display:inline-block;width:12px;height:12px;border-radius:50%;background:#fff;animation:sosBlink 1s infinite;}
+  @keyframes sosBlink{50%{opacity:.15;}}
+  .sos-box{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);border-radius:18px;padding:14px;margin-top:12px;font-size:14px;line-height:1.55;backdrop-filter:blur(6px);}
+  .sos-box b{font-weight:700;}
+  #sosPreview{width:100%;max-height:200px;border-radius:14px;background:#000;margin-top:10px;object-fit:cover;}
+  .sos-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .sos-row .btn,.sos-row a.btn{flex:1;min-width:130px;text-align:center;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;}
+  .btn-white{background:#fff;color:#B0021F;font-weight:700;}
+  .btn-outline-w{background:transparent;border:1.5px solid rgba(255,255,255,.7);color:#fff;}
+  .sos-banner{position:fixed;left:0;right:0;top:0;z-index:99000;background:#D90429;color:#fff;padding:calc(8px + env(safe-area-inset-top)) 14px 9px;font-weight:700;font-size:13.5px;text-align:center;animation:sosFlash 1.2s infinite;}
+  .sa-card{background:#fff;border-radius:26px;padding:26px 20px;max-width:420px;width:100%;text-align:center;box-shadow:0 24px 60px -10px rgba(0,0,0,.6);}
+  .sa-card h2{font-family:var(--font-head);color:#B0021F;font-size:25px;margin:8px 0 4px;}
+  .sa-card .sa-sub{font-size:14px;color:var(--ink);line-height:1.55;margin-bottom:14px;}
+  .sa-card .btn,.sa-card a.btn{width:100%;margin-top:8px;text-decoration:none;display:flex;align-items:center;justify-content:center;}
+  .lock-sos{margin-top:14px;background:none;border:1.5px solid #D90429;color:#D90429;border-radius:12px;padding:10px;width:100%;font-weight:700;}
+
 </style>
 </head>
 <body>
@@ -1368,12 +1404,71 @@
       <div class="field-hint" style="margin-bottom:12px;">📨 Notifikasi Telegram: <strong id="tgStatusLabel">-</strong>. Setiap transaksi baru otomatis terkirim ke chat Telegram yang sama untuk semua orang, tanpa perlu diatur ulang.</div>
       <div class="divider-note">Konfigurasi Firebase &amp; Telegram diatur sekali oleh pemilik aplikasi langsung di dalam kode (bagian KONFIGURASI BERSAMA), bukan per-perangkat.</div>
       <div class="divider-note">📲 Versi aplikasi: <strong id="appVersionLabel">-</strong>. Pembaruan dimuat otomatis dari server — tidak perlu install ulang APK. Saat ada versi baru, muncul banner "Perbarui".</div>
+      <div class="divider-note">🆘 Pengaturan SOS</div>
+      <div class="field"><label>Nomor kontak darurat (untuk SMS &amp; telepon cepat)</label><input type="tel" id="sosPhone" placeholder="08xxxxxxxxxx"></div>
+      <label class="loc-switch"><span>Rekam kamera saat SOS<small>Potongan video ±15 dtk dikirim ke Telegram.</small></span><input type="checkbox" id="sosRec" checked></label>
+      <div class="field"><label>Kamera yang dipakai</label><select id="sosCam"><option value="environment">Belakang</option><option value="user">Depan</option></select></div>
+      <label class="loc-switch"><span>Bunyikan sirine di HP saya sendiri<small>Matikan bila situasi berbahaya agar tidak ketahuan.</small></span><input type="checkbox" id="sosSelf"></label>
+      <div style="height:14px"></div>
       <div class="divider-note">🔐 Kode akses: <strong id="accStateLabel">-</strong>. Buat kode baru lalu salin hash ke <code>ACCESS_CODE_HASH</code> di kode &amp; <code>firestore.rules</code> (lihat KEAMANAN.md). Pakai kode panjang (8+ karakter / frasa).</div>
       <div class="field"><input type="text" id="accCodeInput" placeholder="Ketik kode akses baru" autocomplete="off"></div>
       <button class="btn btn-ghost" id="btnAccGen">🔐 Buat hash kode akses</button>
       <div class="field-hint" id="accOut" style="margin:10px 0 14px;word-break:break-all;user-select:all;"></div>
       <button class="btn btn-ghost" id="btnCheckUpdate">🔄 Cek pembaruan</button>
     </div>
+  </div>
+</div>
+
+<button class="sos-fab hidden" id="btnSos" aria-label="Tombol darurat SOS">SOS</button>
+<div class="sos-banner hidden" id="sosBanner"></div>
+
+<div class="sos-ov hidden" id="sosConfirm">
+  <div class="sos-card">
+    <div class="sos-big">🆘</div>
+    <h2>Kirim SOS darurat?</h2>
+    <p>Lokasi &amp; rekaman kamera dikirim ke grup Telegram, dan HP anggota lain berbunyi sirine. Tetap bisa dipakai tanpa internet (kiriman menunggu sinyal).</p>
+    <div class="sos-count" id="sosCount">5</div>
+    <div class="field" id="sosNameField" style="display:none;"><input type="text" id="sosNameInput" maxlength="20" placeholder="Namamu (muncul di alarm)" style="text-align:center;"></div>
+    <button class="btn btn-sos" id="sosGo" style="width:100%;">🚨 Kirim SEKARANG</button>
+    <button class="btn btn-ghost" id="sosCancel" style="width:100%;margin-top:8px;">Batal (salah pencet)</button>
+  </div>
+</div>
+
+<div class="sos-ov hidden" id="sosActive">
+  <div class="sos-panel">
+    <h2><span class="sos-rec"></span> SOS AKTIF</h2>
+    <div style="opacity:.85;font-size:13px;margin-top:4px;" id="sosElapsed">—</div>
+    <div class="sos-box">
+      <div>📍 <b>Lokasi:</b> <span id="sosLocState">mencari…</span></div>
+      <div>🎥 <b>Kamera:</b> <span id="sosCamState">—</span></div>
+      <div>📨 <b>Telegram:</b> <span id="sosQState">—</span></div>
+      <div>👀 <b>Dilihat oleh:</b> <span id="sosAckState">belum ada</span></div>
+      <video id="sosPreview" playsinline muted></video>
+    </div>
+    <div class="sos-row">
+      <a class="btn btn-white hidden" id="sosSms" href="#">💬 SMS darurat</a>
+      <a class="btn btn-white hidden" id="sosTel" href="#">📞 Telepon</a>
+    </div>
+    <div class="sos-row">
+      <button class="btn btn-outline-w" id="sosSiren">🔊 Sirine di HP ini</button>
+      <button class="btn btn-outline-w" id="sosFlip">🔄 Ganti kamera</button>
+      <button class="btn btn-outline-w" id="sosSave">⬇️ Simpan rekaman</button>
+    </div>
+    <div class="sos-row"><button class="btn btn-white" id="sosEnd">✅ Aku aman — akhiri SOS</button></div>
+    <div style="font-size:12px;opacity:.8;margin-top:12px;line-height:1.5;">Biarkan layar menyala &amp; app terbuka agar kamera terus merekam. Tanpa sinyal, rekaman &amp; pesan antre otomatis dan terkirim begitu ada koneksi.</div>
+  </div>
+</div>
+
+<div class="sos-ov hidden" id="sosAlert">
+  <div class="sa-card">
+    <div class="sos-big">🆘</div>
+    <h2 id="saTitle">SOS!</h2>
+    <div class="sa-sub" id="saSub"></div>
+    <a class="btn btn-sos" id="saMap" target="_blank" rel="noopener" href="#">🗺️ Buka lokasi di Maps</a>
+    <a class="btn btn-ghost hidden" id="saTel" href="#">📞 Telepon</a>
+    <button class="btn btn-primary" id="saAck">👀 Saya sudah lihat / menuju ke sana</button>
+    <button class="btn btn-ghost" id="saMute">🔇 Matikan bunyi</button>
+    <button class="btn btn-ghost" id="saClose">Tutup</button>
   </div>
 </div>
 
@@ -1385,6 +1480,7 @@
     <input type="password" id="lockInput" autocomplete="current-password" placeholder="Kode akses">
     <button class="btn btn-primary" id="lockBtn" style="width:100%;">Buka</button>
     <div id="lockMsg"></div>
+    <button class="lock-sos" id="lockSos">🆘 Darurat (SOS)</button>
   </div>
 </div>
 
@@ -1397,7 +1493,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import {
-  getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, updateDoc,
+  getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, getDoc, addDoc, deleteDoc, updateDoc,
   collection, onSnapshot, query, orderBy, serverTimestamp, limit, getDocs
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
@@ -1425,6 +1521,11 @@ const TELEGRAM_CONFIG = {
 // (mis. jadi beberapa "buku kas" berbeda) dengan mengganti ID ini.
 const SHARED_SPACE_ID = "main";
 
+// ---- (Opsional, disarankan) Proxy Telegram agar token bot tidak ada di kode web ----
+// Isi dengan URL Cloudflare Worker (lihat telegram-proxy-worker.js & KEAMANAN.md). Kosong = langsung ke Telegram.
+const TELEGRAM_PROXY_URL = "";
+const TELEGRAM_PROXY_KEY = "";
+
 // ---- KODE AKSES (agar orang tak dikenal tidak bisa membuka data) ----
 // Kosong = gembok MATI. Untuk mengaktifkan: buka app → Pengaturan → Info → "Buat kode akses",
 // salin hasil hash-nya ke ACCESS_CODE_HASH di bawah, lalu pasang aturan di firestore.rules (lihat KEAMANAN.md).
@@ -1437,12 +1538,12 @@ function isFirebaseConfigValid(){
   return !isPlaceholder(FIREBASE_CONFIG.apiKey) && !isPlaceholder(FIREBASE_CONFIG.projectId);
 }
 function isTelegramConfigValid(){
-  return !isPlaceholder(TELEGRAM_CONFIG.token) && !isPlaceholder(TELEGRAM_CONFIG.chatId);
+  return !!TELEGRAM_PROXY_URL || (!isPlaceholder(TELEGRAM_CONFIG.token) && !isPlaceholder(TELEGRAM_CONFIG.chatId));
 }
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.5.0';
+const APP_VERSION = '2.6.0';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -1605,6 +1706,13 @@ function attachMoneyFormatting(){
   });
 }
 
+// ---------- Tulis instan (tanpa menunggu konfirmasi server; sinkron di latar belakang) ----------
+function fbFail(e){ console.error(e); showToast(errorMessage(e), true); }
+function addDocFast(col, data){ const ref = doc(col); setDoc(ref, data).catch(fbFail); return ref; }
+function setDocFast(ref, data, opts){ setDoc(ref, data, opts).catch(fbFail); }
+function deleteDocFast(ref){ deleteDoc(ref).catch(fbFail); }
+function updateDocFast(ref, data){ updateDoc(ref, data).catch(fbFail); }
+
 // ---------- Gembok kode akses ----------
 async function sha256Hex(str){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
@@ -1671,7 +1779,9 @@ async function startApp(){
   document.getElementById('globalLoading').classList.remove('hidden');
   try{
     app = initializeApp(FIREBASE_CONFIG);
-    db = getFirestore(app);
+    try{
+      db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+    }catch(e){ console.warn('cache offline tidak aktif', e); db = getFirestore(app); }
     auth = getAuth(app);
     let accessChecked = false;
     onAuthStateChanged(auth, async (user)=>{
@@ -1680,6 +1790,7 @@ async function startApp(){
         if(accessChecked) return;
         accessChecked = true;
         await ensureAccess();
+        appUnlocked = true;
         document.getElementById('fbProjectLabel').textContent = FIREBASE_CONFIG.projectId || '-';
         document.getElementById('tgStatusLabel').textContent = isTelegramConfigValid() ? 'Aktif' : 'Belum diisi';
         attachListeners();
@@ -1794,6 +1905,8 @@ function attachListeners(){
     render();
   });
   attachLokasiListener();
+  attachSosListener();
+  document.getElementById('btnSos').classList.remove('hidden');
 }
 
 // ---------- Lokasi v2: real-time, deteksi gerak, riwayat perjalanan, tempat & notifikasi ----------
@@ -2168,7 +2281,7 @@ async function locEmit(type, place, extra){
     placeId: place ? place.id : null, placeName: place ? place.name : null, icon: place ? place.icon : null,
     atMs: Date.now(), at: serverTimestamp(), ...(extra || {})
   };
-  try{ await addDoc(locEventsColRef(), ev); }catch(e){ console.warn('locEmit', e); }
+  try{ addDocFast(locEventsColRef(), ev); }catch(e){ console.warn('locEmit', e); }
   if(locStore('loc_tg') !== 'off'){
     const t = locEventText(ev).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
     sendTelegramMessage(t);
@@ -2390,7 +2503,7 @@ async function locSavePlace(){
   if(!name){ showToast('Isi nama tempat', true); return; }
   if(!locDraft){ showToast('Pilih titik: pakai lokasimu atau tap peta', true); return; }
   try{
-    await addDoc(locPlacesColRef(), {
+    addDocFast(locPlacesColRef(), {
       name, icon: document.getElementById('placeIcon').value,
       radius: Number(document.getElementById('placeRadius').value) || 200,
       lat: locDraft.lat, lng: locDraft.lng, by: locMyName() || '', createdAt: serverTimestamp()
@@ -2637,7 +2750,7 @@ document.getElementById('viewLokasi').addEventListener('click', async (e)=>{
   else if(act === 'deltrip'){
     e.stopPropagation();
     if(!confirm('Hapus perjalanan ini dari riwayat?')) return;
-    try{ await deleteDoc(doc(locTripsColRef(locDeviceId()), id)); showToast('Perjalanan dihapus'); }catch(err){ showToast(errorMessage(err), true); }
+    try{ deleteDocFast(doc(locTripsColRef(locDeviceId()), id)); showToast('Perjalanan dihapus'); }catch(err){ showToast(errorMessage(err), true); }
   }
   else if(act === 'placefocus'){
     const pl = locPlaces.find(p=>p.id===id);
@@ -2645,9 +2758,435 @@ document.getElementById('viewLokasi').addEventListener('click', async (e)=>{
   }
   else if(act === 'placedel'){
     if(!confirm('Hapus tempat ini?')) return;
-    try{ await deleteDoc(doc(locPlacesColRef(), id)); locStore('loc_inside', null); showToast('Tempat dihapus'); }catch(err){ showToast(errorMessage(err), true); }
+    try{ deleteDocFast(doc(locPlacesColRef(), id)); locStore('loc_inside', null); showToast('Tempat dihapus'); }catch(err){ showToast(errorMessage(err), true); }
   }
 });
+
+// ---------- SOS DARURAT: notifikasi Telegram, sirine ke anggota lain, kamera merekam, tahan offline ----------
+const SOS_SEG_MS = 15000;          // panjang tiap potongan video
+const SOS_RELOCK_MS = 3 * 60 * 1000;
+let sosOn = false, sosStartedAt = 0, sosStream = null, sosRec = null, sosSeq = 0, sosSent = 0;
+let sosWatchId = null, sosPos = null, sosWake = null, sosCountTimer = null, sosTickTimer = null;
+let sosLastDoc = 0, sosLastTgLoc = 0, sosLocSent = false, sosLastFlush = 0, sosCamMsg = '—';
+let sosRemote = [], sosMine = null, sosSeen = new Set(), sosAlertId = null, sosFlushing = false;
+let sosAudioCtx = null, sosSiren = null, sosVibTimer = null, sosListenerOn = false;
+let appUnlocked = false, sosHiddenAt = 0;
+
+const sosEl = id => document.getElementById(id);
+function sosCfg(k, d){ const v = locStore('sos_' + k); return v === null ? d : v; }
+function sosName(){ return locMyName() || sosCfg('name', '') || 'Seseorang'; }
+function sosDocRef(id){ return doc(db, ...locBase(), 'sos', id || locDeviceId()); }
+function sosMapLink(p){ return p ? `https://maps.google.com/?q=${p.lat},${p.lng}` : ''; }
+function sosPhoneClean(){ return (sosCfg('phone', '') || '').replace(/[^\d+]/g, ''); }
+
+// ----- Telegram (langsung atau lewat proxy) -----
+function tgConfigured(){ return !!TELEGRAM_PROXY_URL || isTelegramConfigValid(); }
+function tgEndpoint(method){
+  return TELEGRAM_PROXY_URL ? TELEGRAM_PROXY_URL.replace(/\/$/, '') + '/' + method
+    : `https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/${method}`;
+}
+function tgHeaders(json){
+  const h = {}; if(json) h['Content-Type'] = 'application/json';
+  if(TELEGRAM_PROXY_URL && TELEGRAM_PROXY_KEY) h['X-App-Key'] = TELEGRAM_PROXY_KEY;
+  return h;
+}
+
+// ----- Antrean offline (IndexedDB) -----
+function sosDb(){
+  return new Promise((res, rej)=>{
+    const r = indexedDB.open('bukukas_sos', 1);
+    r.onupgradeneeded = ()=>r.result.createObjectStore('q', { keyPath:'id', autoIncrement:true });
+    r.onsuccess = ()=>res(r.result); r.onerror = ()=>rej(r.error);
+  });
+}
+async function sosQAll(){ const d = await sosDb(); return new Promise((res, rej)=>{ const r = d.transaction('q').objectStore('q').getAll(); r.onsuccess = ()=>res(r.result || []); r.onerror = ()=>rej(r.error); }); }
+async function sosQAdd(it){ const d = await sosDb(); return new Promise((res, rej)=>{ const t = d.transaction('q','readwrite'); t.objectStore('q').add(it); t.oncomplete = ()=>res(); t.onerror = ()=>rej(t.error); }); }
+async function sosQDel(ids){ if(!ids.length) return; const d = await sosDb(); return new Promise((res, rej)=>{ const t = d.transaction('q','readwrite'); ids.forEach(i=>t.objectStore('q').delete(i)); t.oncomplete = ()=>res(); t.onerror = ()=>rej(t.error); }); }
+async function sosEnqueue(it){
+  it.at = Date.now();
+  try{
+    if(it.kind === 'liveedit'){ const all = await sosQAll(); await sosQDel(all.filter(x=>x.kind === 'liveedit').map(x=>x.id)); }
+    await sosQAdd(it);
+    const vids = (await sosQAll()).filter(x=>x.kind === 'video');
+    if(vids.length > 60) await sosQDel(vids.slice(0, vids.length - 60).map(x=>x.id));
+  }catch(e){ console.warn('antrean SOS gagal, kirim langsung', e); try{ await sosSendItem(it); }catch(_){} }
+  sosFlush();
+}
+async function sosSendItem(it){
+  if(!tgConfigured()) return 'drop';
+  const chat = TELEGRAM_CONFIG.chatId;
+  let method, body, headers;
+  const live = () => locStore('sos_live_msg');
+  if(it.kind === 'msg'){ method = 'sendMessage'; body = JSON.stringify({ chat_id:chat, text:it.text, parse_mode:'HTML' }); headers = tgHeaders(true); }
+  else if(it.kind === 'loc'){
+    method = 'sendLocation'; headers = tgHeaders(true);
+    body = JSON.stringify({ chat_id:chat, latitude:it.lat, longitude:it.lng, live_period:3600, ...(it.acc ? { horizontal_accuracy:Math.min(1500, it.acc) } : {}) });
+  }
+  else if(it.kind === 'liveedit'){ if(!live()) return 'drop'; method = 'editMessageLiveLocation'; headers = tgHeaders(true); body = JSON.stringify({ chat_id:chat, message_id:Number(live()), latitude:it.lat, longitude:it.lng }); }
+  else if(it.kind === 'stoplive'){ if(!live()) return 'drop'; method = 'stopMessageLiveLocation'; headers = tgHeaders(true); body = JSON.stringify({ chat_id:chat, message_id:Number(live()) }); }
+  else if(it.kind === 'video'){
+    const mp4 = /mp4/.test(it.mime || '');
+    const fd = new FormData();
+    fd.append('chat_id', chat); fd.append('caption', it.caption || '');
+    fd.append(mp4 ? 'video' : 'document', it.blob, `sos_${it.at}.${mp4 ? 'mp4' : 'webm'}`);
+    if(mp4) fd.append('supports_streaming', 'true');
+    method = mp4 ? 'sendVideo' : 'sendDocument'; body = fd; headers = tgHeaders(false);
+  }else return 'drop';
+  const res = await fetch(tgEndpoint(method), { method:'POST', headers, body });
+  if(res.ok){
+    const j = await res.json().catch(()=>null);
+    if(it.kind === 'loc' && j && j.result && j.result.message_id) locStore('sos_live_msg', String(j.result.message_id));
+    if(it.kind === 'stoplive') locStore('sos_live_msg', null);
+    return 'ok';
+  }
+  return (res.status === 429 || res.status >= 500) ? 'retry' : 'drop';
+}
+async function sosFlush(){
+  if(sosFlushing) return;
+  sosFlushing = true; sosLastFlush = Date.now();
+  try{
+    if(navigator.onLine === false) return;
+    const all = (await sosQAll()).sort((a, b)=> ((a.kind === 'video') - (b.kind === 'video')) || (a.id - b.id));
+    for(const it of all){
+      let r; try{ r = await sosSendItem(it); }catch(e){ r = 'retry'; }
+      if(r === 'retry') break;
+      await sosQDel([it.id]);
+      if(r === 'ok' && it.kind === 'video') sosSent++;
+    }
+  }catch(e){ console.warn('flush SOS', e); }
+  finally{ sosFlushing = false; sosRenderStatus(); }
+}
+window.addEventListener('online', ()=>{ sosFlush(); });
+
+// ----- Sirine & getar -----
+function sosAudioUnlock(){
+  try{
+    if(!sosAudioCtx) sosAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(sosAudioCtx.state === 'suspended') sosAudioCtx.resume();
+  }catch(e){}
+}
+['pointerdown','touchstart','keydown'].forEach(ev=>document.addEventListener(ev, sosAudioUnlock, { passive:true }));
+function sirenStart(){
+  if(sosSiren) return;
+  sosAudioUnlock();
+  const ctx = sosAudioCtx; if(!ctx) return;
+  try{
+    const osc = ctx.createOscillator(), lfo = ctx.createOscillator(), lg = ctx.createGain(), g = ctx.createGain();
+    osc.type = 'square'; osc.frequency.value = 950;
+    lfo.type = 'sawtooth'; lfo.frequency.value = 1.6; lg.gain.value = 350;
+    lfo.connect(lg); lg.connect(osc.frequency);
+    g.gain.value = 0.7; osc.connect(g); g.connect(ctx.destination);
+    osc.start(); lfo.start();
+    sosSiren = { osc, lfo };
+  }catch(e){ console.warn('sirine', e); }
+  if(!sosVibTimer) sosVibTimer = setInterval(()=>{ try{ navigator.vibrate && navigator.vibrate([600, 250, 600]); }catch(e){} }, 1600);
+}
+function sirenStop(){
+  if(sosSiren){ try{ sosSiren.osc.stop(); sosSiren.lfo.stop(); }catch(e){} sosSiren = null; }
+  if(sosVibTimer){ clearInterval(sosVibTimer); sosVibTimer = null; }
+  try{ navigator.vibrate && navigator.vibrate(0); }catch(e){}
+}
+
+// ----- Kamera: potongan video 15 dtk -----
+function sosPickMime(){
+  if(!window.MediaRecorder) return '';
+  return ['video/mp4;codecs=avc1,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm']
+    .find(m=>MediaRecorder.isTypeSupported(m)) || '';
+}
+async function sosCamStart(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder){ sosCamMsg = 'tidak didukung perangkat'; sosRenderStatus(); return; }
+  const facing = sosCfg('cam', 'environment');
+  const vid = { facingMode:{ ideal:facing }, width:{ ideal:640 }, height:{ ideal:480 }, frameRate:{ ideal:15, max:24 } };
+  try{
+    try{ sosStream = await navigator.mediaDevices.getUserMedia({ video:vid, audio:true }); }
+    catch(e){ sosStream = await navigator.mediaDevices.getUserMedia({ video:vid }); }   // tanpa mikrofon
+    const v = sosEl('sosPreview'); v.srcObject = sosStream; v.play().catch(()=>{});
+    sosCamMsg = '🔴 merekam';
+    sosRecLoop();
+  }catch(e){ console.warn('kamera SOS', e); sosStream = null; sosCamMsg = 'tidak bisa dibuka (izin kamera ditolak?)'; }
+  sosRenderStatus();
+}
+function sosRecLoop(){
+  if(!sosOn || !sosStream) return;
+  const mime = sosPickMime(); let rec;
+  try{ rec = new MediaRecorder(sosStream, mime ? { mimeType:mime, videoBitsPerSecond:700000, audioBitsPerSecond:48000 } : undefined); }
+  catch(e){ sosCamMsg = 'perekam gagal dimulai'; sosRenderStatus(); return; }
+  const chunks = [], seq = ++sosSeq, t0 = Date.now(), who = sosName();
+  sosRec = rec;
+  rec.ondataavailable = e=>{ if(e.data && e.data.size) chunks.push(e.data); };
+  rec.onstop = ()=>{
+    const blob = new Blob(chunks, { type: rec.mimeType || mime || 'video/webm' });
+    if(blob.size > 2000) sosEnqueue({ kind:'video', blob, mime:blob.type, caption:`🎥 SOS ${who} • bagian ${seq} • ${locClock(t0)}` });
+    if(sosOn && sosStream && sosRec === rec) sosRecLoop();
+  };
+  rec.start();
+  setTimeout(()=>{ if(rec.state === 'recording') rec.stop(); }, SOS_SEG_MS);
+}
+function sosCamStop(){
+  const rec = sosRec; sosRec = null;
+  try{ if(rec && rec.state === 'recording') rec.stop(); }catch(e){}
+  const st = sosStream; sosStream = null;
+  setTimeout(()=>{ try{ st && st.getTracks().forEach(t=>t.stop()); }catch(e){} }, 500);
+  try{ sosEl('sosPreview').srcObject = null; }catch(e){}
+}
+async function sosCamFlip(){
+  locStore('sos_cam', sosCfg('cam', 'environment') === 'environment' ? 'user' : 'environment');
+  sosCamStop(); await new Promise(r=>setTimeout(r, 700));
+  if(sosOn) sosCamStart();
+}
+
+// ----- Lokasi saat SOS -----
+function sosStartGps(){
+  if(!navigator.geolocation) return;
+  sosWatchId = navigator.geolocation.watchPosition((p)=>{
+    sosPos = { lat:p.coords.latitude, lng:p.coords.longitude, acc:Math.round(p.coords.accuracy || 0) };
+    sosOnPos();
+  }, ()=>{}, { enableHighAccuracy:true, maximumAge:3000, timeout:20000 });
+}
+function sosOnPos(){
+  if(!sosPos || !sosOn) return;
+  const now = Date.now();
+  if(now - sosLastDoc >= 15000) sosPushDoc();
+  if(!sosLocSent){
+    sosLocSent = true; sosLastTgLoc = now;
+    sosEnqueue({ kind:'msg', text:`📍 Lokasi <b>${escapeHtml(sosName())}</b>: ${sosMapLink(sosPos)}` });
+    sosEnqueue({ kind:'loc', lat:sosPos.lat, lng:sosPos.lng, acc:sosPos.acc });
+  }else if(now - sosLastTgLoc >= 30000){
+    sosLastTgLoc = now; sosEnqueue({ kind:'liveedit', lat:sosPos.lat, lng:sosPos.lng });
+  }
+  sosRenderStatus();
+}
+async function sosPushDoc(extra){
+  sosLastDoc = Date.now();
+  const bat = await locBattery();
+  setDocFast(sosDocRef(), {
+    active:true, name:sosName(), color:locColorFor(locDeviceId()),
+    startedAt:sosStartedAt, updatedAt:Date.now(), ended:null,
+    lat: sosPos ? sosPos.lat : null, lng: sosPos ? sosPos.lng : null, acc: sosPos ? sosPos.acc : null,
+    battery: bat.battery, cam: !!sosStream, ...(extra || {})
+  }, { merge:true });
+}
+
+// ----- Mulai / akhiri -----
+function sosAsk(){
+  if(sosOn){ sosEl('sosActive').classList.remove('hidden'); return; }
+  sosAudioUnlock();
+  const nf = sosEl('sosNameField');
+  nf.style.display = sosName() === 'Seseorang' ? 'block' : 'none';
+  sosEl('sosConfirm').classList.remove('hidden');
+  let n = 5; sosEl('sosCount').textContent = n;
+  clearInterval(sosCountTimer);
+  try{ navigator.vibrate && navigator.vibrate(120); }catch(e){}
+  sosCountTimer = setInterval(()=>{
+    n--; sosEl('sosCount').textContent = Math.max(n, 0);
+    if(n <= 0){ clearInterval(sosCountTimer); sosStart(); }
+  }, 1000);
+}
+function sosCancel(){ clearInterval(sosCountTimer); sosEl('sosConfirm').classList.add('hidden'); }
+async function sosWakeSet(on){
+  try{
+    if(!on){ if(sosWake){ await sosWake.release(); sosWake = null; } return; }
+    if('wakeLock' in navigator && !sosWake) sosWake = await navigator.wakeLock.request('screen');
+  }catch(e){ sosWake = null; }
+}
+function sosTextStart(){
+  const t = new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
+  return [
+    `🆘🆘 <b>SOS DARURAT!</b> 🆘🆘`,
+    `<b>${escapeHtml(sosName())}</b> menekan tombol darurat.`,
+    `🕒 ${t}`,
+    sosPos ? `📍 ${sosMapLink(sosPos)}` : `📍 Lokasi sedang dicari, menyusul…`,
+    `Rekaman kamera dikirim ke grup ini tiap ±15 detik.`
+  ].join('\n');
+}
+async function sosStart(){
+  if(sosOn) return;
+  clearInterval(sosCountTimer);
+  const ni = sosEl('sosNameInput').value.trim();
+  if(ni){ locStore('sos_name', ni); if(!locMyName()) locStore('loc_name', ni); }
+  sosEl('sosConfirm').classList.add('hidden');
+  sosOn = true; sosStartedAt = Date.now(); sosLocSent = false; sosSent = 0; sosSeq = 0; sosLastTgLoc = 0;
+  locStore('sos_state', JSON.stringify({ startedAt:sosStartedAt }));
+  locStore('sos_live_msg', null);
+  sosPos = locLastPos ? { lat:locLastPos.lat, lng:locLastPos.lng, acc:locLastPos.acc || 0 } : null;
+  sosEl('sosActive').classList.remove('hidden');
+  sosEnqueue({ kind:'msg', text:sosTextStart() });
+  if(sosPos){ sosLocSent = true; sosLastTgLoc = Date.now(); sosEnqueue({ kind:'loc', lat:sosPos.lat, lng:sosPos.lng, acc:sosPos.acc }); }
+  sosPushDoc();
+  sosStartGps();
+  sosWakeSet(true);
+  if(sosCfg('rec', 'on') === 'on') sosCamStart(); else sosCamMsg = 'dimatikan di pengaturan';
+  if(sosCfg('self', 'off') === 'on') sirenStart();
+  sosTickTimer = setInterval(sosTick, 5000);
+  try{ navigator.vibrate && navigator.vibrate([200, 100, 200]); }catch(e){}
+  sosRenderStatus();
+}
+async function sosResume(){
+  let st = null; try{ st = JSON.parse(locStore('sos_state') || 'null'); }catch(e){}
+  if(!st || sosOn) return;
+  sosOn = true; sosStartedAt = st.startedAt || Date.now();
+  sosLocSent = false; sosLastTgLoc = 0;
+  sosEl('sosActive').classList.remove('hidden');
+  sosStartGps(); sosWakeSet(true);
+  if(sosCfg('rec', 'on') === 'on') sosCamStart();
+  sosTickTimer = setInterval(sosTick, 5000);
+  sosFlush(); sosRenderStatus();
+}
+function sosTick(){
+  const now = Date.now();
+  if(now - sosLastDoc >= 60000) sosPushDoc();
+  if(now - sosLastFlush >= 15000) sosFlush();
+  if(sosOn && !sosWake && document.visibilityState === 'visible') sosWakeSet(true);
+  sosRenderStatus();
+}
+async function sosEnd(){
+  if(!confirm('Akhiri SOS dan hentikan perekaman?')) return;
+  const who = sosName();
+  sosOn = false;
+  clearInterval(sosTickTimer); sosTickTimer = null;
+  if(sosWatchId !== null){ try{ navigator.geolocation.clearWatch(sosWatchId); }catch(e){} sosWatchId = null; }
+  sosCamStop(); sirenStop(); sosWakeSet(false);
+  setDocFast(sosDocRef(), { active:false, ended:Date.now(), updatedAt:Date.now() }, { merge:true });
+  sosEnqueue({ kind:'msg', text:`✅ SOS dari <b>${escapeHtml(who)}</b> telah diakhiri. Durasi ${locFmtDur(Date.now() - sosStartedAt)}.` });
+  sosEnqueue({ kind:'stoplive' });
+  locStore('sos_state', null);
+  sosEl('sosActive').classList.add('hidden');
+  showToast('SOS diakhiri. Sisa rekaman tetap dikirim di latar belakang.');
+}
+async function sosSaveLocal(){
+  try{
+    const vids = (await sosQAll()).filter(x=>x.kind === 'video');
+    if(!vids.length){ showToast('Belum ada rekaman tersimpan'); return; }
+    vids.forEach((v, i)=>{
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(v.blob);
+      a.download = `sos_${v.at}.${/mp4/.test(v.mime || '') ? 'mp4' : 'webm'}`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+    });
+    showToast(`${vids.length} rekaman disimpan ke HP`);
+  }catch(e){ showToast('Gagal menyimpan rekaman', true); }
+}
+async function sosRenderStatus(){
+  if(!sosOn || !sosEl('sosActive') || sosEl('sosActive').classList.contains('hidden')) return;
+  sosEl('sosElapsed').textContent = `Berjalan ${locFmtDur(Date.now() - sosStartedAt)} • mulai ${locClock(sosStartedAt)}`;
+  sosEl('sosLocState').textContent = sosPos ? `${sosPos.lat.toFixed(5)}, ${sosPos.lng.toFixed(5)} (±${sosPos.acc} m)` : 'mencari sinyal GPS…';
+  sosEl('sosCamState').textContent = sosCamMsg;
+  let pend = 0; try{ pend = (await sosQAll()).length; }catch(e){}
+  sosEl('sosQState').textContent = (navigator.onLine === false ? '📴 offline — ' : '') + `${pend} menunggu terkirim`;
+  const acks = sosMine && sosMine.ack ? Object.values(sosMine.ack).map(a=>a.name).filter(Boolean) : [];
+  sosEl('sosAckState').textContent = acks.length ? acks.join(', ') : 'belum ada';
+  const ph = sosPhoneClean();
+  const body = encodeURIComponent(`SOS DARURAT dari ${sosName()}. ${sosPos ? 'Lokasi: ' + sosMapLink(sosPos) : 'Lokasi belum didapat.'}`);
+  sosEl('sosSms').classList.toggle('hidden', !ph); sosEl('sosTel').classList.toggle('hidden', !ph);
+  if(ph){ sosEl('sosSms').href = `sms:${ph}?body=${body}`; sosEl('sosTel').href = `tel:${ph}`; }
+  sosEl('sosSiren').textContent = sosSiren ? '🔇 Matikan sirine' : '🔊 Sirine di HP ini';
+}
+
+// ----- Menerima SOS dari anggota lain -----
+function sosAttachListener(){
+  if(sosListenerOn) return; sosListenerOn = true;
+  onSnapshot(collection(db, ...locBase(), 'sos'), (snap)=>{
+    const all = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    sosMine = all.find(x=>x.id === locDeviceId()) || null;
+    sosRemote = all.filter(x=>x.active && x.id !== locDeviceId());
+    sosRemote.forEach(r=>{
+      const key = r.id + '_' + r.startedAt;
+      if(sosSeen.has(key)) return; sosSeen.add(key);
+      if(locStore('sos_dis_' + key)) return;
+      if(Date.now() - (r.startedAt || 0) > 3*3600*1000) return;
+      sosAlertShow(r);
+    });
+    sosRenderBanner();
+    if(sosAlertId){ const r = sosRemote.find(x=>x.id === sosAlertId); if(r) sosAlertFill(r); else sosAlertHide(); }
+    sosRenderStatus();
+  }, (err)=>console.warn('Listener SOS gagal', err));
+  if(locStore('sos_state') && !sosOn) sosResume();
+}
+function sosAlertFill(r){
+  const p = (typeof r.lat === 'number') ? { lat:r.lat, lng:r.lng } : null;
+  sosEl('saTitle').textContent = `SOS dari ${r.name || 'anggota'}!`;
+  sosEl('saSub').innerHTML = `Mulai ${locClock(r.startedAt)} • diperbarui ${locRel(r.updatedAt)}<br>${p ? '📍 Lokasi terbaru tersedia' : '📍 Lokasi belum didapat'}${typeof r.battery === 'number' ? ' • 🔋 ' + r.battery + '%' : ''}${r.cam ? '<br>🎥 Kamera merekam — cek video di grup Telegram' : ''}`;
+  const m = sosEl('saMap'); m.classList.toggle('hidden', !p); if(p) m.href = sosMapLink(p);
+  const ph = sosPhoneClean(); const tel = sosEl('saTel');
+  tel.classList.toggle('hidden', !ph); if(ph) tel.href = 'tel:' + ph;
+}
+function sosAlertShow(r){
+  sosAlertId = r.id;
+  sosAlertFill(r);
+  sosEl('sosAlert').classList.remove('hidden');
+  sirenStart();
+  try{
+    if('Notification' in window && Notification.permission === 'granted')
+      new Notification(`🆘 SOS dari ${r.name || 'anggota'}`, { body:'Buka aplikasi untuk melihat lokasi.', requireInteraction:true, tag:'sos-' + r.id });
+  }catch(e){}
+}
+function sosAlertHide(){ sosEl('sosAlert').classList.add('hidden'); sirenStop(); sosAlertId = null; }
+function sosRenderBanner(){
+  const b = sosEl('sosBanner');
+  if(!sosRemote.length){ b.classList.add('hidden'); return; }
+  b.classList.remove('hidden');
+  b.textContent = '🆘 SOS aktif: ' + sosRemote.map(r=>r.name || 'anggota').join(', ') + ' — ketuk untuk melihat';
+}
+function sosAck(){
+  const r = sosRemote.find(x=>x.id === sosAlertId); if(!r) return;
+  const me = sosName();
+  setDocFast(sosDocRef(r.id), { ack:{ [locDeviceId()]:{ name:me, at:Date.now() } } }, { merge:true });
+  sosEnqueue({ kind:'msg', text:`👀 <b>${escapeHtml(me)}</b> sudah melihat SOS dari <b>${escapeHtml(r.name || 'anggota')}</b>.` });
+  showToast('Konfirmasi terkirim 👀');
+  sirenStop();
+}
+
+// ----- Kunci ulang otomatis -----
+function showRelock(){
+  const scr = sosEl('lockScreen'), inp = sosEl('lockInput'), msg = sosEl('lockMsg'), btn = sosEl('lockBtn');
+  scr.classList.remove('hidden'); inp.value = ''; msg.textContent = '';
+  const submit = async ()=>{
+    const until = Number(localStorage.getItem('lock_until') || 0);
+    if(Date.now() < until){ msg.textContent = `Terlalu banyak percobaan. Coba lagi ${Math.ceil((until - Date.now())/1000)} detik lagi.`; return; }
+    if((await hashAccessCode(inp.value)) === ACCESS_CODE_HASH){
+      localStorage.removeItem('lock_fails'); localStorage.removeItem('lock_until');
+      scr.classList.add('hidden'); inp.value = ''; sosHiddenAt = 0; return;
+    }
+    const fails = Number(localStorage.getItem('lock_fails') || 0) + 1;
+    localStorage.setItem('lock_fails', String(fails));
+    if(fails >= 5) localStorage.setItem('lock_until', String(Date.now() + Math.min(600, 30*(fails - 4))*1000));
+    msg.textContent = 'Kode salah.'; inp.value = '';
+  };
+  btn.onclick = submit; inp.onkeydown = (e)=>{ if(e.key === 'Enter') submit(); };
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'hidden'){ sosHiddenAt = Date.now(); return; }
+  if(sosOn) sosWakeSet(true);
+  if(ACCESS_CODE_HASH && appUnlocked && sosHiddenAt && Date.now() - sosHiddenAt > SOS_RELOCK_MS) showRelock();
+});
+
+// ----- Event -----
+sosEl('btnSos').addEventListener('click', sosAsk);
+sosEl('lockSos').addEventListener('click', sosAsk);
+sosEl('sosGo').addEventListener('click', sosStart);
+sosEl('sosCancel').addEventListener('click', sosCancel);
+sosEl('sosEnd').addEventListener('click', sosEnd);
+sosEl('sosFlip').addEventListener('click', sosCamFlip);
+sosEl('sosSave').addEventListener('click', sosSaveLocal);
+sosEl('sosSiren').addEventListener('click', ()=>{ if(sosSiren) sirenStop(); else sirenStart(); sosRenderStatus(); });
+sosEl('saAck').addEventListener('click', sosAck);
+sosEl('saMute').addEventListener('click', sirenStop);
+sosEl('saClose').addEventListener('click', ()=>{
+  const r = sosRemote.find(x=>x.id === sosAlertId);
+  if(r) locStore('sos_dis_' + r.id + '_' + r.startedAt, '1');
+  sosAlertHide();
+});
+sosEl('sosBanner').addEventListener('click', ()=>{ if(sosRemote.length) sosAlertShow(sosRemote[0]); sirenStop(); });
+(function(){
+  const map = [['sosPhone','phone','val'],['sosCam','cam','val'],['sosRec','rec','chk'],['sosSelf','self','chk']];
+  map.forEach(([id, key, t])=>{
+    const el = sosEl(id); if(!el) return;
+    if(t === 'val') el.value = sosCfg(key, key === 'cam' ? 'environment' : '');
+    else el.checked = sosCfg(key, key === 'rec' ? 'on' : 'off') === 'on';
+    el.addEventListener('change', ()=>locStore('sos_' + key, t === 'val' ? el.value.trim() : (el.checked ? 'on' : 'off')));
+  });
+})();
 
 // ---------- Computation ----------
 function totalIncome(){ return transactions.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0); }
@@ -3225,7 +3764,7 @@ function escapeHtml(s){
 // ---------- Actions: Kas ----------
 async function saveDanaAwal(value){
   try{
-    await setDoc(userDocRef(), { danaAwal: Number(value)||0 }, { merge:true });
+    await setDocFast(userDocRef(), { danaAwal: Number(value)||0 }, { merge:true });
     showToast('Dana awal disimpan');
   }catch(e){
     console.error('saveDanaAwal', e);
@@ -3236,7 +3775,7 @@ async function saveDanaAwal(value){
 
 async function saveCategory(name, allocated, icon, colorIdx){
   try{
-    await addDoc(categoriesColRef(), {
+    await addDocFast(categoriesColRef(), {
       name,
       allocated: Number(allocated)||0,
       icon: icon || CATEGORY_ICONS[0],
@@ -3254,7 +3793,7 @@ async function saveCategory(name, allocated, icon, colorIdx){
 async function deleteCategory(id){
   if(!confirm('Hapus kategori ini? Riwayat transaksi lama tetap tersimpan.')) return;
   try{
-    await deleteDoc(doc(categoriesColRef(), id));
+    await deleteDocFast(doc(categoriesColRef(), id));
     showToast('Kategori dihapus');
   }catch(e){
     console.error('deleteCategory', e);
@@ -3264,7 +3803,7 @@ async function deleteCategory(id){
 
 async function saveTransaction(data){
   try{
-    await addDoc(txColRef(), { ...data, createdAt: serverTimestamp() });
+    await addDocFast(txColRef(), { ...data, createdAt: serverTimestamp() });
     showToast('Transaksi disimpan');
     sendTelegramNotification(data);
   }catch(e){
@@ -3277,7 +3816,7 @@ async function saveTransaction(data){
 async function deleteTransaction(id){
   if(!confirm('Hapus transaksi ini?')) return;
   try{
-    await deleteDoc(doc(txColRef(), id));
+    await deleteDocFast(doc(txColRef(), id));
     showToast('Transaksi dihapus');
   }catch(e){
     console.error('deleteTransaction', e);
@@ -3288,9 +3827,9 @@ async function deleteTransaction(id){
 async function sendTelegramMessage(text){
   if(!isTelegramConfigValid()) return;
   try{
-    await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage`, {
+    await fetch(tgEndpoint('sendMessage'), {
       method:'POST',
-      headers:{ 'Content-Type':'application/json' },
+      headers: tgHeaders(true),
       body: JSON.stringify({ chat_id: TELEGRAM_CONFIG.chatId, text, parse_mode:'HTML' })
     });
   }catch(e){
@@ -3330,7 +3869,7 @@ async function sendTelegramGoldNotification(item){
 // ---------- Actions: Gold ----------
 async function saveGold(data){
   try{
-    await addDoc(goldColRef(), { ...data, createdAt: serverTimestamp() });
+    await addDocFast(goldColRef(), { ...data, createdAt: serverTimestamp() });
     showToast('Emas ditambahkan');
     sendTelegramGoldNotification(data);
   }catch(e){
@@ -3343,7 +3882,7 @@ async function saveGold(data){
 async function deleteGold(id){
   if(!confirm('Hapus data emas ini?')) return;
   try{
-    await deleteDoc(doc(goldColRef(), id));
+    await deleteDocFast(doc(goldColRef(), id));
     showToast('Data emas dihapus');
   }catch(e){
     console.error('deleteGold', e);
@@ -3353,7 +3892,7 @@ async function deleteGold(id){
 
 async function saveGoldRefPrice(value, source){
   try{
-    await setDoc(userDocRef(), {
+    await setDocFast(userDocRef(), {
       goldRefPrice: Number(value)||0,
       goldRefPriceUpdatedAt: new Date().toISOString(),
       goldRefPriceSource: source || 'manual'
@@ -3471,7 +4010,7 @@ async function autoUpdateGoldNow(opts){
   goldAutoLastTry = Date.now();
   try{
     const r = await getGoldPricePerGram(opts);
-    await setDoc(userDocRef(), {
+    await setDocFast(userDocRef(), {
       goldRefPrice: r.price,
       goldRefPriceUpdatedAt: new Date().toISOString(),
       goldRefPriceSource: r.label
@@ -3754,7 +4293,7 @@ function bindHistToggles(area){
 
 // ---------- Aksi: pencatatan ke Kas (opsional) ----------
 async function mirrorToKas(type, amount, categoryName, note, date){
-  await addDoc(txColRef(), {
+  await addDocFast(txColRef(), {
     type, categoryId: null, categoryName, amount, note, date, createdAt: serverTimestamp()
   });
 }
@@ -3762,7 +4301,7 @@ async function mirrorToKas(type, amount, categoryName, note, date){
 // ---------- Aksi: Tabungan ----------
 async function saveSavingsGoal(data){
   try{
-    const ref = await addDoc(savingsGoalsColRef(), {
+    const ref = await addDocFast(savingsGoalsColRef(), {
       name: data.name, icon: data.icon, target: data.target,
       targetDate: data.targetDate || null, createdAt: serverTimestamp()
     });
@@ -3784,7 +4323,7 @@ async function saveSavingsGoal(data){
   }
 }
 async function addSavingsEntry(d, silent){
-  await addDoc(savingsEntriesColRef(), {
+  await addDocFast(savingsEntriesColRef(), {
     goalId: d.goalId, goalName: d.goalName, type: d.type, amount: d.amount,
     note: d.note || '', date: d.date, createdAt: serverTimestamp()
   });
@@ -3808,9 +4347,9 @@ async function deleteGoal(id){
   if(!confirm('Hapus target tabungan ini beserta seluruh riwayat setorannya?')) return;
   try{
     for(const e of savingsEntries.filter(x=>x.goalId===id)){
-      await deleteDoc(doc(savingsEntriesColRef(), e.id));
+      await deleteDocFast(doc(savingsEntriesColRef(), e.id));
     }
-    await deleteDoc(doc(savingsGoalsColRef(), id));
+    await deleteDocFast(doc(savingsGoalsColRef(), id));
     showToast('Target tabungan dihapus');
   }catch(e){
     console.error('deleteGoal', e);
@@ -3820,7 +4359,7 @@ async function deleteGoal(id){
 async function deleteSvEntry(id){
   if(!confirm('Hapus catatan setoran/penarikan ini? (Catatan di Kas, jika ada, tidak ikut terhapus.)')) return;
   try{
-    await deleteDoc(doc(savingsEntriesColRef(), id));
+    await deleteDocFast(doc(savingsEntriesColRef(), id));
     showToast('Catatan dihapus');
   }catch(e){
     console.error('deleteSvEntry', e);
@@ -3831,7 +4370,7 @@ async function deleteSvEntry(id){
 // ---------- Aksi: Hutang ----------
 async function saveDebt(d){
   try{
-    await addDoc(debtsColRef(), {
+    await addDocFast(debtsColRef(), {
       kind: d.kind, person: d.person, amount: d.amount, note: d.note || '',
       date: d.date, dueDate: d.dueDate || null, createdAt: serverTimestamp()
     });
@@ -3857,7 +4396,7 @@ async function saveDebt(d){
 async function saveDebtPayment(debt, p){
   try{
     const isLent = debt.kind === 'lent';
-    await addDoc(debtPaymentsColRef(), {
+    await addDocFast(debtPaymentsColRef(), {
       debtId: debt.id, person: debt.person, kind: debt.kind, amount: p.amount,
       note: p.note || '', date: p.date, createdAt: serverTimestamp()
     });
@@ -3883,9 +4422,9 @@ async function deleteDebt(id){
   if(!confirm('Hapus catatan ini beserta riwayat pembayarannya?')) return;
   try{
     for(const p of debtPayments.filter(x=>x.debtId===id)){
-      await deleteDoc(doc(debtPaymentsColRef(), p.id));
+      await deleteDocFast(doc(debtPaymentsColRef(), p.id));
     }
-    await deleteDoc(doc(debtsColRef(), id));
+    await deleteDocFast(doc(debtsColRef(), id));
     showToast('Catatan dihapus');
   }catch(e){
     console.error('deleteDebt', e);
@@ -3895,7 +4434,7 @@ async function deleteDebt(id){
 async function deleteDebtPay(id){
   if(!confirm('Hapus catatan pembayaran ini? (Catatan di Kas, jika ada, tidak ikut terhapus.)')) return;
   try{
-    await deleteDoc(doc(debtPaymentsColRef(), id));
+    await deleteDocFast(doc(debtPaymentsColRef(), id));
     showToast('Catatan dihapus');
   }catch(e){
     console.error('deleteDebtPay', e);
@@ -4435,7 +4974,7 @@ document.getElementById('btnSaveGoldAuto').addEventListener('click', async ()=>{
   const btn = document.getElementById('btnSaveGoldAuto');
   btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Menyimpan…';
   try{
-    await setDoc(userDocRef(), { goldAutoUpdate: auto, goldSource: source, goldAdjustPct: adj }, { merge:true });
+    await setDocFast(userDocRef(), { goldAutoUpdate: auto, goldSource: source, goldAdjustPct: adj }, { merge:true });
     showToast('Pengaturan otomatis disimpan');
     if(auto){
       const ok = await autoUpdateGoldNow({ source, adjustPct: adj });
@@ -4980,7 +5519,7 @@ document.getElementById('btnSaveNote').addEventListener('click', async ()=>{
   if(!text){ showToast('Tulis dulu catatannya ya', true); return; }
   if(!uid){ showToast('Belum terhubung ke Firebase, coba lagi sebentar.', true); return; }
   try{
-    await addDoc(petNotesColRef(), { date: todayISO(), text, mood: noteMood, createdAt: serverTimestamp() });
+    await addDocFast(petNotesColRef(), { date: todayISO(), text, mood: noteMood, createdAt: serverTimestamp() });
     ta.value = '';
     catSay('Meow~ catatan tersimpan! 📔'); sfx('claim');
     showToast('Catatan tersimpan 🐾');
@@ -4989,7 +5528,7 @@ document.getElementById('btnSaveNote').addEventListener('click', async ()=>{
 document.getElementById('noteList').addEventListener('click', async (e)=>{
   const b = e.target.closest('[data-delnote]'); if(!b) return;
   if(!confirm('Hapus catatan ini?')) return;
-  try{ await deleteDoc(doc(petNotesColRef(), b.dataset.delnote)); }catch(err){ showToast(errorMessage(err), true); }
+  try{ await deleteDocFast(doc(petNotesColRef(), b.dataset.delnote)); }catch(err){ showToast(errorMessage(err), true); }
 });
 setInterval(()=>renderCat(), 60000);
 setInterval(tickMission, 1000);
