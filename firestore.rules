@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Perangkat dianggap "anggota" jika punya dokumen members/{uid}.
+    function isMember() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/members/$(request.auth.uid));
+    }
+
+    // Dokumen anggota hanya bisa dibuat kalau kode akses benar.
+    // GANTI nilai di bawah dengan hash dari app (Pengaturan > Info > Buat hash kode akses),
+    // dan nilai yang SAMA harus ada di ACCESS_CODE_HASH di index.html.
+    match /members/{uid} {
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['code', 'at'])
+        && request.resource.data.code == 'GANTI_DENGAN_HASH_KODE_AKSES';
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow update, delete: if false;
+    }
+
+    // Semua data app (kas, emas, kucing, lokasi, riwayat, tempat, kabar) hanya untuk anggota.
+    match /bukukas_shared/{document=**} {
+      allow read, write: if isMember();
+    }
+  }
+}

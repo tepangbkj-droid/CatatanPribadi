@@ -616,26 +616,73 @@
   .shop-tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
   .shop-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
   .shop-grid .shop-item{min-width:0;}
-  /* ===== Lokasi (cek lokasi bersama) ===== */
+  /* ===== Lokasi v2 ===== */
   .tab-btn.active.tab-loc{color:#0A7FB0;background:var(--blue-soft);}
   .hero.hero-loc{background:linear-gradient(150deg,#0C8F83 0%,#14B8A6 45%,#2E8BFF 100%);box-shadow:0 16px 34px -14px rgba(20,184,166,0.55);}
+  .loc-hero-row{display:flex;align-items:center;justify-content:space-between;gap:14px;position:relative;}
+  .loc-hero-act{width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-size:28px;flex:0 0 auto;backdrop-filter:blur(4px);}
   .loc-card{padding:16px;border:1px solid var(--line);border-radius:var(--radius-m);background:var(--card);box-shadow:0 8px 18px -14px rgba(34,26,61,0.4);margin-top:16px;}
   .loc-card .field{margin-bottom:10px;}
   .loc-status{font-size:12.5px;color:var(--ink-soft);margin-top:10px;line-height:1.45;}
-  .loc-mapbox{margin-top:16px;border-radius:var(--radius-m);overflow:hidden;border:1px solid var(--line);background:var(--blue-soft);position:relative;}
-  #locMap{height:280px;width:100%;z-index:0;}
+  .loc-opts{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px;display:flex;flex-direction:column;gap:2px;}
+  .loc-switch{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;padding:7px 0;}
+  .loc-switch small{display:block;color:var(--ink-soft);font-size:11.5px;margin-top:1px;}
+  .loc-switch input{width:44px;height:26px;appearance:none;-webkit-appearance:none;background:#D9D4EE;border-radius:99px;position:relative;flex:0 0 auto;transition:.2s;cursor:pointer;}
+  .loc-switch input::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3);}
+  .loc-switch input:checked{background:var(--teal);}
+  .loc-switch input:checked::after{left:21px;}
+  .loc-strip{display:flex;gap:12px;overflow-x:auto;padding:16px 2px 4px;scrollbar-width:none;}
+  .loc-strip::-webkit-scrollbar{display:none;}
+  .loc-chip{display:flex;flex-direction:column;align-items:center;gap:5px;flex:0 0 auto;width:62px;background:none;border:none;padding:0;color:var(--ink);font-size:11.5px;font-weight:600;}
+  .loc-chip .nm{max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .loc-ava{position:relative;width:46px;height:46px;border-radius:50%;flex:0 0 auto;color:#fff;font-weight:700;font-family:var(--font-head);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 6px 14px -6px rgba(0,0,0,.4);border:3px solid #fff;outline:2px solid var(--ava,#14B8A6);}
+  .loc-ava.off{opacity:.45;}
+  .loc-badge{position:absolute;right:-6px;bottom:-6px;font-style:normal;font-size:14px;background:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.3);}
+  .loc-mapbox{margin-top:10px;border-radius:var(--radius-m);overflow:hidden;border:1px solid var(--line);background:var(--blue-soft);position:relative;}
+  #locMap{height:320px;width:100%;z-index:0;}
+  .loc-fab{position:absolute;right:10px;bottom:10px;z-index:1001;width:42px;height:42px;border-radius:50%;border:none;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.3);font-size:19px;}
+  .loc-pickhint{position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:1001;background:rgba(34,26,61,.88);color:#fff;font-size:12.5px;padding:8px 14px;border-radius:99px;white-space:nowrap;}
   .loc-map-empty{padding:26px 16px;text-align:center;color:var(--ink-soft);font-size:13px;}
-  .loc-pin{width:34px;height:34px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,.35);}
+  .loc-pin{position:relative;width:36px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,.35);}
   .loc-pin span{transform:rotate(45deg);color:#fff;font-weight:700;font-size:14px;font-family:var(--font-head);}
+  .loc-pin i{position:absolute;transform:rotate(45deg);right:-12px;top:-10px;font-style:normal;font-size:15px;background:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.3);}
+  .loc-place-pin{font-size:20px;text-align:center;line-height:26px;width:26px;height:26px;background:#fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.3);}
+  .loc-seg{display:flex;gap:4px;background:var(--violet-soft);padding:4px;border-radius:14px;margin-top:16px;}
+  .loc-seg button{flex:1;border:none;background:transparent;border-radius:11px;padding:9px 2px;font-size:12px;font-weight:700;color:var(--ink-soft);}
+  .loc-seg button.active{background:#fff;color:var(--violet-dark);box-shadow:0 3px 8px -4px rgba(34,26,61,.4);}
+  .loc-pane{margin-top:14px;}
   .loc-row{padding:14px;border:1px solid var(--line);border-radius:var(--radius-m);background:var(--card);box-shadow:0 8px 18px -14px rgba(34,26,61,0.4);}
   .loc-row.sel{border-color:var(--teal);box-shadow:0 0 0 2px var(--teal-soft);}
   .loc-top{display:flex;align-items:center;gap:12px;}
-  .loc-ava{width:42px;height:42px;border-radius:50%;flex:0 0 auto;color:#fff;font-weight:700;font-family:var(--font-head);display:flex;align-items:center;justify-content:center;font-size:17px;}
   .loc-name{font-weight:700;font-size:15px;overflow-wrap:anywhere;}
   .loc-sub{font-size:12.5px;color:var(--ink-soft);margin-top:2px;line-height:1.4;}
-  .loc-sub.live{color:#0A8C5A;}
+  .loc-sub.live{color:#0A8C5A;font-weight:600;}
   .loc-acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
   .loc-acts .link-btn{text-decoration:none;}
+  .loc-who{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none;}
+  .loc-who button{flex:0 0 auto;border:1px solid var(--line);background:#fff;border-radius:99px;padding:7px 13px;font-size:12.5px;font-weight:600;color:var(--ink-soft);}
+  .loc-who button.active{background:var(--teal);border-color:var(--teal);color:#fff;}
+  .loc-sum{margin:8px 0 12px;font-size:12.5px;color:var(--ink-soft);}
+  .loc-dayhead{font-size:12px;font-weight:700;color:var(--ink-soft);margin:14px 0 8px;text-transform:uppercase;letter-spacing:.4px;}
+  .loc-trip{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:var(--radius-m);background:var(--card);margin-bottom:8px;cursor:pointer;}
+  .loc-trip:active{background:var(--violet-soft);}
+  .loc-trip .ti{width:40px;height:40px;border-radius:12px;background:var(--teal-soft);display:flex;align-items:center;justify-content:center;font-size:20px;flex:0 0 auto;}
+  .loc-trip .tt{font-weight:700;font-size:14px;overflow-wrap:anywhere;}
+  .loc-trip .ts{font-size:12px;color:var(--ink-soft);margin-top:2px;line-height:1.4;}
+  .loc-trip .td{margin-left:auto;border:none;background:none;font-size:16px;opacity:.6;padding:6px;}
+  .loc-form{padding:14px;border:1px dashed var(--teal);border-radius:var(--radius-m);background:var(--teal-soft);margin-bottom:12px;}
+  .loc-form select,.loc-form input{width:100%;}
+  .loc-feed{display:flex;align-items:flex-start;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);font-size:13.5px;}
+  .loc-feed:last-child{border-bottom:none;}
+  .loc-feed .fi{font-size:20px;flex:0 0 auto;}
+  .loc-feed .ft{color:var(--ink-soft);font-size:11.5px;margin-top:2px;}
+  .lock-screen{position:fixed;inset:0;z-index:99999;background:linear-gradient(150deg,#4B2FD9,#6D4AFF 55%,#2E8BFF);display:flex;align-items:center;justify-content:center;padding:24px;}
+  .lock-card{background:#fff;border-radius:var(--radius-l);padding:28px 22px;max-width:360px;width:100%;text-align:center;box-shadow:0 24px 50px -16px rgba(0,0,0,.5);}
+  .lock-card .li{font-size:44px;}
+  .lock-card h2{font-family:var(--font-head);margin:8px 0 4px;font-size:21px;}
+  .lock-card p{color:var(--ink-soft);font-size:13px;margin:0 0 16px;line-height:1.5;}
+  .lock-card input{width:100%;padding:13px 14px;border:1.5px solid var(--line);border-radius:12px;font-size:16px;margin-bottom:12px;text-align:center;}
+  #lockMsg{font-size:12.5px;color:var(--rose);margin-top:10px;min-height:16px;}
 </style>
 </head>
 <body>
@@ -886,9 +933,14 @@
     <!-- ===== VIEW: LOKASI ===== -->
     <div id="viewLokasi" class="view-pane">
       <div class="hero hero-loc fade-up">
-        <div class="hero-label">📍 Cek lokasi bersama</div>
-        <div class="hero-number" style="font-size:24px;" id="locHeroTitle">Belum ada yang berbagi</div>
-        <div class="hero-sub">Masing-masing bebas memilih mau berbagi lokasi atau tidak.</div>
+        <div class="loc-hero-row">
+          <div style="min-width:0;">
+            <div class="hero-label">📍 Lokasi keluarga</div>
+            <div class="hero-number" style="font-size:23px;" id="locHeroTitle">Belum ada yang berbagi</div>
+            <div class="hero-sub" id="locHeroSub">Masing-masing bebas memilih mau berbagi atau tidak.</div>
+          </div>
+          <div class="loc-hero-act" id="locHeroAct">📍</div>
+        </div>
       </div>
 
       <div class="loc-card">
@@ -899,19 +951,69 @@
         <div class="btn-row">
           <button class="btn btn-teal" id="btnLocToggle">📍 Bagikan lokasi saya</button>
         </div>
-        <div class="loc-status" id="locMyStatus">Lokasi hanya dibagikan setelah kamu menekan tombol di atas, dan bisa dimatikan kapan saja.</div>
-      </div>
-
-      <div class="loc-mapbox"><div id="locMap"></div></div>
-
-      <div class="section" style="margin-top:22px;">
-        <div class="section-head">
-          <div class="section-title">👥 Anggota</div>
-          <button class="link-btn teal" id="btnLocRefresh">🔄 Muat ulang</button>
+        <div class="loc-status" id="locMyStatus"></div>
+        <div class="loc-opts">
+          <label class="loc-switch"><span>Jaga layar tetap menyala<small>Lebih akurat saat berjalan/berkendara, tapi boros baterai.</small></span><input type="checkbox" id="optWake"></label>
+          <label class="loc-switch"><span>Kirim notifikasi Telegram<small>Saat tiba/meninggalkan tempat, check-in &amp; baterai lemah.</small></span><input type="checkbox" id="optTg" checked></label>
+          <label class="loc-switch"><span>Notifikasi di HP ini<small>Kabar tiba/pergi anggota lain saat app terbuka.</small></span><input type="checkbox" id="optNotif"></label>
         </div>
-        <div class="fin-list" id="locList"></div>
       </div>
-      <div class="field-hint" style="margin-top:14px;">ℹ️ Lokasi diperbarui otomatis selama aplikasi terbuka di HP masing-masing. Kalau aplikasi ditutup, yang terlihat adalah lokasi terakhir beserta waktunya. Tombol “Minta update” akan memicu HP orang itu memperbarui lokasi bila aplikasinya sedang terbuka.</div>
+
+      <div class="loc-strip" id="locStrip"></div>
+      <div class="loc-mapbox">
+        <div id="locMap"></div>
+        <button class="loc-fab" id="btnLocFit" aria-label="Tampilkan semua">🎯</button>
+        <div class="loc-pickhint hidden" id="locPickHint">👆 Tap peta untuk memilih titik tempat</div>
+      </div>
+
+      <div class="loc-seg" id="locSeg">
+        <button data-lseg="anggota" class="active">👥 Anggota</button>
+        <button data-lseg="riwayat">🧭 Riwayat</button>
+        <button data-lseg="tempat">📌 Tempat</button>
+        <button data-lseg="aktivitas">🔔 Kabar</button>
+      </div>
+
+      <div class="loc-pane" id="locPane-anggota"><div class="fin-list" id="locList"></div></div>
+
+      <div class="loc-pane hidden" id="locPane-riwayat">
+        <div class="loc-who" id="locHistWho"></div>
+        <div class="loc-sum" id="locHistSum"></div>
+        <div id="locTrips"></div>
+      </div>
+
+      <div class="loc-pane hidden" id="locPane-tempat">
+        <div class="section-head" style="margin-bottom:10px;">
+          <div class="section-title" style="font-size:16px;">📌 Tempat penting</div>
+          <button class="link-btn teal" id="btnPlaceAdd">+ Tambah</button>
+        </div>
+        <div class="loc-form hidden" id="placeForm">
+          <div class="field"><label>Nama tempat</label><input type="text" id="placeName" maxlength="24" placeholder="mis. Rumah, Kantor, Sekolah Adik"></div>
+          <div class="field-row">
+            <div class="field"><label>Ikon</label>
+              <select id="placeIcon"><option value="🏠">🏠 Rumah</option><option value="💼">💼 Kantor</option><option value="🏫">🏫 Sekolah</option><option value="🛒">🛒 Belanja</option><option value="🕌">🕌 Ibadah</option><option value="🏥">🏥 Kesehatan</option><option value="🏋️">🏋️ Olahraga</option><option value="📍">📍 Lainnya</option></select></div>
+            <div class="field"><label>Radius</label>
+              <select id="placeRadius"><option value="100">100 m</option><option value="200" selected>200 m</option><option value="300">300 m</option><option value="500">500 m</option></select></div>
+          </div>
+          <div class="btn-row" style="margin-bottom:8px;">
+            <button class="btn btn-ghost" id="btnPlaceHere">📍 Pakai lokasiku</button>
+            <button class="btn btn-ghost" id="btnPlacePick">🗺️ Pilih di peta</button>
+          </div>
+          <div class="loc-status" id="placeDraftLabel" style="margin:0 0 10px;">Belum ada titik dipilih.</div>
+          <div class="btn-row">
+            <button class="btn btn-ghost" id="btnPlaceCancel">Batal</button>
+            <button class="btn btn-teal" id="btnPlaceSave">Simpan tempat</button>
+          </div>
+        </div>
+        <div class="fin-list" id="placeList"></div>
+      </div>
+
+      <div class="loc-pane hidden" id="locPane-aktivitas">
+        <button class="btn btn-teal" id="btnCheckin">✅ Check-in: aku aman / sudah sampai</button>
+        <div style="margin-top:12px;" id="locFeed"></div>
+      </div>
+
+      <div class="field-hint hidden" id="locNativeHint" style="margin-top:16px;">🟢 Mode native aktif: pelacakan berjalan di belakang layar (ada notifikasi tetap “berbagi lokasi”). Pilih izin lokasi <b>Sepanjang waktu</b> dan set baterai app ke <b>Tidak dibatasi</b> agar tidak dimatikan sistem. <button class="link-btn teal" id="btnLocPerm" style="margin-left:6px;">⚙️ Buka izin</button></div>
+      <div class="field-hint" id="locWebHint" style="margin-top:16px;">ℹ️ Aplikasi web hanya bisa melacak selama app terbuka (layar menyala atau app di depan). Saat app ditutup/dikunci, yang terlihat adalah lokasi terakhir beserta waktunya. Gerak (diam, jalan, berkendara) dan riwayat perjalanan dihitung otomatis dari kecepatan GPS.</div>
     </div>
 
     <div id="viewAI" class="view-pane">
@@ -1266,8 +1368,23 @@
       <div class="field-hint" style="margin-bottom:12px;">📨 Notifikasi Telegram: <strong id="tgStatusLabel">-</strong>. Setiap transaksi baru otomatis terkirim ke chat Telegram yang sama untuk semua orang, tanpa perlu diatur ulang.</div>
       <div class="divider-note">Konfigurasi Firebase &amp; Telegram diatur sekali oleh pemilik aplikasi langsung di dalam kode (bagian KONFIGURASI BERSAMA), bukan per-perangkat.</div>
       <div class="divider-note">📲 Versi aplikasi: <strong id="appVersionLabel">-</strong>. Pembaruan dimuat otomatis dari server — tidak perlu install ulang APK. Saat ada versi baru, muncul banner "Perbarui".</div>
+      <div class="divider-note">🔐 Kode akses: <strong id="accStateLabel">-</strong>. Buat kode baru lalu salin hash ke <code>ACCESS_CODE_HASH</code> di kode &amp; <code>firestore.rules</code> (lihat KEAMANAN.md). Pakai kode panjang (8+ karakter / frasa).</div>
+      <div class="field"><input type="text" id="accCodeInput" placeholder="Ketik kode akses baru" autocomplete="off"></div>
+      <button class="btn btn-ghost" id="btnAccGen">🔐 Buat hash kode akses</button>
+      <div class="field-hint" id="accOut" style="margin:10px 0 14px;word-break:break-all;user-select:all;"></div>
       <button class="btn btn-ghost" id="btnCheckUpdate">🔄 Cek pembaruan</button>
     </div>
+  </div>
+</div>
+
+<div class="lock-screen hidden" id="lockScreen">
+  <div class="lock-card">
+    <div class="li">🔐</div>
+    <h2>Masukkan kode akses</h2>
+    <p>Aplikasi ini privat. Hanya yang tahu kode akses yang bisa membuka data keuangan dan lokasi.</p>
+    <input type="password" id="lockInput" autocomplete="current-password" placeholder="Kode akses">
+    <button class="btn btn-primary" id="lockBtn" style="width:100%;">Buka</button>
+    <div id="lockMsg"></div>
   </div>
 </div>
 
@@ -1281,7 +1398,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import {
   getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, updateDoc,
-  collection, onSnapshot, query, orderBy, serverTimestamp
+  collection, onSnapshot, query, orderBy, serverTimestamp, limit, getDocs
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
@@ -1307,6 +1424,12 @@ const TELEGRAM_CONFIG = {
 // ID ruang data bersama. Biarkan "main" kecuali sengaja ingin memisah data
 // (mis. jadi beberapa "buku kas" berbeda) dengan mengganti ID ini.
 const SHARED_SPACE_ID = "main";
+
+// ---- KODE AKSES (agar orang tak dikenal tidak bisa membuka data) ----
+// Kosong = gembok MATI. Untuk mengaktifkan: buka app → Pengaturan → Info → "Buat kode akses",
+// salin hasil hash-nya ke ACCESS_CODE_HASH di bawah, lalu pasang aturan di firestore.rules (lihat KEAMANAN.md).
+const ACCESS_SALT = "catatanpribadi-v1";
+const ACCESS_CODE_HASH = "";
 // =====================================================================
 
 function isPlaceholder(v){ return !v || String(v).startsWith('GANTI_'); }
@@ -1319,7 +1442,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.3.0';
+const APP_VERSION = '2.5.0';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -1482,6 +1605,53 @@ function attachMoneyFormatting(){
   });
 }
 
+// ---------- Gembok kode akses ----------
+async function sha256Hex(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function hashAccessCode(code){ return sha256Hex(ACCESS_SALT + '|' + String(code).trim()); }
+async function ensureAccess(){
+  if(!ACCESS_CODE_HASH) return true;
+  const memRef = doc(db, 'members', uid);
+  try{
+    const m = await getDoc(memRef);
+    if(m.exists() && m.data().code === ACCESS_CODE_HASH) return true;
+  }catch(e){ console.warn('cek akses', e); }
+  const scr = document.getElementById('lockScreen');
+  const inp = document.getElementById('lockInput'), msg = document.getElementById('lockMsg'), btn = document.getElementById('lockBtn');
+  document.getElementById('globalLoading').classList.add('hidden');
+  scr.classList.remove('hidden');
+  setTimeout(()=>inp.focus(), 100);
+  return new Promise((resolve)=>{
+    async function submit(){
+      const until = Number(localStorage.getItem('lock_until') || 0);
+      if(Date.now() < until){ msg.textContent = `Terlalu banyak percobaan. Coba lagi ${Math.ceil((until-Date.now())/1000)} detik lagi.`; return; }
+      if(!inp.value.trim()){ msg.textContent = 'Masukkan kode akses.'; return; }
+      btn.disabled = true; msg.textContent = '';
+      try{
+        const h = await hashAccessCode(inp.value);
+        if(h !== ACCESS_CODE_HASH){
+          const fails = Number(localStorage.getItem('lock_fails') || 0) + 1;
+          localStorage.setItem('lock_fails', String(fails));
+          if(fails >= 5){ localStorage.setItem('lock_until', String(Date.now() + Math.min(600, 30*(fails-4))*1000)); }
+          msg.textContent = 'Kode salah.'; inp.value = ''; return;
+        }
+        await setDoc(memRef, { code:h, at:serverTimestamp() });
+        localStorage.removeItem('lock_fails'); localStorage.removeItem('lock_until');
+        scr.classList.add('hidden'); inp.value = '';
+        document.getElementById('globalLoading').classList.remove('hidden');
+        resolve(true);
+      }catch(e){
+        console.error(e);
+        msg.textContent = 'Ditolak server. Kode mungkin sudah diganti atau aturan Firestore belum dipasang.';
+      }finally{ btn.disabled = false; }
+    }
+    btn.onclick = submit;
+    inp.onkeydown = (ev)=>{ if(ev.key === 'Enter') submit(); };
+  });
+}
+
 // ---------- Firebase bootstrap ----------
 function showOnboardError(msg){
   document.getElementById('appRoot').classList.add('hidden');
@@ -1503,9 +1673,13 @@ async function startApp(){
     app = initializeApp(FIREBASE_CONFIG);
     db = getFirestore(app);
     auth = getAuth(app);
-    onAuthStateChanged(auth, (user)=>{
+    let accessChecked = false;
+    onAuthStateChanged(auth, async (user)=>{
       if(user){
         uid = user.uid;
+        if(accessChecked) return;
+        accessChecked = true;
+        await ensureAccess();
         document.getElementById('fbProjectLabel').textContent = FIREBASE_CONFIG.projectId || '-';
         document.getElementById('tgStatusLabel').textContent = isTelegramConfigValid() ? 'Aktif' : 'Belum diisi';
         attachListeners();
@@ -1622,18 +1796,34 @@ function attachListeners(){
   attachLokasiListener();
 }
 
-// ---------- Lokasi (cek lokasi bersama, ala Life360) ----------
+// ---------- Lokasi v2: real-time, deteksi gerak, riwayat perjalanan, tempat & notifikasi ----------
 // Tiap perangkat punya ID sendiri. Lokasi hanya ditulis ke Firestore bila pemilik perangkat
-// menyalakan "Bagikan lokasi saya". Semua orang di ruang data bersama bisa melihat daftar & peta.
+// menyalakan "Bagikan lokasi saya". Pelacakan berjalan selama app terbuka (batasan web app).
 const LOC_COLORS = ['#6D4AFF','#0FAE73','#F0355A','#F5A324','#2E8BFF','#EC4899','#14B8A6'];
-const LOC_STALE_MS = 10 * 60 * 1000;     // >10 menit tanpa update = "terakhir terlihat"
-const LOC_MIN_INTERVAL = 30 * 1000;      // jarak minimal antar penulisan saat bergerak
-const LOC_HEARTBEAT = 3 * 60 * 1000;     // tetap tulis tiap 3 menit walau diam
-const LOC_MIN_MOVE_M = 25;               // gerak minimal (meter) untuk memicu penulisan
-let locMembers = [];
+const LOC_STALE_MS = 10 * 60 * 1000;
+const LOC_HEARTBEAT = 3 * 60 * 1000;
+const LOC_GAP_MS = 8 * 60 * 1000;          // jeda data > 8 menit = perjalanan dipotong
+const LOC_TRIP_END_MS = 3 * 60 * 1000;     // diam >3 menit = perjalanan selesai
+const LOC_MAX_ACC = 150;                   // abaikan titik GPS yang terlalu kasar (m)
+const MODE_INFO = {
+  diam:    { ic:'🧍', label:'Diam' },
+  jalan:   { ic:'🚶', label:'Berjalan' },
+  sepeda:  { ic:'🚴', label:'Berlari / bersepeda' },
+  kendara: { ic:'🚗', label:'Berkendara' }
+};
+const EV_ICON = { arrive:'🏠', leave:'🚪', checkin:'✅', lowbat:'🪫' };
+
+let locMembers = [], locPlaces = [], locEvents = [], locTrips = [];
 let locMap = null, locMarkers = {}, locMapFitted = false;
+let locLayerPlaces = null, locLayerTrail = null, locLayerRoute = null, locDraftMarker = null;
 let locWatchId = null, locLastWrite = 0, locLastPos = null, locSelectedId = null;
-let locHandledPing = null, locListenerOn = false, locTick = null;
+let locHandledPing = null, locListenerOn = false, locTick = null, locWake = null;
+let locSeg = 'anggota', locHistWho = null, locTripsUnsub = null, locEventsReady = false;
+let locPicking = false, locDraft = null;
+// mesin gerak
+let locPrev = null, locSpeed = 0, locMode = 'diam', locModeSince = Date.now();
+let locModeCand = 'diam', locModeCandN = 0, locAnchor = null, locTrip = null, locLastSampleAt = 0;
+let locFenceCnt = {}, locLowBatSent = false;
 
 function locStore(key, val){
   try{
@@ -1651,8 +1841,12 @@ function locColorFor(id){
   let h = 0; for(const ch of String(id)) h = (h*31 + ch.charCodeAt(0)) >>> 0;
   return LOC_COLORS[h % LOC_COLORS.length];
 }
-function locColRef(){ return collection(db, 'bukukas_shared', SHARED_SPACE_ID, 'locations'); }
-function locDocRef(id){ return doc(db, 'bukukas_shared', SHARED_SPACE_ID, 'locations', id || locDeviceId()); }
+const locBase = () => ['bukukas_shared', SHARED_SPACE_ID];
+function locColRef(){ return collection(db, ...locBase(), 'locations'); }
+function locDocRef(id){ return doc(db, ...locBase(), 'locations', id || locDeviceId()); }
+function locTripsColRef(id){ return collection(db, ...locBase(), 'locations', id, 'trips'); }
+function locPlacesColRef(){ return collection(db, ...locBase(), 'places'); }
+function locEventsColRef(){ return collection(db, ...locBase(), 'locEvents'); }
 function locMyName(){ return (locStore('loc_name') || '').trim(); }
 function locIsSharing(){ return locStore('loc_sharing') === 'on'; }
 
@@ -1662,7 +1856,11 @@ function locDistanceM(a, b){
   const h = Math.sin(dLat/2)**2 + Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLng/2)**2;
   return 2*R*Math.asin(Math.sqrt(h));
 }
-function locFmtDist(m){ return m < 1000 ? `${Math.round(m/10)*10} m` : `${(m/1000).toFixed(m<10000?1:0)} km`; }
+function locFmtDist(m){ return m < 1000 ? `${Math.round(m/10)*10} m` : `${(m/1000).toFixed(m<10000?1:0).replace('.',',')} km`; }
+function locFmtDur(ms){
+  const m = Math.max(1, Math.round(ms/60000));
+  return m < 60 ? `${m} mnt` : `${Math.floor(m/60)} j ${m%60} mnt`;
+}
 function locRel(ms){
   if(!ms) return 'belum ada data';
   const s = Math.max(0, Math.round((Date.now()-ms)/1000));
@@ -1671,7 +1869,27 @@ function locRel(ms){
   const h = Math.round(m/60); if(h < 24) return `${h} jam lalu`;
   return `${Math.round(h/24)} hari lalu`;
 }
+function locClock(ms){ const d = new Date(ms); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
+function locDayLabel(ms){
+  const d = new Date(ms), t = new Date();
+  const k = x => x.getFullYear()*10000 + x.getMonth()*100 + x.getDate();
+  const y = new Date(t); y.setDate(t.getDate()-1);
+  if(k(d) === k(t)) return 'Hari ini';
+  if(k(d) === k(y)) return 'Kemarin';
+  return d.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'short' });
+}
+function locIni(name){ return escapeHtml((name || '?').trim().charAt(0).toUpperCase() || '?'); }
+function locHasPos(m){ return !!m && m.sharing && typeof m.lat === 'number' && typeof m.lng === 'number'; }
+function locIsFresh(m){ return locHasPos(m) && m.updatedMs && (Date.now()-m.updatedMs) < LOC_STALE_MS; }
+function locPlaceAt(p){
+  if(!p) return null;
+  let best = null, bd = Infinity;
+  locPlaces.forEach(pl=>{ const d = locDistanceM(p, pl); if(d <= pl.radius && d < bd){ best = pl; bd = d; } });
+  return best;
+}
+function locClassify(v){ return v < 0.8 ? 'diam' : v < 2.3 ? 'jalan' : v < 6 ? 'sepeda' : 'kendara'; }
 
+// ----- Listener -----
 function attachLokasiListener(){
   if(locListenerOn) return;
   locListenerOn = true;
@@ -1680,7 +1898,6 @@ function attachLokasiListener(){
       const x = d.data({ serverTimestamps:'estimate' });
       return { id:d.id, ...x, updatedMs: x.updatedAt && x.updatedAt.toMillis ? x.updatedAt.toMillis() : null };
     });
-    // permintaan "minta update" untuk perangkat ini
     const me = locMembers.find(m=>m.id===locDeviceId());
     if(me){
       if(locHandledPing === null){ locHandledPing = me.pingAt || 0; }
@@ -1691,71 +1908,325 @@ function attachLokasiListener(){
     }else if(locHandledPing === null){ locHandledPing = 0; }
     renderLokasi();
   }, (err)=>console.warn('Listener lokasi gagal', err));
-  // Lanjutkan berbagi otomatis jika sebelumnya sudah dinyalakan di perangkat ini
+
+  onSnapshot(query(locPlacesColRef(), orderBy('createdAt','asc')), (snap)=>{
+    locPlaces = snap.docs.map(d=>({ id:d.id, ...d.data(), radius:Number(d.data().radius||200) }));
+    renderLokasi();
+  }, (err)=>console.warn('Listener tempat gagal', err));
+
+  onSnapshot(query(locEventsColRef(), orderBy('atMs','desc'), limit(30)), (snap)=>{
+    if(locEventsReady){
+      snap.docChanges().forEach(ch=>{
+        if(ch.type !== 'added') return;
+        const ev = ch.doc.data();
+        if(ev.deviceId === locDeviceId() || !ev.atMs || Date.now()-ev.atMs > 2*60*1000) return;
+        const txt = locEventText(ev);
+        showToast(txt);
+        locNotify('Kabar lokasi', txt);
+      });
+    }
+    locEvents = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    locEventsReady = true;
+    renderLokasi();
+  }, (err)=>console.warn('Listener kabar gagal', err));
+
   if(locIsSharing() && locMyName()) locStartWatch();
-  locTick = setInterval(()=>{ if(activeTab === 'lokasi') renderLokasi(); }, 30000);
+  locTick = setInterval(locTickFn, 20000);
   document.addEventListener('visibilitychange', ()=>{
-    if(document.visibilityState === 'visible' && locIsSharing()) locPushNow(true);
+    if(document.visibilityState === 'visible'){
+      if(locIsSharing()) locPushNow(false);
+      locWakeSet();
+      renderLokasi();
+    }
   });
 }
+function locTickFn(){
+  const now = Date.now();
+  if(locIsSharing()){
+    // tidak ada data baru lama = anggap diam
+    if(locMode !== 'diam' && locLastSampleAt && now - locLastSampleAt > 90*1000){
+      locMode = 'diam'; locModeSince = now; locSpeed = 0; locModeCand = 'diam'; locModeCandN = 0;
+      if(locLastPos) locWriteState();
+    }
+    if(locTrip && now - locTrip.lastMoveAt >= LOC_TRIP_END_MS) locEndTrip();
+    if(locLastPos && now - locLastWrite >= LOC_HEARTBEAT) locWriteState();
+  }
+  if(activeTab === 'lokasi') renderLokasi();
+}
 
+function locNotify(title, body){
+  try{
+    if(locStore('loc_notif') === 'on' && 'Notification' in window && Notification.permission === 'granted'){
+      new Notification(title, { body, icon:'icon-192.png', tag:'loc-' + Date.now() });
+    }
+  }catch(e){}
+}
+
+// ----- Perangkat: baterai & layar -----
 async function locBattery(){
   try{
     if(navigator.getBattery){ const b = await navigator.getBattery(); return { battery: Math.round(b.level*100), charging: !!b.charging }; }
   }catch(e){}
   return { battery:null, charging:null };
 }
+async function locWakeSet(){
+  try{
+    const want = locIsSharing() && locStore('loc_wake') === 'on' && 'wakeLock' in navigator;
+    if(!want){ if(locWake){ await locWake.release(); locWake = null; } return; }
+    if(locWake || document.visibilityState !== 'visible') return;
+    locWake = await navigator.wakeLock.request('screen');
+    locWake.addEventListener('release', ()=>{ locWake = null; });
+  }catch(e){ locWake = null; }
+}
 
-async function locWrite(pos){
-  if(!uid || !pos) return;
+// ----- Tulis ke Firestore -----
+function locTrailFlat(){
+  if(!locTrip) return [];
+  const pts = locTrip.pts.slice(-60), out = [];
+  pts.forEach(p=>{ out.push(+p[0].toFixed(5), +p[1].toFixed(5)); });
+  return out;
+}
+async function locWrite(cur){
+  if(!uid || !cur) return;
   const bat = await locBattery();
   try{
     await setDoc(locDocRef(), {
       name: locMyName() || 'Tanpa nama',
       color: locColorFor(locDeviceId()),
       sharing: true,
-      lat: pos.coords.latitude,
-      lng: pos.coords.longitude,
-      accuracy: Math.round(pos.coords.accuracy || 0),
+      lat: cur.lat, lng: cur.lng, accuracy: Math.round(cur.acc || 0),
+      mode: locMode, modeSince: locModeSince, speedKmh: Math.round(locSpeed*3.6),
+      trail: locTrailFlat(), tripSince: locTrip ? locTrip.startAt : null,
       battery: bat.battery, charging: bat.charging,
       updatedAt: serverTimestamp()
     }, { merge:true });
     locLastWrite = Date.now();
-    locLastPos = { lat:pos.coords.latitude, lng:pos.coords.longitude };
+    locLastPos = { lat:cur.lat, lng:cur.lng, acc:cur.acc };
+    locCheckBattery(bat);
   }catch(e){ console.error('locWrite', e); showToast(errorMessage(e), true); }
 }
+function locWriteState(){ if(locLastPos) locWrite({ lat:locLastPos.lat, lng:locLastPos.lng, acc:locLastPos.acc||0 }); }
+function locCheckBattery(bat){
+  if(typeof bat.battery !== 'number') return;
+  if(bat.battery <= 15 && !bat.charging && !locLowBatSent){ locLowBatSent = true; locEmit('lowbat', null, { battery:bat.battery }); }
+  if(bat.battery > 25 || bat.charging) locLowBatSent = false;
+}
 
+// ----- Mesin gerak + perjalanan -----
 function locOnPosition(pos){
-  const now = Date.now();
-  const cur = { lat:pos.coords.latitude, lng:pos.coords.longitude };
-  const moved = locLastPos ? locDistanceM(locLastPos, cur) : Infinity;
-  const since = now - locLastWrite;
-  if((moved >= LOC_MIN_MOVE_M && since >= LOC_MIN_INTERVAL) || since >= LOC_HEARTBEAT || !locLastPos){
-    locWrite(pos);
+  const c = pos.coords, t = pos.timestamp || Date.now();
+  const acc = c.accuracy || 0;
+  if(acc > LOC_MAX_ACC) return;
+  const cur = { lat:c.latitude, lng:c.longitude, t, acc };
+  locLastSampleAt = Date.now();
+
+  if(locPrev && t - locPrev.t > LOC_GAP_MS){ locEndTrip(); locAnchor = null; }
+
+  let raw = (typeof c.speed === 'number' && isFinite(c.speed) && c.speed >= 0) ? c.speed : null;
+  if(locPrev){
+    const dt = (t - locPrev.t)/1000, d = locDistanceM(locPrev, cur);
+    const noise = Math.max(8, Math.min(acc, 60)*0.6);
+    if(raw === null && dt > 0.5) raw = d > noise ? d/dt : 0;
   }
+  if(raw === null) raw = 0;
+  locSpeed = locPrev ? 0.6*raw + 0.4*locSpeed : raw;
+  locPrev = cur;
+
+  // mode dengan konfirmasi 2 sampel agar tidak berkedip
+  let modeChanged = false;
+  const cand = locClassify(locSpeed);
+  if(cand !== locMode){
+    if(cand === locModeCand) locModeCandN++; else { locModeCand = cand; locModeCandN = 1; }
+    if(locModeCandN >= 2){ locMode = cand; locModeSince = t; locModeCandN = 0; modeChanged = true; }
+  }else{ locModeCand = cand; locModeCandN = 0; }
+
+  // perjalanan
+  const moving = locSpeed >= 1.0;
+  if(!locTrip){
+    if(!moving || !locAnchor) locAnchor = cur;
+    else if(locDistanceM(locAnchor, cur) >= 60) locTripStart(locAnchor, cur);
+  }else{
+    locTripAdd(cur, moving);
+  }
+
+  locCheckPlaces(cur);
+
+  // seberapa sering menulis ke server: sering saat bergerak, hemat saat diam
+  const now = Date.now(), since = now - locLastWrite;
+  const act = locMode !== 'diam';
+  const minInt = act ? 10000 : 30000, minMove = act ? 10 : 25, hb = act ? 60000 : LOC_HEARTBEAT;
+  const moved = locLastPos ? locDistanceM(locLastPos, cur) : Infinity;
+  if(modeChanged || !locLastPos || (moved >= minMove && since >= minInt) || since >= hb) locWrite(cur);
+  else if(activeTab === 'lokasi') renderLokasi();
 }
 function locOnError(err){
   const msg = err && err.code === 1
     ? 'Izin lokasi ditolak. Aktifkan izin lokasi untuk aplikasi ini di pengaturan HP.'
     : err && err.code === 3 ? 'Lokasi belum didapat (timeout), mencoba lagi…' : 'Tidak bisa membaca lokasi perangkat.';
-  if(err && err.code === 1){ locStopSharing(true); }
+  if(err && err.code === 1) locStopSharing(true);
   showToast(msg, true);
 }
+function locTripSave(){ try{ locStore('loc_trip', locTrip ? JSON.stringify(locTrip) : null); }catch(e){} }
+function locTripStart(a, cur){
+  locTrip = {
+    id: 't' + a.t, startAt: a.t,
+    pts: [[a.lat, a.lng, a.t], [cur.lat, cur.lng, cur.t]],
+    dist: locDistanceM(a, cur), maxSpd: locSpeed, modes: {}, lastMoveAt: cur.t,
+    lastPt: { lat:cur.lat, lng:cur.lng, t:cur.t },
+    startPlace: (locPlaceAt(a) || {}).id || null
+  };
+  locTripSave();
+}
+function locTripAdd(cur, moving){
+  const tr = locTrip, d = locDistanceM(tr.lastPt, cur);
+  if(d >= 15 || cur.t - tr.lastPt.t >= 30000){
+    tr.pts.push([cur.lat, cur.lng, cur.t]);
+    if(d >= 15) tr.dist += d;
+    tr.lastPt = { lat:cur.lat, lng:cur.lng, t:cur.t };
+    if(tr.pts.length > 600){ tr.pts = tr.pts.filter((_,i)=> i % 2 === 0 || i === tr.pts.length-1); }
+  }
+  tr.modes[locMode] = (tr.modes[locMode] || 0) + 1;
+  tr.maxSpd = Math.max(tr.maxSpd, locSpeed);
+  if(moving) tr.lastMoveAt = cur.t;
+  locTripSave();
+}
+async function locReverse(lat, lng){
+  try{
+    const ctl = new AbortController(); const to = setTimeout(()=>ctl.abort(), 4000);
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=17&accept-language=id&lat=${lat}&lon=${lng}`, { signal:ctl.signal });
+    clearTimeout(to);
+    const j = await r.json(), a = j.address || {};
+    return a.road || a.neighbourhood || a.suburb || a.village || a.city_district || (j.name || '') || null;
+  }catch(e){ return null; }
+}
+async function locEndTrip(){
+  const tr = locTrip; locTrip = null; locTripSave();
+  if(!tr || !uid) return;
+  const endAt = tr.lastPt.t, dur = endAt - tr.startAt;
+  if(tr.dist < 150 || dur < 90*1000) return;
+  // mode dominan selain 'diam'
+  let mode = 'jalan', best = 0;
+  Object.entries(tr.modes).forEach(([k,v])=>{ if(k !== 'diam' && v > best){ best = v; mode = k; } });
+  // kurangi titik hingga ≤ 250
+  let pts = tr.pts;
+  if(pts.length > 250){ const step = Math.ceil(pts.length/250); pts = pts.filter((_,i)=> i % step === 0 || i === pts.length-1); }
+  const flat = []; pts.forEach(p=>{ flat.push(+p[0].toFixed(5), +p[1].toFixed(5)); });
+  const first = pts[0], last = pts[pts.length-1];
+  const sp = locPlaceAt({ lat:first[0], lng:first[1] }), ep = locPlaceAt({ lat:last[0], lng:last[1] });
+  const [sn, en] = await Promise.all([
+    sp ? null : locReverse(first[0], first[1]),
+    ep ? null : locReverse(last[0], last[1])
+  ]);
+  try{
+    await setDoc(doc(locTripsColRef(locDeviceId()), tr.id), {
+      name: locMyName() || 'Tanpa nama', mode,
+      startAt: tr.startAt, endAt, dist: Math.round(tr.dist),
+      maxKmh: Math.round(tr.maxSpd*3.6), avgKmh: Math.round((tr.dist/Math.max(dur/1000,1))*3.6),
+      pts: flat,
+      startPlace: sp ? { name:sp.name, icon:sp.icon } : null, endPlace: ep ? { name:ep.name, icon:ep.icon } : null,
+      startName: sn || null, endName: en || null
+    });
+  }catch(e){ console.error('locEndTrip', e); }
+}
+
+// ----- Geofence: tiba / meninggalkan tempat -----
+function locCheckPlaces(cur){
+  if(!locPlaces.length || cur.acc > 80) return;
+  let inside = null;
+  try{ inside = JSON.parse(locStore('loc_inside') || 'null'); }catch(e){}
+  const set = new Set(inside || []);
+  if(inside === null){
+    // evaluasi pertama: catat posisi awal saja, tanpa notifikasi
+    locPlaces.forEach(pl=>{ if(locDistanceM(cur, pl) <= pl.radius) set.add(pl.id); });
+    locStore('loc_inside', JSON.stringify([...set]));
+    return;
+  }
+  locPlaces.forEach(pl=>{
+    const d = locDistanceM(cur, pl), was = set.has(pl.id);
+    const nowIn = was ? d <= pl.radius * 1.15 + Math.min(cur.acc, 50)*0.3 : d <= pl.radius;
+    if(nowIn === was){ locFenceCnt[pl.id] = 0; return; }
+    locFenceCnt[pl.id] = (locFenceCnt[pl.id] || 0) + 1;
+    if(locFenceCnt[pl.id] < 2) return;           // konfirmasi 2 sampel berturut-turut
+    locFenceCnt[pl.id] = 0;
+    if(nowIn) set.add(pl.id); else set.delete(pl.id);
+    locEmit(nowIn ? 'arrive' : 'leave', pl);
+  });
+  locStore('loc_inside', JSON.stringify([...set]));
+}
+function locEventText(ev){
+  const who = ev.who || 'Seseorang';
+  if(ev.type === 'arrive') return `${ev.icon || '📍'} ${who} tiba di ${ev.placeName || 'suatu tempat'}`;
+  if(ev.type === 'leave') return `🚪 ${who} meninggalkan ${ev.placeName || 'suatu tempat'}`;
+  if(ev.type === 'checkin') return `✅ ${who} check-in${ev.placeName ? ' di ' + ev.placeName : ''}`;
+  if(ev.type === 'lowbat') return `🪫 Baterai ${who} tinggal ${ev.battery}%`;
+  return `${who}: ${ev.type}`;
+}
+async function locEmit(type, place, extra){
+  if(!uid) return;
+  const ev = {
+    type, deviceId: locDeviceId(), who: locMyName() || 'Seseorang', color: locColorFor(locDeviceId()),
+    placeId: place ? place.id : null, placeName: place ? place.name : null, icon: place ? place.icon : null,
+    atMs: Date.now(), at: serverTimestamp(), ...(extra || {})
+  };
+  try{ await addDoc(locEventsColRef(), ev); }catch(e){ console.warn('locEmit', e); }
+  if(locStore('loc_tg') !== 'off'){
+    const t = locEventText(ev).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+    sendTelegramMessage(t);
+  }
+}
+
+// ----- Kontrol berbagi -----
+// --- Mode native (APK Capacitor): pelacakan tetap jalan saat app ditutup/layar terkunci ---
+function locNative(){ try{ return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); }catch(e){ return false; } }
+let locBGPlugin = null;
+function locBG(){ if(!locBGPlugin) locBGPlugin = window.Capacitor.registerPlugin('BackgroundGeolocation'); return locBGPlugin; }
+function locClearWatch(){
+  const id = locWatchId; locWatchId = null;
+  if(id === null) return;
+  if(locNative()){ if(id !== 'pending') locBG().removeWatcher({ id }).catch(()=>{}); }
+  else navigator.geolocation.clearWatch(id);
+}
+function locStartNativeWatch(){
+  locWatchId = 'pending';
+  locBG().addWatcher({
+    backgroundTitle: 'Buku Kas — berbagi lokasi',
+    backgroundMessage: 'Lokasimu sedang dibagikan ke keluarga.',
+    requestPermissions: true, stale: false, distanceFilter: 10
+  }, (loc, err)=>{
+    if(err){
+      if(err.code === 'NOT_AUTHORIZED'){
+        showToast('Izinkan lokasi “Sepanjang waktu” agar pelacakan jalan di belakang layar.', true);
+        locBG().openSettings().catch(()=>{});
+      }
+      return;
+    }
+    if(!loc) return;
+    locOnPosition({ coords:{ latitude:loc.latitude, longitude:loc.longitude, accuracy:loc.accuracy, speed:(typeof loc.speed === 'number' ? loc.speed : null) }, timestamp: loc.time || Date.now() });
+  }).then(id=>{ if(locWatchId === 'pending') locWatchId = id; else locBG().removeWatcher({ id }).catch(()=>{}); })
+    .catch(e=>{ locWatchId = null; console.error('addWatcher', e); showToast('Gagal memulai pelacakan native', true); });
+}
 function locStartWatch(){
+  if(locNative()){
+    if(locWatchId !== null) return;
+    try{ const saved = JSON.parse(locStore('loc_trip') || 'null'); if(saved && Date.now() - saved.lastPt.t < LOC_GAP_MS) locTrip = saved; }catch(e){}
+    locStartNativeWatch();
+    return;
+  }
   if(!navigator.geolocation){ showToast('Perangkat ini tidak mendukung lokasi.', true); return; }
   if(locWatchId !== null) return;
+  try{ const saved = JSON.parse(locStore('loc_trip') || 'null'); if(saved && Date.now() - saved.lastPt.t < LOC_GAP_MS) locTrip = saved; }catch(e){}
   locWatchId = navigator.geolocation.watchPosition(locOnPosition, locOnError,
-    { enableHighAccuracy:true, maximumAge:15000, timeout:30000 });
+    { enableHighAccuracy:true, maximumAge:5000, timeout:30000 });
+  locWakeSet();
 }
 function locPushNow(force){
   if(!navigator.geolocation || !locIsSharing()) return;
   navigator.geolocation.getCurrentPosition(
-    (pos)=>{ locWrite(pos); },
+    (pos)=>{ locOnPosition(pos); },
     (err)=>{ if(force) locOnError(err); },
     { enableHighAccuracy:true, maximumAge:0, timeout:20000 }
   );
 }
-
 async function locStartSharing(){
   const input = document.getElementById('locNameInput');
   const name = input.value.trim();
@@ -1763,21 +2234,23 @@ async function locStartSharing(){
   if(!navigator.geolocation){ showToast('Perangkat ini tidak mendukung lokasi.', true); return; }
   locStore('loc_name', name);
   locStore('loc_sharing', 'on');
-  locLastPos = null; locLastWrite = 0;
+  locLastPos = null; locLastWrite = 0; locPrev = null;
   locStartWatch();
   locPushNow(true);
   showToast('Lokasi mulai dibagikan 📍');
   renderLokasi();
 }
 async function locStopSharing(silent){
+  await locEndTrip();
   locStore('loc_sharing', 'off');
-  if(locWatchId !== null){ navigator.geolocation.clearWatch(locWatchId); locWatchId = null; }
-  locLastPos = null;
+  locClearWatch();
+  locLastPos = null; locPrev = null; locSpeed = 0; locMode = 'diam'; locAnchor = null;
+  locWakeSet();
   try{
     if(uid) await setDoc(locDocRef(), {
       name: locMyName() || 'Tanpa nama', color: locColorFor(locDeviceId()),
       sharing:false, lat:null, lng:null, accuracy:null, battery:null, charging:null,
-      updatedAt: serverTimestamp()
+      mode:'diam', speedKmh:0, trail:[], tripSince:null, updatedAt: serverTimestamp()
     }, { merge:true });
   }catch(e){ console.error('locStop', e); }
   if(!silent) showToast('Berbagi lokasi dimatikan');
@@ -1791,12 +2264,22 @@ async function locPing(id){
   }catch(e){ showToast(errorMessage(e), true); }
 }
 async function locRemoveMe(){
-  if(!confirm('Hapus data lokasi dan namamu dari daftar?')) return;
-  if(locWatchId !== null){ navigator.geolocation.clearWatch(locWatchId); locWatchId = null; }
-  locStore('loc_sharing', 'off');
-  try{ await deleteDoc(locDocRef()); showToast('Data lokasimu dihapus'); }
-  catch(e){ showToast(errorMessage(e), true); }
+  if(!confirm('Hapus data lokasi, riwayat, dan namamu dari daftar?')) return;
+  locClearWatch();
+  locStore('loc_sharing', 'off'); locTrip = null; locTripSave();
+  try{
+    const old = await getDocs(locTripsColRef(locDeviceId()));
+    await Promise.all(old.docs.map(d=>deleteDoc(d.ref)));
+    await deleteDoc(locDocRef());
+    showToast('Data lokasimu dihapus');
+  }catch(e){ showToast(errorMessage(e), true); }
   renderLokasi();
+}
+async function locCheckin(){
+  if(!locMyName()){ showToast('Isi nama dan aktifkan berbagi lokasi dulu', true); return; }
+  const pl = locLastPos ? locPlaceAt(locLastPos) : null;
+  await locEmit('checkin', pl);
+  showToast('Check-in terkirim ✅');
 }
 
 // ----- Peta -----
@@ -1804,141 +2287,366 @@ function locEnsureMap(){
   const el = document.getElementById('locMap');
   if(locMap || !el) return;
   if(typeof L === 'undefined'){
-    el.outerHTML = '<div class="loc-map-empty" id="locMap">Peta tidak bisa dimuat (offline?). Daftar anggota di bawah tetap bisa dibuka lewat Google Maps.</div>';
+    el.outerHTML = '<div class="loc-map-empty" id="locMap">Peta tidak bisa dimuat (offline?). Daftar anggota tetap bisa dibuka lewat Google Maps.</div>';
     return;
   }
-  locMap = L.map('locMap', { zoomControl:true, attributionControl:true }).setView([-2.5, 118], 4);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom:19, attribution:'&copy; OpenStreetMap'
-  }).addTo(locMap);
+  locMap = L.map('locMap', { zoomControl:false, attributionControl:true }).setView([-2.5, 118], 4);
+  L.control.zoom({ position:'topleft' }).addTo(locMap);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'&copy; OpenStreetMap' }).addTo(locMap);
+  locLayerPlaces = L.layerGroup().addTo(locMap);
+  locLayerTrail = L.layerGroup().addTo(locMap);
+  locLayerRoute = L.layerGroup().addTo(locMap);
+  locMap.on('click', (e)=>{ if(locPicking) locSetDraft(e.latlng.lat, e.latlng.lng); });
 }
 function locPinIcon(m){
-  const initial = escapeHtml((m.name || '?').trim().charAt(0).toUpperCase() || '?');
+  const mode = MODE_INFO[m.mode];
+  const badge = locIsFresh(m) && m.mode && m.mode !== 'diam' && mode ? `<i>${mode.ic}</i>` : '';
   return L.divIcon({
-    className:'', iconSize:[34,34], iconAnchor:[17,34],
-    html:`<div class="loc-pin" style="background:${m.color || '#14B8A6'}"><span>${initial}</span></div>`
+    className:'', iconSize:[36,36], iconAnchor:[18,36],
+    html:`<div class="loc-pin" style="background:${escapeHtml(m.color || '#14B8A6')}"><span>${locIni(m.name)}</span>${badge}</div>`
   });
 }
 function locUpdateMap(){
   if(!locMap) return;
-  const live = locMembers.filter(m=>m.sharing && typeof m.lat === 'number' && typeof m.lng === 'number');
-  const liveIds = new Set(live.map(m=>m.id));
-  Object.keys(locMarkers).forEach(id=>{ if(!liveIds.has(id)){ locMap.removeLayer(locMarkers[id]); delete locMarkers[id]; } });
+  const live = locMembers.filter(locHasPos);
+  const ids = new Set(live.map(m=>m.id));
+  Object.keys(locMarkers).forEach(id=>{ if(!ids.has(id)){ locMap.removeLayer(locMarkers[id]); delete locMarkers[id]; } });
   live.forEach(m=>{
     const ll = [m.lat, m.lng];
-    const tip = `${m.name || 'Tanpa nama'} • ${locRel(m.updatedMs)}`;
-    if(locMarkers[m.id]){
-      locMarkers[m.id].setLatLng(ll).setIcon(locPinIcon(m)).setTooltipContent(tip);
-    }else{
-      locMarkers[m.id] = L.marker(ll, { icon:locPinIcon(m) }).addTo(locMap).bindTooltip(tip, { direction:'top', offset:[0,-30] });
+    const mi = MODE_INFO[m.mode] || MODE_INFO.diam;
+    const tip = `${m.name || 'Tanpa nama'} • ${mi.label}${m.speedKmh ? ' ' + m.speedKmh + ' km/j' : ''} • ${locRel(m.updatedMs)}`;
+    if(locMarkers[m.id]) locMarkers[m.id].setLatLng(ll).setIcon(locPinIcon(m)).setTooltipContent(tip);
+    else{
+      locMarkers[m.id] = L.marker(ll, { icon:locPinIcon(m) }).addTo(locMap).bindTooltip(tip, { direction:'top', offset:[0,-34] });
       locMarkers[m.id].on('click', ()=>locFocus(m.id));
     }
   });
-  if(!locMapFitted && live.length){
-    locMapFitted = true;
-    if(live.length === 1) locMap.setView([live[0].lat, live[0].lng], 16);
-    else locMap.fitBounds(live.map(m=>[m.lat, m.lng]), { padding:[40,40], maxZoom:16 });
-  }
+  // jejak perjalanan berjalan
+  locLayerTrail.clearLayers();
+  live.forEach(m=>{
+    if(Array.isArray(m.trail) && m.trail.length >= 4){
+      const line = []; for(let i=0;i+1<m.trail.length;i+=2) line.push([m.trail[i], m.trail[i+1]]);
+      L.polyline(line, { color:m.color || '#14B8A6', weight:4, opacity:.75, dashArray:'2 8', lineCap:'round' }).addTo(locLayerTrail);
+    }
+  });
+  // tempat
+  locLayerPlaces.clearLayers();
+  locPlaces.forEach(pl=>{
+    L.circle([pl.lat, pl.lng], { radius:pl.radius, color:'#14B8A6', weight:1.5, fillColor:'#14B8A6', fillOpacity:.12 }).addTo(locLayerPlaces);
+    L.marker([pl.lat, pl.lng], { icon:L.divIcon({ className:'', iconSize:[26,26], iconAnchor:[13,13], html:`<div class="loc-place-pin">${escapeHtml(pl.icon || '📍')}</div>` }) })
+      .addTo(locLayerPlaces).bindTooltip(escapeHtml(pl.name || ''), { direction:'top', offset:[0,-12] });
+  });
+  if(!locMapFitted && live.length){ locMapFitted = true; locFitAll(); }
 }
+function locFitAll(){
+  if(!locMap) return;
+  const pts = locMembers.filter(locHasPos).map(m=>[m.lat, m.lng]);
+  if(!pts.length){ showToast('Belum ada lokasi yang dibagikan'); return; }
+  if(pts.length === 1) locMap.setView(pts[0], 16); else locMap.fitBounds(pts, { padding:[44,44], maxZoom:16 });
+}
+function locScrollToMap(){ const el = document.getElementById('locMap'); if(el && el.scrollIntoView) el.scrollIntoView({ behavior:'smooth', block:'center' }); }
 function locFocus(id){
   const m = locMembers.find(x=>x.id===id);
   locSelectedId = id;
-  if(m && locMap && typeof m.lat === 'number'){
+  if(m && locMap && locHasPos(m)){
+    locLayerRoute.clearLayers();
     locMap.flyTo([m.lat, m.lng], 17, { duration:.8 });
     if(locMarkers[id]) locMarkers[id].openTooltip();
-    document.getElementById('locMap').scrollIntoView({ behavior:'smooth', block:'center' });
+    locScrollToMap();
   }
   renderLokasi();
 }
+function locShowTrip(tr){
+  if(!locMap || !tr || !tr.pts) return;
+  locLayerRoute.clearLayers();
+  const line = []; for(let i=0;i+1<tr.pts.length;i+=2) line.push([tr.pts[i], tr.pts[i+1]]);
+  if(line.length < 2) return;
+  L.polyline(line, { color:'#6D4AFF', weight:5, opacity:.9 }).addTo(locLayerRoute);
+  L.circleMarker(line[0], { radius:8, color:'#fff', weight:3, fillColor:'#0FAE73', fillOpacity:1 }).addTo(locLayerRoute).bindTooltip('Mulai');
+  L.circleMarker(line[line.length-1], { radius:8, color:'#fff', weight:3, fillColor:'#F0355A', fillOpacity:1 }).addTo(locLayerRoute).bindTooltip('Selesai');
+  locMap.fitBounds(line, { padding:[40,40], maxZoom:17 });
+  locScrollToMap();
+}
+
+// ----- Tempat -----
+function locSetDraft(lat, lng){
+  locDraft = { lat, lng }; locPicking = false;
+  document.getElementById('locPickHint').classList.add('hidden');
+  document.getElementById('placeDraftLabel').textContent = `📌 Titik dipilih: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  if(locMap){
+    if(locDraftMarker) locMap.removeLayer(locDraftMarker);
+    locDraftMarker = L.marker([lat, lng], { icon:L.divIcon({ className:'', iconSize:[26,26], iconAnchor:[13,13], html:'<div class="loc-place-pin">📌</div>' }) }).addTo(locMap);
+    locMap.flyTo([lat, lng], Math.max(locMap.getZoom(), 16), { duration:.6 });
+  }
+}
+function locCloseForm(){
+  document.getElementById('placeForm').classList.add('hidden');
+  document.getElementById('locPickHint').classList.add('hidden');
+  locPicking = false; locDraft = null;
+  if(locDraftMarker && locMap){ locMap.removeLayer(locDraftMarker); locDraftMarker = null; }
+}
+async function locSavePlace(){
+  const name = document.getElementById('placeName').value.trim();
+  if(!name){ showToast('Isi nama tempat', true); return; }
+  if(!locDraft){ showToast('Pilih titik: pakai lokasimu atau tap peta', true); return; }
+  try{
+    await addDoc(locPlacesColRef(), {
+      name, icon: document.getElementById('placeIcon').value,
+      radius: Number(document.getElementById('placeRadius').value) || 200,
+      lat: locDraft.lat, lng: locDraft.lng, by: locMyName() || '', createdAt: serverTimestamp()
+    });
+    document.getElementById('placeName').value = '';
+    locStore('loc_inside', null);      // evaluasi ulang tanpa memicu notifikasi palsu
+    locCloseForm();
+    showToast('Tempat disimpan 📌');
+  }catch(e){ showToast(errorMessage(e), true); }
+}
+
+// ----- Riwayat -----
+function locSubscribeTrips(id){
+  if(locTripsUnsub){ locTripsUnsub(); locTripsUnsub = null; }
+  locTrips = [];
+  if(!id) return;
+  locTripsUnsub = onSnapshot(query(locTripsColRef(id), orderBy('startAt','desc'), limit(40)), (snap)=>{
+    locTrips = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    renderLokasiHistory();
+  }, (err)=>{ console.warn('Riwayat gagal', err); });
+}
 
 // ----- Render -----
+function locAvaHtml(m){
+  const mi = MODE_INFO[m.mode], fresh = locIsFresh(m);
+  const badge = fresh && m.mode && m.mode !== 'diam' && mi ? `<i class="loc-badge">${mi.ic}</i>` : '';
+  return `<div class="loc-ava${locHasPos(m) ? '' : ' off'}" style="background:${escapeHtml(m.color || '#14B8A6')};--ava:${escapeHtml(m.color || '#14B8A6')}"><span>${locIni(m.name)}</span>${badge}</div>`;
+}
 function renderLokasi(){
-  const list = document.getElementById('locList');
-  if(!list) return;
-  const myId = locDeviceId();
-  const sharing = locIsSharing();
-
+  if(!document.getElementById('locList')) return;
+  const myId = locDeviceId(), sharing = locIsSharing();
   const nameInput = document.getElementById('locNameInput');
-  if(nameInput && document.activeElement !== nameInput && !nameInput.value) nameInput.value = locMyName();
+  if(document.activeElement !== nameInput && !nameInput.value) nameInput.value = locMyName();
   nameInput.disabled = sharing;
   const tgl = document.getElementById('btnLocToggle');
   tgl.textContent = sharing ? '⏹️ Hentikan berbagi lokasi' : '📍 Bagikan lokasi saya';
   tgl.className = 'btn ' + (sharing ? 'btn-danger' : 'btn-teal');
   document.getElementById('locMyStatus').textContent = sharing
-    ? '🟢 Lokasimu sedang dibagikan ke semua anggota selama aplikasi terbuka.'
+    ? (locNative() ? '🟢 Lokasimu dibagikan ke semua anggota, termasuk saat app ditutup atau layar terkunci.' : '🟢 Lokasimu dibagikan ke semua anggota selama aplikasi terbuka.')
     : 'Lokasi hanya dibagikan setelah kamu menekan tombol di atas, dan bisa dimatikan kapan saja.';
 
-  const liveCount = locMembers.filter(m=>m.sharing && typeof m.lat === 'number').length;
-  document.getElementById('locHeroTitle').textContent = liveCount
-    ? `${liveCount} orang berbagi lokasi` : 'Belum ada yang berbagi';
+  const live = locMembers.filter(locHasPos);
+  document.getElementById('locHeroTitle').textContent = live.length ? `${live.length} orang berbagi lokasi` : 'Belum ada yang berbagi';
+  const mi = MODE_INFO[locMode];
+  document.getElementById('locHeroAct').textContent = sharing ? mi.ic : '📍';
+  document.getElementById('locHeroSub').textContent = sharing
+    ? `Kamu: ${mi.label}${locMode !== 'diam' ? ' • ' + Math.round(locSpeed*3.6) + ' km/j' : ''}${locTrip ? ' • perjalanan berjalan' : ''}`
+    : 'Masing-masing bebas memilih mau berbagi atau tidak.';
 
   const me = locMembers.find(m=>m.id===myId);
-  const myPos = me && me.sharing && typeof me.lat === 'number' ? { lat:me.lat, lng:me.lng } : null;
+  const myPos = locHasPos(me) ? { lat:me.lat, lng:me.lng } : null;
   const sorted = [...locMembers].sort((a,b)=>{
     if(a.id===myId) return -1; if(b.id===myId) return 1;
-    if(!!a.sharing !== !!b.sharing) return a.sharing ? -1 : 1;
+    if(!!locHasPos(a) !== !!locHasPos(b)) return locHasPos(a) ? -1 : 1;
     return (a.name||'').localeCompare(b.name||'');
   });
 
+  // strip avatar
+  document.getElementById('locStrip').innerHTML = sorted.filter(m=>m.name).map(m=>
+    `<button class="loc-chip" data-locact="focus" data-id="${escapeHtml(m.id)}">${locAvaHtml(m)}<span class="nm">${escapeHtml(m.id===myId ? 'Aku' : m.name)}</span></button>`).join('');
+
+  // daftar anggota
+  const list = document.getElementById('locList');
   if(!sorted.length){
     list.innerHTML = '<div class="empty-box">Belum ada anggota. Isi nama dan tekan “Bagikan lokasi saya” — minta yang lain melakukan hal yang sama di HP mereka.</div>';
   }else{
     list.innerHTML = sorted.map(m=>{
-      const isMe = m.id === myId;
-      const hasPos = m.sharing && typeof m.lat === 'number' && typeof m.lng === 'number';
-      const fresh = hasPos && m.updatedMs && (Date.now()-m.updatedMs) < LOC_STALE_MS;
-      let sub;
-      if(hasPos){
-        sub = `${fresh ? '📍 Terlihat' : '🕒 Terakhir terlihat'} ${locRel(m.updatedMs)}`;
-        if(m.accuracy) sub += ` • ±${m.accuracy} m`;
+      const isMe = m.id === myId, has = locHasPos(m), fresh = locIsFresh(m);
+      const info = MODE_INFO[m.mode] || MODE_INFO.diam;
+      const pl = has ? locPlaceAt(m) : null;
+      let l1, l2 = '';
+      if(has){
+        l1 = fresh ? `${info.ic} ${info.label}${m.speedKmh && m.mode !== 'diam' ? ' • ' + m.speedKmh + ' km/j' : ''}` : '🕒 Terakhir terlihat';
+        if(pl) l1 += ` • di ${pl.icon || '📍'} ${pl.name}`;
+        if(fresh && m.mode === 'diam' && m.modeSince) l1 += ` • sejak ${locClock(m.modeSince)}`;
+        l2 = `${fresh ? '📍 Diperbarui' : '⏱️'} ${locRel(m.updatedMs)}${m.accuracy ? ' • ±' + m.accuracy + ' m' : ''}`;
       }else{
-        sub = m.updatedMs ? `Tidak berbagi lokasi • ${locRel(m.updatedMs)}` : 'Tidak berbagi lokasi';
+        l1 = 'Tidak berbagi lokasi'; l2 = m.updatedMs ? locRel(m.updatedMs) : '';
       }
-      const extras = [];
-      if(typeof m.battery === 'number') extras.push(`${m.charging ? '🔌' : '🔋'} ${m.battery}%`);
-      if(hasPos && myPos && !isMe) extras.push(`↔ ${locFmtDist(locDistanceM(myPos, {lat:m.lat,lng:m.lng}))} darimu`);
-      const maps = hasPos ? `https://www.google.com/maps?q=${m.lat},${m.lng}` : '';
+      const extra = [];
+      if(typeof m.battery === 'number') extra.push(`${m.charging ? '🔌' : (m.battery <= 15 ? '🪫' : '🔋')} ${m.battery}%`);
+      if(has && myPos && !isMe) extra.push(`↔ ${locFmtDist(locDistanceM(myPos, m))} darimu`);
+      const maps = has ? `https://www.google.com/maps?q=${m.lat},${m.lng}` : '';
       return `
         <div class="loc-row${locSelectedId===m.id?' sel':''}">
           <div class="loc-top">
-            <div class="loc-ava" style="background:${escapeHtml(m.color || '#14B8A6')}${hasPos?'':';opacity:.45'}">${escapeHtml((m.name||'?').trim().charAt(0).toUpperCase()||'?')}</div>
+            ${locAvaHtml(m)}
             <div style="min-width:0;flex:1;">
               <div class="loc-name">${escapeHtml(m.name || 'Tanpa nama')}${isMe ? ' <span style="color:var(--ink-soft);font-weight:500;">(kamu)</span>' : ''}</div>
-              <div class="loc-sub${fresh?' live':''}">${escapeHtml(sub)}</div>
-              ${extras.length ? `<div class="loc-sub">${escapeHtml(extras.join(' • '))}</div>` : ''}
+              <div class="loc-sub${fresh?' live':''}">${escapeHtml(l1)}</div>
+              ${l2 ? `<div class="loc-sub">${escapeHtml(l2)}</div>` : ''}
+              ${extra.length ? `<div class="loc-sub">${escapeHtml(extra.join(' • '))}</div>` : ''}
             </div>
           </div>
           <div class="loc-acts">
-            ${hasPos ? `<button class="link-btn teal" data-locact="focus" data-id="${escapeHtml(m.id)}">🗺️ Cek lokasi</button>
-            <a class="link-btn" href="${maps}" target="_blank" rel="noopener">↗ Google Maps</a>` : ''}
+            ${has ? `<button class="link-btn teal" data-locact="focus" data-id="${escapeHtml(m.id)}">🗺️ Cek lokasi</button>
+            <a class="link-btn" href="${maps}" target="_blank" rel="noopener">↗ Maps</a>` : ''}
+            <button class="link-btn" data-locact="hist" data-id="${escapeHtml(m.id)}">🧭 Riwayat</button>
             ${!isMe ? `<button class="link-btn amber" data-locact="ping" data-id="${escapeHtml(m.id)}">🔔 Minta update</button>` : `<button class="link-btn rose" data-locact="remove" data-id="${escapeHtml(m.id)}">🗑️ Hapus saya</button>`}
           </div>
         </div>`;
     }).join('');
   }
+
+  renderLokasiHistory();
+  renderLokasiPlaces();
+  renderLokasiFeed();
   locUpdateMap();
 }
+function renderLokasiHistory(){
+  const who = document.getElementById('locHistWho');
+  if(!who) return;
+  const named = locMembers.filter(m=>m.name);
+  if(!locHistWho || !named.find(m=>m.id===locHistWho)){
+    const pick = named.find(m=>m.id===locDeviceId()) || named[0];
+    const nid = pick ? pick.id : null;
+    if(nid !== locHistWho){ locHistWho = nid; locSubscribeTrips(nid); }
+  }
+  who.innerHTML = named.map(m=>`<button class="${m.id===locHistWho?'active':''}" data-locact="histwho" data-id="${escapeHtml(m.id)}">${escapeHtml(m.id===locDeviceId() ? 'Aku' : m.name)}</button>`).join('');
+  const box = document.getElementById('locTrips');
+  if(!locTrips.length){
+    document.getElementById('locHistSum').textContent = '';
+    box.innerHTML = '<div class="empty-box">Belum ada riwayat perjalanan. Perjalanan tercatat otomatis saat berbagi lokasi aktif dan kamu berpindah tempat.</div>';
+    return;
+  }
+  const todayTrips = locTrips.filter(t=>locDayLabel(t.startAt) === 'Hari ini');
+  const km = todayTrips.reduce((s,t)=>s+(t.dist||0),0);
+  document.getElementById('locHistSum').textContent = todayTrips.length
+    ? `Hari ini: ${todayTrips.length} perjalanan • ${locFmtDist(km)}` : 'Tidak ada perjalanan hari ini.';
+  let lastDay = '', html = '';
+  const mine = locHistWho === locDeviceId();
+  locTrips.forEach(t=>{
+    const day = locDayLabel(t.startAt);
+    if(day !== lastDay){ html += `<div class="loc-dayhead">${escapeHtml(day)}</div>`; lastDay = day; }
+    const mo = MODE_INFO[t.mode] || MODE_INFO.jalan;
+    const from = t.startPlace ? `${t.startPlace.icon || ''} ${t.startPlace.name}` : (t.startName || 'Titik awal');
+    const to = t.endPlace ? `${t.endPlace.icon || ''} ${t.endPlace.name}` : (t.endName || 'Titik tujuan');
+    html += `<div class="loc-trip" data-locact="trip" data-id="${escapeHtml(t.id)}">
+      <div class="ti">${mo.ic}</div>
+      <div style="min-width:0;flex:1;">
+        <div class="tt">${escapeHtml(from)} → ${escapeHtml(to)}</div>
+        <div class="ts">${locClock(t.startAt)}–${locClock(t.endAt)} • ${locFmtDist(t.dist||0)} • ${locFmtDur(t.endAt - t.startAt)} • rata² ${t.avgKmh||0} km/j</div>
+      </div>
+      ${mine ? `<button class="td" data-locact="deltrip" data-id="${escapeHtml(t.id)}" aria-label="Hapus">🗑️</button>` : ''}
+    </div>`;
+  });
+  box.innerHTML = html;
+}
+function renderLokasiPlaces(){
+  const box = document.getElementById('placeList');
+  if(!box) return;
+  if(!locPlaces.length){
+    box.innerHTML = '<div class="empty-box">Belum ada tempat. Tambahkan Rumah, Kantor, Sekolah, dll. Kamu akan dapat kabar otomatis saat ada yang tiba atau pergi.</div>';
+    return;
+  }
+  box.innerHTML = locPlaces.map(pl=>{
+    const here = locMembers.filter(m=>locHasPos(m) && locDistanceM(m, pl) <= pl.radius).map(m=>m.name);
+    return `<div class="loc-row"><div class="loc-top">
+      <div class="loc-trip" style="margin:0;border:none;padding:0;background:none;cursor:default;"><div class="ti">${escapeHtml(pl.icon || '📍')}</div></div>
+      <div style="min-width:0;flex:1;">
+        <div class="loc-name">${escapeHtml(pl.name)}</div>
+        <div class="loc-sub">Radius ${pl.radius} m${here.length ? ' • 👥 di sini: ' + escapeHtml(here.join(', ')) : ''}</div>
+      </div></div>
+      <div class="loc-acts">
+        <button class="link-btn teal" data-locact="placefocus" data-id="${escapeHtml(pl.id)}">🗺️ Lihat</button>
+        <button class="link-btn rose" data-locact="placedel" data-id="${escapeHtml(pl.id)}">🗑️ Hapus</button>
+      </div></div>`;
+  }).join('');
+}
+function renderLokasiFeed(){
+  const box = document.getElementById('locFeed');
+  if(!box) return;
+  if(!locEvents.length){ box.innerHTML = '<div class="empty-box">Belum ada kabar. Kabar tiba/pergi dari tempat, check-in, dan baterai lemah muncul di sini.</div>'; return; }
+  box.innerHTML = locEvents.map(ev=>`<div class="loc-feed"><div class="fi">${ev.type === 'arrive' ? (ev.icon || '📍') : (EV_ICON[ev.type] || '📍')}</div><div><div>${escapeHtml(locEventText(ev).replace(/^\S+\s/, ''))}</div><div class="ft">${locRel(ev.atMs)} • ${locClock(ev.atMs)}</div></div></div>`).join('');
+}
 
+function locApplyNativeUi(){
+  const n = locNative();
+  document.getElementById('locNativeHint').classList.toggle('hidden', !n);
+  document.getElementById('locWebHint').classList.toggle('hidden', n);
+  const w = document.getElementById('optWake'); if(w && n) w.closest('label').classList.add('hidden');
+}
+document.getElementById('btnLocPerm').addEventListener('click', ()=>{ if(locNative()) locBG().openSettings().catch(()=>{}); });
+locApplyNativeUi();
 function onLokasiTabShown(){
   locEnsureMap();
   renderLokasi();
   if(locMap) setTimeout(()=>{ locMap.invalidateSize(); }, 120);
 }
-document.getElementById('btnLocToggle').addEventListener('click', ()=>{
-  if(locIsSharing()) locStopSharing(); else locStartSharing();
+function locSetSeg(seg){
+  locSeg = seg;
+  document.querySelectorAll('#locSeg button').forEach(b=>b.classList.toggle('active', b.dataset.lseg === seg));
+  ['anggota','riwayat','tempat','aktivitas'].forEach(k=>document.getElementById('locPane-'+k).classList.toggle('hidden', k !== seg));
+  if(seg !== 'tempat') locCloseForm();
+}
+
+// ----- Event handler -----
+document.getElementById('btnLocToggle').addEventListener('click', ()=>{ if(locIsSharing()) locStopSharing(); else locStartSharing(); });
+document.getElementById('btnLocFit').addEventListener('click', locFitAll);
+document.getElementById('locSeg').addEventListener('click', (e)=>{ const b = e.target.closest('[data-lseg]'); if(b) locSetSeg(b.dataset.lseg); });
+document.getElementById('btnCheckin').addEventListener('click', locCheckin);
+document.getElementById('btnPlaceAdd').addEventListener('click', ()=>{ document.getElementById('placeForm').classList.toggle('hidden'); });
+document.getElementById('btnPlaceCancel').addEventListener('click', locCloseForm);
+document.getElementById('btnPlaceSave').addEventListener('click', locSavePlace);
+document.getElementById('btnPlacePick').addEventListener('click', ()=>{
+  locPicking = true;
+  document.getElementById('locPickHint').classList.remove('hidden');
+  locScrollToMap();
 });
-document.getElementById('btnLocRefresh').addEventListener('click', ()=>{
-  if(locIsSharing()) locPushNow(true);
-  renderLokasi();
-  showToast('Daftar lokasi diperbarui');
+document.getElementById('btnPlaceHere').addEventListener('click', ()=>{
+  if(!navigator.geolocation){ showToast('Perangkat ini tidak mendukung lokasi.', true); return; }
+  navigator.geolocation.getCurrentPosition(
+    (p)=>locSetDraft(p.coords.latitude, p.coords.longitude),
+    (err)=>locOnError(err),
+    { enableHighAccuracy:true, timeout:20000, maximumAge:0 });
 });
-document.getElementById('locList').addEventListener('click', (e)=>{
+// opsi
+(function(){
+  const wake = document.getElementById('optWake'), tg = document.getElementById('optTg'), nt = document.getElementById('optNotif');
+  wake.checked = locStore('loc_wake') === 'on';
+  tg.checked = locStore('loc_tg') !== 'off';
+  nt.checked = locStore('loc_notif') === 'on' && 'Notification' in window && Notification.permission === 'granted';
+  wake.addEventListener('change', ()=>{ locStore('loc_wake', wake.checked ? 'on' : 'off'); locWakeSet(); });
+  tg.addEventListener('change', ()=>{ locStore('loc_tg', tg.checked ? 'on' : 'off'); });
+  nt.addEventListener('change', async ()=>{
+    if(!nt.checked){ locStore('loc_notif', 'off'); return; }
+    if(!('Notification' in window)){ showToast('Perangkat tidak mendukung notifikasi', true); nt.checked = false; return; }
+    const perm = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
+    if(perm === 'granted'){ locStore('loc_notif', 'on'); showToast('Notifikasi lokasi aktif 🔔'); }
+    else{ nt.checked = false; locStore('loc_notif', 'off'); showToast('Izin notifikasi ditolak', true); }
+  });
+})();
+// klik pada daftar/strip/riwayat/tempat
+document.getElementById('viewLokasi').addEventListener('click', async (e)=>{
   const b = e.target.closest('[data-locact]');
   if(!b) return;
-  const id = b.dataset.id;
-  if(b.dataset.locact === 'focus') locFocus(id);
-  else if(b.dataset.locact === 'ping') locPing(id);
-  else if(b.dataset.locact === 'remove') locRemoveMe();
+  const act = b.dataset.locact, id = b.dataset.id;
+  if(act === 'focus') locFocus(id);
+  else if(act === 'ping') locPing(id);
+  else if(act === 'remove') locRemoveMe();
+  else if(act === 'hist'){ locHistWho = id; locSubscribeTrips(id); locSetSeg('riwayat'); renderLokasiHistory(); }
+  else if(act === 'histwho'){ locHistWho = id; locSubscribeTrips(id); renderLokasiHistory(); }
+  else if(act === 'trip'){ if(e.target.closest('[data-locact="deltrip"]')) return; locShowTrip(locTrips.find(t=>t.id===id)); }
+  else if(act === 'deltrip'){
+    e.stopPropagation();
+    if(!confirm('Hapus perjalanan ini dari riwayat?')) return;
+    try{ await deleteDoc(doc(locTripsColRef(locDeviceId()), id)); showToast('Perjalanan dihapus'); }catch(err){ showToast(errorMessage(err), true); }
+  }
+  else if(act === 'placefocus'){
+    const pl = locPlaces.find(p=>p.id===id);
+    if(pl && locMap){ locMap.flyTo([pl.lat, pl.lng], 17, { duration:.8 }); locScrollToMap(); }
+  }
+  else if(act === 'placedel'){
+    if(!confirm('Hapus tempat ini?')) return;
+    try{ await deleteDoc(doc(locPlacesColRef(), id)); locStore('loc_inside', null); showToast('Tempat dihapus'); }catch(err){ showToast(errorMessage(err), true); }
+  }
 });
 
 // ---------- Computation ----------
@@ -3285,6 +3993,14 @@ document.querySelectorAll('[data-close]').forEach(btn=>{
 });
 document.querySelectorAll('.modal-overlay').forEach(ov=>{
   ov.addEventListener('click', (e)=>{ if(e.target === ov) ov.classList.add('hidden'); });
+});
+
+document.getElementById('accStateLabel').textContent = ACCESS_CODE_HASH ? 'Aktif' : 'Belum diaktifkan';
+document.getElementById('btnAccGen').addEventListener('click', async ()=>{
+  const v = document.getElementById('accCodeInput').value.trim();
+  if(v.length < 6){ showToast('Kode minimal 6 karakter', true); return; }
+  const h = await hashAccessCode(v);
+  document.getElementById('accOut').innerHTML = 'Hash (salin ke ACCESS_CODE_HASH &amp; firestore.rules):<br><strong>' + h + '</strong>';
 });
 
 // ---------- Tab navigation ----------
