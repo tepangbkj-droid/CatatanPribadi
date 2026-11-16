@@ -995,6 +995,11 @@
         </div>
       </div>
 
+      <details class="loc-card" style="margin-top:12px;padding:12px 16px;">
+        <summary style="font-weight:700;font-size:13.5px;cursor:pointer;">🛠️ Diagnostik GPS &amp; notifikasi</summary>
+        <pre id="locDiag" style="white-space:pre-wrap;font-size:12px;line-height:1.55;margin:10px 0;color:var(--ink-soft);"></pre>
+        <button class="btn btn-ghost" id="btnLocRestart" style="width:100%;">🔁 Coba ulang GPS</button>
+      </details>
       <div class="loc-strip" id="locStrip"></div>
       <div class="loc-mapbox">
         <div id="locMap"></div>
@@ -1419,7 +1424,7 @@
   </div>
 </div>
 
-<button class="sos-fab hidden" id="btnSos" aria-label="Tombol darurat SOS">SOS</button>
+<button class="sos-fab" id="btnSos" aria-label="Tombol darurat SOS">SOS</button>
 <div class="sos-banner hidden" id="sosBanner"></div>
 
 <div class="sos-ov hidden" id="sosConfirm">
@@ -1543,7 +1548,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.6.1';
+const APP_VERSION = '2.6.3';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -1659,8 +1664,12 @@ async function appNotifRequest(){
       const ok = (await appLN().requestPermissions()).display === 'granted';
       locStore('notif_native', ok ? 'on' : 'off');
       if(ok) appLNChannels();
+      if(ok) locStore('notif_plugin', null);
       return ok;
-    }catch(e){ showToast('Plugin notifikasi belum ada di APK ini — build ulang APK native (lihat PANDUAN-NATIVE).', true); return false; }
+    }catch(e){
+      if(e && (e.code === 'UNIMPLEMENTED' || /not implemented|not available/i.test(String(e.message || e)))) locStore('notif_plugin', 'missing');
+      return false;
+    }
   }
   if(!('Notification' in window)) return false;
   const perm = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
@@ -1711,7 +1720,7 @@ async function requestNotifPermission(){
     if(locStore('notif_native') === 'on' && await appNotifGranted()){ showToast('Notifikasi sudah aktif 🔔'); return; }
     const ok = await appNotifRequest(); updateNotifBtn();
     if(ok){ showToast('Notifikasi diaktifkan 🔔'); showLocalNotification('🔔 Notifikasi aktif', 'Kamu akan diberi tahu setiap ada transaksi baru.'); }
-    else showToast('Notifikasi belum aktif. Cek izin Notifikasi app ini di pengaturan HP.', true);
+    else showToast(locStore('notif_plugin') === 'missing' ? 'APK ini belum punya plugin notifikasi — build ulang APK native lalu install.' : 'Notifikasi belum aktif. Cek izin Notifikasi app ini di pengaturan HP.', true);
     return;
   }
   if(!('Notification' in window)){
@@ -1986,6 +1995,7 @@ let locPrev = null, locSpeed = 0, locMode = 'diam', locModeSince = Date.now();
 let locModeCand = 'diam', locModeCandN = 0, locAnchor = null, locTrip = null, locLastSampleAt = 0;
 let locFenceCnt = {}, locLowBatSent = false;
 let locAcquiring = false, locAcquireTimer = null;
+let locNativeFails = 0, locPendingAt = 0, locLastErr = '', locLastFixAt = 0, locWebWatchId = null;
 
 function locStore(key, val){
   try{
@@ -2124,6 +2134,10 @@ function locTickFn(){
       locMode = 'diam'; locModeSince = now; locSpeed = 0; locModeCand = 'diam'; locModeCandN = 0;
       if(locLastPos) locWriteState();
     }
+    if(locNative()){
+      if(locWatchId === null || (locWatchId === 'pending' && now - locPendingAt > 12000)){ locWatchId = null; locStartNativeWatch(); }
+      if(locAcquiring) locStartWebWatch();
+    }
     if(locTrip && now - locTrip.lastMoveAt >= LOC_TRIP_END_MS) locEndTrip();
     if(locLastPos && now - locLastWrite >= LOC_HEARTBEAT) locWriteState();
   }
@@ -2186,7 +2200,8 @@ function locCheckBattery(bat){
 function locOnPosition(pos){
   const c = pos.coords, t = pos.timestamp || Date.now();
   const acc = c.accuracy || 0;
-  if(acc > LOC_MAX_ACC) return;
+  if(acc > LOC_MAX_ACC && locLastFixAt) return;      // titik pertama boleh kasar, berikutnya difilter
+  locLastFixAt = Date.now();
   locAcquiring = false; clearTimeout(locAcquireTimer);
   const cur = { lat:c.latitude, lng:c.longitude, t, acc };
   locLastSampleAt = Date.now();
@@ -2234,7 +2249,7 @@ function locOnError(err){
   const msg = err && err.code === 1
     ? 'Izin lokasi ditolak. Aktifkan izin lokasi untuk aplikasi ini di pengaturan HP.'
     : err && err.code === 3 ? 'Lokasi belum didapat (timeout), mencoba lagi…' : 'Tidak bisa membaca lokasi perangkat.';
-  if(err && err.code === 1) locStopSharing(true);
+  if(err && err.code === 1 && !locNative()) locStopSharing(true);
   showToast(msg, true);
 }
 function locTripSave(){ try{ locStore('loc_trip', locTrip ? JSON.stringify(locTrip) : null); }catch(e){} }
@@ -2351,31 +2366,63 @@ async function locEmit(type, place, extra){
 function locNative(){ try{ return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); }catch(e){ return false; } }
 let locBGPlugin = null;
 function locBG(){ if(!locBGPlugin) locBGPlugin = window.Capacitor.registerPlugin('BackgroundGeolocation'); return locBGPlugin; }
+function locStartWebWatch(){
+  if(locWebWatchId !== null || !navigator.geolocation) return;
+  locWebWatchId = navigator.geolocation.watchPosition(locOnPosition, (err)=>{
+    locLastErr = 'GPS web: ' + ((err && (err.message || err.code)) || 'gagal');
+    if(!locNative()) locOnError(err);
+  }, { enableHighAccuracy:true, maximumAge:5000, timeout:30000 });
+}
+function locClearWebWatch(){
+  if(locWebWatchId !== null){ try{ navigator.geolocation.clearWatch(locWebWatchId); }catch(e){} locWebWatchId = null; }
+}
+function locRestartGps(){
+  locClearWatch(); locClearWebWatch(); locNativeFails = 0; locLastErr = '';
+  if(!locIsSharing()){ showToast('Aktifkan "Bagikan lokasi saya" dulu', true); renderLokasi(); return; }
+  locStartWatch();
+  showToast('GPS dimulai ulang…');
+  renderLokasi();
+}
 function locClearWatch(){
   const id = locWatchId; locWatchId = null;
   if(id === null) return;
   if(locNative()){ if(id !== 'pending') locBG().removeWatcher({ id }).catch(()=>{}); }
   else navigator.geolocation.clearWatch(id);
+  locClearWebWatch();
 }
 function locStartNativeWatch(){
-  locWatchId = 'pending';
-  locBG().addWatcher({
+  locWatchId = 'pending'; locPendingAt = Date.now();
+  let BG;
+  try{ BG = locBG(); }catch(e){ locWatchId = null; locLastErr = 'plugin lokasi tidak tersedia'; return; }
+  BG.addWatcher({
     backgroundTitle: 'Buku Kas — berbagi lokasi',
     backgroundMessage: 'Lokasimu sedang dibagikan ke keluarga.',
     requestPermissions: true, stale: true, distanceFilter: 10
   }, (loc, err)=>{
     if(err){
+      locLastErr = 'plugin: ' + (err.code || err.message || 'error');
       if(err.code === 'NOT_AUTHORIZED'){
         showToast('Izinkan lokasi “Sepanjang waktu” agar pelacakan jalan di belakang layar.', true);
-        locBG().openSettings().catch(()=>{});
-      }else showToast('Lokasi gagal: ' + (err.message || err.code || 'tidak diketahui'), true);
+        BG.openSettings().catch(()=>{});
+      }
       return;
     }
     if(!loc) return;
     if(loc.time && Date.now() - loc.time > 10*60*1000) return;      // abaikan titik basi
     locOnPosition({ coords:{ latitude:loc.latitude, longitude:loc.longitude, accuracy:loc.accuracy, speed:(typeof loc.speed === 'number' ? loc.speed : null) }, timestamp: loc.time || Date.now() });
-  }).then(id=>{ if(locWatchId === 'pending') locWatchId = id; else locBG().removeWatcher({ id }).catch(()=>{}); })
-    .catch(e=>{ locWatchId = null; console.error('addWatcher', e); showToast('Gagal memulai pelacakan native', true); });
+  }).then(id=>{
+    locNativeFails = 0;
+    if(locWatchId === 'pending') locWatchId = id; else BG.removeWatcher({ id }).catch(()=>{});
+  }).catch(e=>{
+    locWatchId = null; locNativeFails++;
+    locLastErr = 'addWatcher: ' + ((e && (e.message || e.code)) || e);
+    console.error('addWatcher', e);
+    if(locIsSharing() && locNativeFails <= 8){
+      setTimeout(()=>{ if(locIsSharing() && locWatchId === null) locStartNativeWatch(); }, 1500 * locNativeFails);
+    }else if(locIsSharing()){
+      showToast('Pelacakan latar belakang gagal dimulai. Memakai GPS biasa selama app terbuka.', true);
+    }
+  });
 }
 function locStartWatch(){
   locAcquiring = true;
@@ -2390,6 +2437,7 @@ function locStartWatch(){
     if(locWatchId !== null) return;
     try{ const saved = JSON.parse(locStore('loc_trip') || 'null'); if(saved && Date.now() - saved.lastPt.t < LOC_GAP_MS) locTrip = saved; }catch(e){}
     locStartNativeWatch();
+    locStartWebWatch();          // cadangan: GPS biasa saat app terbuka
     return;
   }
   if(!navigator.geolocation){ showToast('Perangkat ini tidak mendukung lokasi.', true); return; }
@@ -2680,6 +2728,7 @@ function renderLokasi(){
     }).join('');
   }
 
+  renderLocDiag();
   renderLokasiHistory();
   renderLokasiPlaces();
   renderLokasiFeed();
@@ -2760,6 +2809,24 @@ function locApplyNativeUi(){
 }
 document.getElementById('btnLocPerm').addEventListener('click', ()=>{ if(locNative()) locBG().openSettings().catch(()=>{}); });
 locApplyNativeUi();
+function renderLocDiag(){
+  const el = document.getElementById('locDiag'); if(!el) return;
+  const ago = locLastFixAt ? Math.round((Date.now() - locLastFixAt)/1000) + ' dtk lalu' : 'belum ada';
+  const pos = locLastPos ? `${locLastPos.lat.toFixed(5)}, ${locLastPos.lng.toFixed(5)} (±${Math.round(locLastPos.acc || 0)} m)` : 'belum ada';
+  el.textContent = [
+    `Versi app      : ${APP_VERSION}`,
+    `Mode           : ${locNative() ? 'APK native' : 'web/browser'}`,
+    `Berbagi lokasi : ${locIsSharing() ? 'aktif' : 'mati'}${locAcquiring ? ' (mencari GPS)' : ''}`,
+    `Watcher native : ${locWatchId === null ? 'tidak ada' : locWatchId === 'pending' ? 'menunggu…' : 'aktif'}`,
+    `GPS web        : ${locWebWatchId !== null ? 'aktif' : 'tidak'}`,
+    `Titik terakhir : ${ago}`,
+    `Posisi         : ${pos}`,
+    `Gagal berturut : ${locNativeFails}`,
+    `Error terakhir : ${locLastErr || '-'}`,
+    `Plugin notif   : ${locStore('notif_plugin') === 'missing' ? 'TIDAK ADA di APK (build ulang)' : locStore('notif_native') === 'on' ? 'aktif' : 'belum diaktifkan'}`
+  ].join('\n');
+}
+document.getElementById('btnLocRestart').addEventListener('click', locRestartGps);
 function onLokasiTabShown(){
   locEnsureMap();
   renderLokasi();
@@ -2804,7 +2871,7 @@ document.getElementById('btnPlaceHere').addEventListener('click', ()=>{
     if(!nt.checked){ locStore('loc_notif', 'off'); return; }
     const ok = await appNotifRequest();
     if(ok){ locStore('loc_notif', 'on'); updateNotifBtn(); showToast('Notifikasi lokasi aktif 🔔'); }
-    else{ nt.checked = false; locStore('loc_notif', 'off'); showToast('Notifikasi belum bisa diaktifkan. Cek izin Notifikasi app ini di pengaturan HP.', true); }
+    else{ nt.checked = false; locStore('loc_notif', 'off'); showToast(locStore('notif_plugin') === 'missing' ? 'APK ini belum punya plugin notifikasi — build ulang APK native lalu install (lihat panduan).' : 'Notifikasi belum bisa diaktifkan. Cek izin Notifikasi app ini di pengaturan HP.', true); }
   });
 })();
 // klik pada daftar/strip/riwayat/tempat
