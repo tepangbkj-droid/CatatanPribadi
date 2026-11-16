@@ -1558,7 +1558,7 @@ const SOS_PUSH_KEY = "Tepangbkjaja305";
 // Kosong = gembok MATI. Untuk mengaktifkan: buka app → Pengaturan → Info → "Buat kode akses",
 // salin hasil hash-nya ke ACCESS_CODE_HASH di bawah, lalu pasang aturan di firestore.rules (lihat KEAMANAN.md).
 const ACCESS_SALT = "catatanpribadi-v1";
-const ACCESS_CODE_HASH = "e4282f19ca78db07227f83526cc8429c1e1d4410bbdf55d422dfbc9c24b71187";
+const ACCESS_CODE_HASH = "";
 // =====================================================================
 
 function isPlaceholder(v){ return !v || String(v).startsWith('GANTI_'); }
@@ -1571,7 +1571,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.8.2';
+const APP_VERSION = '2.8.4';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -1923,6 +1923,12 @@ function savingsEntriesColRef(){ return collection(db, 'bukukas_shared', SHARED_
 function debtsColRef(){ return collection(db, 'bukukas_shared', SHARED_SPACE_ID, 'debts'); }
 function debtPaymentsColRef(){ return collection(db, 'bukukas_shared', SHARED_SPACE_ID, 'debtPayments'); }
 
+// Jalankan tiap bagian start terpisah: kalau satu gagal, yang lain tetap jalan; errornya tampil di Diagnostik.
+const initErrs = [];
+function safeInit(name, fn){
+  const fail = (e)=>{ initErrs.push(name + ': ' + ((e && e.message) || e)); console.error('init ' + name, e); };
+  try{ const r = fn(); if(r && typeof r.catch === 'function') r.catch(fail); }catch(e){ fail(e); }
+}
 function attachListeners(){
   onSnapshot(userDocRef(), (snap)=>{
     meta = { ...DEFAULT_META, ...(snap.exists() ? snap.data() : {}) };
@@ -2011,10 +2017,10 @@ function attachListeners(){
     petNotes = snap.docs.map(d=>({ id:d.id, ...d.data() }));
     render();
   });
-  attachLokasiListener();
-  sosAttachListener();
-  attachAdminListener();
-  pushInit();
+  safeInit('lokasi', attachLokasiListener);
+  safeInit('sos', sosAttachListener);
+  safeInit('admin', attachAdminListener);
+  safeInit('push', pushInit);
   document.getElementById('btnSos').classList.remove('hidden');
 }
 
@@ -2869,6 +2875,7 @@ document.getElementById('btnLocPerm').addEventListener('click', ()=>{ if(locNati
 locApplyNativeUi();
 let locCamPerm = '?';
 try{ if(navigator.permissions && navigator.permissions.query) navigator.permissions.query({ name:'camera' }).then(r=>{ locCamPerm = r.state; r.onchange = ()=>{ locCamPerm = r.state; }; }).catch(()=>{ locCamPerm = 'tidak bisa dicek'; }); }catch(e){}
+setInterval(()=>{ try{ renderLocDiag(); }catch(e){} }, 2000);
 function renderLocDiag(){
   const el = document.getElementById('locDiag'); if(!el) return;
   const ago = locLastFixAt ? Math.round((Date.now() - locLastFixAt)/1000) + ' dtk lalu' : 'belum ada';
@@ -2887,6 +2894,9 @@ function renderLocDiag(){
     `Jalur plugin   : lokasi=${capVia.BackgroundGeolocation || '-'}, notif=${capVia.LocalNotifications || '-'}`,
     `Izin kamera    : ${locCamPerm}`,
     `Push SOS       : ${pushState}`,
+    `Admin          : ${adminErr ? 'ERROR ' + adminErr : !adminLoaded ? 'listener belum aktif' : !adminCfg ? 'belum ada admin' : isAdmin() ? 'kamu admin' : 'ada admin, kamu belum masuk'}`,
+    `SOS kirim err : ${sosLastErr || '-'}`,
+    `Error start    : ${initErrs.length ? initErrs.join(' | ') : '-'}`,
     `Plugin notif   : ${locStore('notif_plugin') === 'missing' ? 'TIDAK ADA di APK (build ulang)' : locStore('notif_native') === 'on' ? 'aktif' : 'belum diaktifkan'}`
   ].join('\n');
 }
@@ -2966,16 +2976,16 @@ document.getElementById('viewLokasi').addEventListener('click', async (e)=>{
 });
 
 // ---------- Admin ----------
-let adminCfg = null, adminListenerOn = false;
+let adminCfg = null, adminListenerOn = false, adminErr = '', adminLoaded = false;
 function adminDocRef(){ return doc(db, ...locBase(), 'config', 'admin'); }
 function adminHash(pin){ return sha256Hex(ACCESS_SALT + '|admin|' + String(pin).trim()); }
 function isAdmin(){ return !!adminCfg && locStore('admin_ok') === adminCfg.pinHash; }
 function attachAdminListener(){
   if(adminListenerOn) return; adminListenerOn = true;
   onSnapshot(adminDocRef(), (snap)=>{
-    adminCfg = snap.exists() ? snap.data() : null;
+    adminCfg = snap.exists() ? snap.data() : null; adminLoaded = true; adminErr = '';
     adminRenderUi(); renderLokasi();
-  }, (err)=>console.warn('Listener admin gagal', err));
+  }, (err)=>{ adminErr = (err && (err.code || err.message)) || String(err); console.warn('Listener admin gagal', err); });
 }
 function adminRenderUi(){
   const st = document.getElementById('adminState'); if(!st) return;
@@ -3052,27 +3062,34 @@ function pushSaveToken(token){
   locStore('push_token', token);
   setDocFast(doc(db, ...locBase(), 'fcm', locDeviceId()), { token, name:(locMyName() || sosName()), at:Date.now() }, { merge:true });
 }
+function pushTimeout(p, ms, label){
+  return Promise.race([p, new Promise((_, rej)=>setTimeout(()=>rej(new Error('timeout: ' + label)), ms))]);
+}
 async function pushInit(){
   if(!SOS_PUSH_URL){ pushState = 'mati (SOS_PUSH_URL kosong)'; return; }
   if(!locNative()){ pushState = 'tidak aktif: app dibuka di browser/TWA lama, bukan APK native baru'; return; }
+  pushState = 'mencari plugin…';
   let P = null; try{ P = capPlugin('PushNotifications'); }catch(e){}
   if(!P){ pushState = 'plugin tidak ada di APK (build ulang)'; return; }
   try{
-    try{ await P.createChannel({ id:'sos', name:'SOS Darurat', description:'Alarm darurat dari anggota', importance:5, visibility:1, vibration:true, lights:true }); }catch(e){}
-    let perm = await P.checkPermissions();
-    if(perm.receive !== 'granted') perm = await P.requestPermissions();
+    try{ await pushTimeout(P.createChannel({ id:'sos', name:'SOS Darurat', description:'Alarm darurat dari anggota', importance:5, visibility:1, vibration:true, lights:true }), 5000, 'createChannel'); }catch(e){}
+    pushState = 'cek izin notifikasi…';
+    let perm = await pushTimeout(P.checkPermissions(), 8000, 'checkPermissions');
+    if(perm.receive !== 'granted'){ pushState = 'meminta izin notifikasi…'; perm = await pushTimeout(P.requestPermissions(), 60000, 'requestPermissions'); }
     if(perm.receive !== 'granted'){ pushState = 'izin notifikasi ditolak'; return; }
     await P.addListener('registration', (t)=>{ pushState = 'terdaftar'; pushSaveToken(t && t.value); });
     await P.addListener('registrationError', (e)=>{ pushState = 'gagal daftar: ' + ((e && (e.error || e.message)) || ''); });
     await P.addListener('pushNotificationReceived', (n)=>{
       const d = (n && n.data) || {};
       if(d.type !== 'sos') return;
-      const key = (d.senderId || '') + '_push';
       sosAlertShow({ id:d.senderId || 'push', name:d.name, lat:d.lat ? Number(d.lat) : null, lng:d.lng ? Number(d.lng) : null, startedAt:Date.now(), updatedAt:Date.now() });
     });
-    await P.register();
-    pushState = 'mendaftar…';
-  }catch(e){ pushState = 'error: ' + ((e && e.message) || e); }
+    pushState = 'mendaftar ke Firebase…';
+    await pushTimeout(P.register(), 15000, 'register');
+  }catch(e){
+    const m = (e && e.message) || String(e);
+    pushState = /not implemented|UNIMPLEMENTED/i.test(m) ? 'plugin tidak ada di APK (google-services.json belum cocok, build ulang)' : 'error: ' + m;
+  }
 }
 function sosTestAlarm(){
   sosAudioUnlock(); sirenStart();
@@ -3132,13 +3149,20 @@ async function sosEnqueue(it){
   }catch(e){ console.warn('antrean SOS gagal, kirim langsung', e); try{ await sosSendItem(it); }catch(_){} }
   sosFlush();
 }
+let sosLastErr = '';
+const sosTries = new Map();
+function sosFetch(url, opts, ms){
+  const ac = new AbortController(); const t = setTimeout(()=>ac.abort(), ms || 30000);
+  return fetch(url, { ...opts, signal:ac.signal }).finally(()=>clearTimeout(t));
+}
 async function sosSendItem(it){
   if(it.kind === 'push'){
     if(!SOS_PUSH_URL) return 'drop';
     const isGas = /script\.google\.com/.test(SOS_PUSH_URL);
     const url = isGas ? SOS_PUSH_URL : SOS_PUSH_URL.replace(/\/$/, '') + '/sos';
     const payload = JSON.stringify({ ...JSON.parse(it.body), key:SOS_PUSH_KEY });
-    const r = await fetch(url, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body:payload });
+    const r = await sosFetch(url, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body:payload }, 20000);
+    if(!r.ok) sosLastErr = 'push HTTP ' + r.status;
     return r.ok ? 'ok' : ((r.status === 429 || r.status >= 500) ? 'retry' : 'drop');
   }
   if(!tgConfigured()) return 'drop';
@@ -3160,13 +3184,15 @@ async function sosSendItem(it){
     if(mp4) fd.append('supports_streaming', 'true');
     method = mp4 ? 'sendVideo' : 'sendDocument'; body = fd; headers = tgHeaders(false);
   }else return 'drop';
-  const res = await fetch(tgEndpoint(method), { method:'POST', headers, body });
+  const res = await sosFetch(tgEndpoint(method), { method:'POST', headers, body }, it.kind === 'video' ? 120000 : 30000);
   if(res.ok){
     const j = await res.json().catch(()=>null);
     if(it.kind === 'loc' && j && j.result && j.result.message_id) locStore('sos_live_msg', String(j.result.message_id));
     if(it.kind === 'stoplive') locStore('sos_live_msg', null);
     return 'ok';
   }
+  let desc = ''; try{ const j = await res.json(); desc = (j && j.description) || ''; }catch(e){}
+  sosLastErr = `${it.kind} ${res.status} ${desc}`.trim();
   return (res.status === 429 || res.status >= 500) ? 'retry' : 'drop';
 }
 async function sosFlush(){
@@ -3176,9 +3202,14 @@ async function sosFlush(){
     if(navigator.onLine === false) return;
     const all = (await sosQAll()).sort((a, b)=> ((a.kind === 'video') - (b.kind === 'video')) || (a.id - b.id));
     for(const it of all){
-      let r; try{ r = await sosSendItem(it); }catch(e){ r = 'retry'; }
-      if(r === 'retry') break;
-      await sosQDel([it.id]);
+      let r; try{ r = await sosSendItem(it); }catch(e){ r = 'retry'; sosLastErr = it.kind + ': ' + ((e && e.message) || e); }
+      if(r === 'retry'){
+        // satu item gagal (mis. push) tidak boleh menahan video/pesan lain di belakangnya
+        const n = (sosTries.get(it.id) || 0) + 1; sosTries.set(it.id, n);
+        if(it.kind === 'push' || n >= 8){ await sosQDel([it.id]); sosTries.delete(it.id); }
+        continue;
+      }
+      await sosQDel([it.id]); sosTries.delete(it.id);
       if(r === 'ok' && it.kind === 'video') sosSent++;
     }
   }catch(e){ console.warn('flush SOS', e); }
@@ -3407,7 +3438,7 @@ async function sosRenderStatus(){
   sosEl('sosCamState').textContent = sosCamMsg;
   sosEl('sosPreview').style.display = sosStream ? 'block' : 'none';
   let pend = 0; try{ pend = (await sosQAll()).length; }catch(e){}
-  sosEl('sosQState').textContent = (navigator.onLine === false ? '📴 offline — ' : '') + `${pend} menunggu terkirim`;
+  sosEl('sosQState').textContent = (navigator.onLine === false ? '📴 offline — ' : '') + `${sosSent} video terkirim • ${pend} menunggu` + (sosLastErr ? ` • error: ${sosLastErr}` : '');
   const acks = sosMine && sosMine.ack ? Object.values(sosMine.ack).map(a=>a.name).filter(Boolean) : [];
   sosEl('sosAckState').textContent = acks.length ? acks.join(', ') : 'belum ada';
   const ph = sosPhoneClean();
