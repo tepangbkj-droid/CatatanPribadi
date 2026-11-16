@@ -53,6 +53,17 @@ jobs:
         working-directory: native
         run: npx cap add android
 
+      - name: Konfigurasi Firebase untuk push SOS
+        env:
+          GSJ: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GSJ" ]; then
+            printf '%s' "$GSJ" > native/android/app/google-services.json
+            echo "google-services.json terpasang"
+          else
+            echo "::warning::Secret GOOGLE_SERVICES_JSON kosong - push SOS saat app tertutup tidak aktif."
+          fi
+
       - name: Patch izin, versi, nama app
         working-directory: native
         run: python3 scripts/patch_android.py
