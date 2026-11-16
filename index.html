@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://cdnjs.cloudflare.com; media-src 'self' blob: data:; connect-src 'self' https://*.googleapis.com wss://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://api.telegram.org https://nominatim.openstreetmap.org https://api.gold-api.com https://open.er-api.com https://api.frankfurter.app https://cdn.jsdelivr.net https://*.workers.dev https://api.anthropic.com https://api.groq.com https://openrouter.ai; frame-src https://*.firebaseapp.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://cdnjs.cloudflare.com; media-src 'self' blob: data:; connect-src 'self' https://*.googleapis.com wss://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://api.telegram.org https://nominatim.openstreetmap.org https://api.gold-api.com https://open.er-api.com https://api.frankfurter.app https://cdn.jsdelivr.net https://*.workers.dev https://script.google.com https://script.googleusercontent.com https://api.anthropic.com https://api.groq.com https://openrouter.ai; frame-src https://*.firebaseapp.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="no-referrer">
 <script>if(window.top!==window.self){document.documentElement.style.display="none";try{window.top.location=window.self.location;}catch(e){}}</script>
 <title>Buku Kas — Catatan Keuangan &amp; Tabungan Emas</title>
@@ -687,7 +687,7 @@
   .lock-card input{width:100%;padding:13px 14px;border:1.5px solid var(--line);border-radius:12px;font-size:16px;margin-bottom:12px;text-align:center;}
   #lockMsg{font-size:12.5px;color:var(--rose);margin-top:10px;min-height:16px;}
 /* ===== SOS & keamanan ===== */
-  .sos-fab{position:fixed;left:14px;bottom:calc(88px + env(safe-area-inset-bottom));z-index:900;width:56px;height:56px;border-radius:50%;background:linear-gradient(145deg,#FF3B5C,#D90429);color:#fff;font-weight:800;font-size:15px;letter-spacing:.5px;font-family:var(--font-head);border:3px solid #fff;box-shadow:0 10px 22px -6px rgba(217,4,41,.85);animation:sosPulse 2.4s infinite;}
+  .sos-fab{position:fixed;left:12px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:900;width:48px;height:48px;font-size:13px;opacity:.94;border-radius:50%;background:linear-gradient(145deg,#FF3B5C,#D90429);color:#fff;font-weight:800;font-size:15px;letter-spacing:.5px;font-family:var(--font-head);border:3px solid #fff;box-shadow:0 10px 22px -6px rgba(217,4,41,.85);animation:sosPulse 2.4s infinite;}
   .sos-fab:active{transform:scale(.93);}
   @keyframes sosPulse{0%{box-shadow:0 0 0 0 rgba(217,4,41,.55),0 10px 22px -6px rgba(217,4,41,.85);}70%{box-shadow:0 0 0 16px rgba(217,4,41,0),0 10px 22px -6px rgba(217,4,41,.85);}100%{box-shadow:0 0 0 0 rgba(217,4,41,0),0 10px 22px -6px rgba(217,4,41,.85);}}
   @keyframes sosFlash{0%,100%{background:#B0021F;}50%{background:#FF2D4F;}}
@@ -1014,7 +1014,16 @@
         <button data-lseg="aktivitas">🔔 Kabar</button>
       </div>
 
-      <div class="loc-pane" id="locPane-anggota"><div class="fin-list" id="locList"></div></div>
+      <div class="loc-pane" id="locPane-anggota">
+        <div class="loc-row hidden" id="locAdminBar" style="margin-bottom:12px;border-color:var(--teal);">
+          <div class="loc-sub" style="margin:0 0 8px;">👑 <b>Mode admin</b> — kelola anggota &amp; kabar</div>
+          <div class="loc-acts" style="margin-top:0;">
+            <button class="link-btn amber" id="btnAdminClean">🧹 Bersihkan anggota tidak aktif</button>
+            <button class="link-btn rose" id="btnAdminFeed">🗑️ Hapus semua kabar</button>
+          </div>
+        </div>
+        <div class="fin-list" id="locList"></div>
+      </div>
 
       <div class="loc-pane hidden" id="locPane-riwayat">
         <div class="loc-who" id="locHistWho"></div>
@@ -1414,7 +1423,15 @@
       <label class="loc-switch"><span>Rekam kamera saat SOS<small>Potongan video ±15 dtk dikirim ke Telegram.</small></span><input type="checkbox" id="sosRec" checked></label>
       <div class="field"><label>Kamera yang dipakai</label><select id="sosCam"><option value="environment">Belakang</option><option value="user">Depan</option></select></div>
       <label class="loc-switch"><span>Bunyikan sirine di HP saya sendiri<small>Matikan bila situasi berbahaya agar tidak ketahuan.</small></span><input type="checkbox" id="sosSelf"></label>
+      <button class="btn btn-ghost" id="btnSosTest" style="margin-bottom:6px;">🔔 Tes bunyi &amp; getar alarm di HP ini</button>
       <div style="height:14px"></div>
+      <div class="divider-note">👑 Admin: <strong id="adminState">-</strong>. Admin bisa menghapus anggota/riwayat lokasi dan mengakhiri SOS yang tersangkut. Pakai PIN 6+ karakter.</div>
+      <div class="field"><input type="password" id="adminPin" placeholder="PIN admin" autocomplete="off"></div>
+      <div class="btn-row" style="margin-bottom:14px;">
+        <button class="btn btn-ghost" id="btnAdminClaim">👑 Jadikan saya admin</button>
+        <button class="btn btn-ghost hidden" id="btnAdminLogin">🔑 Masuk admin</button>
+        <button class="btn btn-ghost hidden" id="btnAdminLogout">Keluar admin</button>
+      </div>
       <div class="divider-note">🔐 Kode akses: <strong id="accStateLabel">-</strong>. Buat kode baru lalu salin hash ke <code>ACCESS_CODE_HASH</code> di kode &amp; <code>firestore.rules</code> (lihat KEAMANAN.md). Pakai kode panjang (8+ karakter / frasa).</div>
       <div class="field"><input type="text" id="accCodeInput" placeholder="Ketik kode akses baru" autocomplete="off"></div>
       <button class="btn btn-ghost" id="btnAccGen">🔐 Buat hash kode akses</button>
@@ -1473,6 +1490,7 @@
     <a class="btn btn-ghost hidden" id="saTel" href="#">📞 Telepon</a>
     <button class="btn btn-primary" id="saAck">👀 Saya sudah lihat / menuju ke sana</button>
     <button class="btn btn-ghost" id="saMute">🔇 Matikan bunyi</button>
+    <button class="btn btn-ghost hidden" id="saAdminEnd">🛑 Akhiri SOS ini (admin)</button>
     <button class="btn btn-ghost" id="saClose">Tutup</button>
   </div>
 </div>
@@ -1531,6 +1549,11 @@ const SHARED_SPACE_ID = "main";
 const TELEGRAM_PROXY_URL = "";
 const TELEGRAM_PROXY_KEY = "";
 
+// ---- Notifikasi push SOS (HP anggota berbunyi & bergetar walau app tertutup) ----
+// Isi dengan URL Google Apps Script (sos-push-appsscript.gs) atau Cloudflare Worker (lihat PANDUAN-PUSH.md). Kosong = fitur push mati.
+const SOS_PUSH_URL = "";
+const SOS_PUSH_KEY = "";
+
 // ---- KODE AKSES (agar orang tak dikenal tidak bisa membuka data) ----
 // Kosong = gembok MATI. Untuk mengaktifkan: buka app → Pengaturan → Info → "Buat kode akses",
 // salin hasil hash-nya ke ACCESS_CODE_HASH di bawah, lalu pasang aturan di firestore.rules (lihat KEAMANAN.md).
@@ -1548,7 +1571,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.6.3';
+const APP_VERSION = '2.8.1';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -1643,12 +1666,39 @@ function openModal(id){ document.getElementById(id).classList.remove('hidden'); 
 function closeModal(id){ document.getElementById(id).classList.add('hidden'); }
 
 // ---------- Notifikasi perangkat (web & native) ----------
-function appLN(){ try{ return window.Capacitor.registerPlugin('LocalNotifications'); }catch(e){ return null; } }
+let capVia = {};
+function capManual(name){
+  const C = window.Capacitor;
+  if(!C || typeof C.nativePromise !== 'function') return null;
+  return new Proxy({}, { get:(_, method)=>{
+    if(method === 'then') return undefined;
+    if(method === 'addListener') return (eventName, cb)=>{
+      const id = C.nativeCallback(name, 'addListener', { eventName }, cb);
+      return Promise.resolve({ remove: ()=>{ try{ C.nativePromise(name, 'removeListener', { eventName, callbackId:id }); }catch(e){} } });
+    };
+    return (opts, cb)=>{
+      if(typeof cb === 'function' && typeof C.nativeCallback === 'function') return Promise.resolve(C.nativeCallback(name, String(method), opts || {}, cb));
+      return C.nativePromise(name, String(method), opts || {});
+    };
+  }});
+}
+function capPlugin(name){
+  const C = window.Capacitor; if(!C) return null;
+  try{ if(C.Plugins && C.Plugins[name]){ capVia[name] = 'Plugins'; return C.Plugins[name]; } }catch(e){}
+  try{ if(typeof C.registerPlugin === 'function'){ capVia[name] = 'registerPlugin'; return C.registerPlugin(name); } }catch(e){}
+  const m = capManual(name); if(m){ capVia[name] = 'bridge'; return m; }
+  capVia[name] = 'tidak ada'; return null;
+}
+function appLN(){
+  const p = capPlugin('LocalNotifications');
+  if(!p){ const e = new Error('LocalNotifications not implemented'); e.code = 'UNIMPLEMENTED'; throw e; }
+  return p;
+}
 let appLNReady = false, appNotifSeq = 0;
 async function appLNChannels(){
   if(appLNReady || !locNative()) return;
   appLNReady = true;
-  const ln = appLN(); if(!ln) return;
+  let ln; try{ ln = appLN(); }catch(e){ return; }
   try{
     await ln.createChannel({ id:'sos', name:'SOS Darurat', description:'Alarm darurat dari anggota', importance:5, visibility:1, vibration:true });
     await ln.createChannel({ id:'info', name:'Pemberitahuan', description:'Transaksi, lokasi, dan kabar', importance:3, vibration:true });
@@ -1963,6 +2013,8 @@ function attachListeners(){
   });
   attachLokasiListener();
   attachSosListener();
+  attachAdminListener();
+  pushInit();
   document.getElementById('btnSos').classList.remove('hidden');
 }
 
@@ -2365,7 +2417,11 @@ async function locEmit(type, place, extra){
 // --- Mode native (APK Capacitor): pelacakan tetap jalan saat app ditutup/layar terkunci ---
 function locNative(){ try{ return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); }catch(e){ return false; } }
 let locBGPlugin = null;
-function locBG(){ if(!locBGPlugin) locBGPlugin = window.Capacitor.registerPlugin('BackgroundGeolocation'); return locBGPlugin; }
+function locBG(){
+  if(!locBGPlugin) locBGPlugin = capPlugin('BackgroundGeolocation');
+  if(!locBGPlugin) throw new Error('plugin BackgroundGeolocation tidak ada di APK');
+  return locBGPlugin;
+}
 function locStartWebWatch(){
   if(locWebWatchId !== null || !navigator.geolocation) return;
   locWebWatchId = navigator.geolocation.watchPosition(locOnPosition, (err)=>{
@@ -2393,7 +2449,7 @@ function locClearWatch(){
 function locStartNativeWatch(){
   locWatchId = 'pending'; locPendingAt = Date.now();
   let BG;
-  try{ BG = locBG(); }catch(e){ locWatchId = null; locLastErr = 'plugin lokasi tidak tersedia'; return; }
+  try{ BG = locBG(); }catch(e){ locWatchId = null; locLastErr = String(e && e.message || e); return; }
   BG.addWatcher({
     backgroundTitle: 'Buku Kas — berbagi lokasi',
     backgroundMessage: 'Lokasimu sedang dibagikan ke keluarga.',
@@ -2462,6 +2518,8 @@ async function locStartSharing(){
   const name = input.value.trim();
   if(!name){ showToast('Isi dulu nama kamu', true); input.focus(); return; }
   if(!locNative() && !navigator.geolocation){ showToast('Perangkat ini tidak mendukung lokasi.', true); return; }
+  const same = locMembers.find(m=>m.id !== locDeviceId() && !m.sharing && (m.name || '').trim().toLowerCase() === name.toLowerCase());
+  if(same && confirm(`Nama “${name}” sudah terdaftar tapi tidak aktif. Pakai data lama itu supaya tidak dobel?`)){ locStore('loc_device_id', same.id); }
   locStore('loc_name', name);
   locStore('loc_sharing', 'on');
   locLastPos = null; locLastWrite = 0; locPrev = null;
@@ -2722,7 +2780,7 @@ function renderLokasi(){
             ${has ? `<button class="link-btn teal" data-locact="focus" data-id="${escapeHtml(m.id)}">🗺️ Cek lokasi</button>
             <a class="link-btn" href="${maps}" target="_blank" rel="noopener">↗ Maps</a>` : ''}
             <button class="link-btn" data-locact="hist" data-id="${escapeHtml(m.id)}">🧭 Riwayat</button>
-            ${!isMe ? `<button class="link-btn amber" data-locact="ping" data-id="${escapeHtml(m.id)}">🔔 Minta update</button>` : `<button class="link-btn rose" data-locact="remove" data-id="${escapeHtml(m.id)}">🗑️ Hapus saya</button>`}
+            ${!isMe ? `<button class="link-btn amber" data-locact="ping" data-id="${escapeHtml(m.id)}">🔔 Minta update</button>${isAdmin() ? `<button class="link-btn rose" data-locact="admindel" data-id="${escapeHtml(m.id)}">🗑️ Hapus</button>` : ''}` : `<button class="link-btn rose" data-locact="remove" data-id="${escapeHtml(m.id)}">🗑️ Hapus saya</button>`}
           </div>
         </div>`;
     }).join('');
@@ -2809,6 +2867,8 @@ function locApplyNativeUi(){
 }
 document.getElementById('btnLocPerm').addEventListener('click', ()=>{ if(locNative()) locBG().openSettings().catch(()=>{}); });
 locApplyNativeUi();
+let locCamPerm = '?';
+try{ if(navigator.permissions && navigator.permissions.query) navigator.permissions.query({ name:'camera' }).then(r=>{ locCamPerm = r.state; r.onchange = ()=>{ locCamPerm = r.state; }; }).catch(()=>{ locCamPerm = 'tidak bisa dicek'; }); }catch(e){}
 function renderLocDiag(){
   const el = document.getElementById('locDiag'); if(!el) return;
   const ago = locLastFixAt ? Math.round((Date.now() - locLastFixAt)/1000) + ' dtk lalu' : 'belum ada';
@@ -2823,6 +2883,10 @@ function renderLocDiag(){
     `Posisi         : ${pos}`,
     `Gagal berturut : ${locNativeFails}`,
     `Error terakhir : ${locLastErr || '-'}`,
+    `Capacitor API  : Plugins=${window.Capacitor && window.Capacitor.Plugins ? 'ya' : 'tidak'}, register=${window.Capacitor && window.Capacitor.registerPlugin ? 'ya' : 'tidak'}, bridge=${window.Capacitor && window.Capacitor.nativePromise ? 'ya' : 'tidak'}`,
+    `Jalur plugin   : lokasi=${capVia.BackgroundGeolocation || '-'}, notif=${capVia.LocalNotifications || '-'}`,
+    `Izin kamera    : ${locCamPerm}`,
+    `Push SOS       : ${pushState}`,
     `Plugin notif   : ${locStore('notif_plugin') === 'missing' ? 'TIDAK ADA di APK (build ulang)' : locStore('notif_native') === 'on' ? 'aktif' : 'belum diaktifkan'}`
   ].join('\n');
 }
@@ -2882,6 +2946,7 @@ document.getElementById('viewLokasi').addEventListener('click', async (e)=>{
   if(act === 'focus') locFocus(id);
   else if(act === 'ping') locPing(id);
   else if(act === 'remove') locRemoveMe();
+  else if(act === 'admindel') adminDeleteMember(id);
   else if(act === 'hist'){ locHistWho = id; locSubscribeTrips(id); locSetSeg('riwayat'); renderLokasiHistory(); }
   else if(act === 'histwho'){ locHistWho = id; locSubscribeTrips(id); renderLokasiHistory(); }
   else if(act === 'trip'){ if(e.target.closest('[data-locact="deltrip"]')) return; locShowTrip(locTrips.find(t=>t.id===id)); }
@@ -2900,10 +2965,126 @@ document.getElementById('viewLokasi').addEventListener('click', async (e)=>{
   }
 });
 
+// ---------- Admin ----------
+let adminCfg = null, adminListenerOn = false;
+function adminDocRef(){ return doc(db, ...locBase(), 'config', 'admin'); }
+function adminHash(pin){ return sha256Hex(ACCESS_SALT + '|admin|' + String(pin).trim()); }
+function isAdmin(){ return !!adminCfg && locStore('admin_ok') === adminCfg.pinHash; }
+function attachAdminListener(){
+  if(adminListenerOn) return; adminListenerOn = true;
+  onSnapshot(adminDocRef(), (snap)=>{
+    adminCfg = snap.exists() ? snap.data() : null;
+    adminRenderUi(); renderLokasi();
+  }, (err)=>console.warn('Listener admin gagal', err));
+}
+function adminRenderUi(){
+  const st = document.getElementById('adminState'); if(!st) return;
+  const me = isAdmin();
+  st.textContent = !adminCfg ? 'belum ada admin' : me ? `kamu admin 👑 (${adminCfg.name || ''})` : `admin: ${adminCfg.name || '-'} (kamu belum masuk)`;
+  document.getElementById('btnAdminClaim').classList.toggle('hidden', !!adminCfg);
+  document.getElementById('btnAdminLogin').classList.toggle('hidden', !adminCfg || me);
+  document.getElementById('btnAdminLogout').classList.toggle('hidden', !me);
+  document.getElementById('adminPin').classList.toggle('hidden', me);
+  const bar = document.getElementById('locAdminBar'); if(bar) bar.classList.toggle('hidden', !me);
+}
+async function adminClaim(){
+  const pin = document.getElementById('adminPin').value.trim();
+  if(pin.length < 6){ showToast('PIN admin minimal 6 karakter', true); return; }
+  try{
+    const cur = await getDoc(adminDocRef());
+    if(cur.exists()){ showToast('Admin sudah ada', true); return; }
+    const h = await adminHash(pin);
+    await setDoc(adminDocRef(), { deviceId:locDeviceId(), name:(locMyName() || sosName()), pinHash:h, at:serverTimestamp() });
+    locStore('admin_ok', h); document.getElementById('adminPin').value = '';
+    showToast('Kamu sekarang admin 👑');
+  }catch(e){ showToast(errorMessage(e), true); }
+}
+async function adminLogin(){
+  if(!adminCfg) return;
+  const until = Number(localStorage.getItem('admin_until') || 0);
+  if(Date.now() < until){ showToast('Coba lagi sebentar lagi', true); return; }
+  const h = await adminHash(document.getElementById('adminPin').value);
+  if(h === adminCfg.pinHash){
+    locStore('admin_ok', h); localStorage.removeItem('admin_fails'); document.getElementById('adminPin').value = '';
+    showToast('Masuk sebagai admin 👑'); adminRenderUi(); renderLokasi();
+  }else{
+    const f = Number(localStorage.getItem('admin_fails') || 0) + 1; localStorage.setItem('admin_fails', String(f));
+    if(f >= 5) localStorage.setItem('admin_until', String(Date.now() + Math.min(600, 30*(f - 4))*1000));
+    showToast('PIN salah', true);
+  }
+}
+function adminLogout(){ locStore('admin_ok', null); adminRenderUi(); renderLokasi(); showToast('Keluar dari mode admin'); }
+async function adminDeleteMember(id, silent){
+  if(!isAdmin()) return;
+  const m = locAll().find(x=>x.id === id);
+  if(!silent && !confirm(`Hapus ${m ? (m.name || 'anggota') : 'anggota'} beserta riwayat perjalanannya?`)) return;
+  try{
+    const trips = await getDocs(locTripsColRef(id));
+    trips.docs.forEach(d=>deleteDocFast(d.ref));
+    deleteDocFast(locDocRef(id)); deleteDocFast(sosDocRef(id));
+    if(!silent) showToast('Anggota dihapus');
+  }catch(e){ showToast(errorMessage(e), true); }
+}
+async function adminCleanInactive(){
+  if(!isAdmin()) return;
+  const myId = locDeviceId(), cut = Date.now() - 24*3600*1000;
+  const ghosts = locMembers.filter(m=>m.id !== myId && !m.sharing && (!m.updatedMs || m.updatedMs < cut));
+  if(!ghosts.length){ showToast('Tidak ada anggota tidak aktif (>24 jam)'); return; }
+  if(!confirm(`Hapus ${ghosts.length} anggota tidak aktif: ${ghosts.map(g=>g.name || 'tanpa nama').join(', ')}?`)) return;
+  for(const g of ghosts) await adminDeleteMember(g.id, true);
+  showToast(`${ghosts.length} anggota dihapus`);
+}
+async function adminClearFeed(){
+  if(!isAdmin()) return;
+  if(!confirm('Hapus semua kabar lokasi?')) return;
+  try{ const d = await getDocs(locEventsColRef()); d.docs.forEach(x=>deleteDocFast(x.ref)); showToast('Kabar dihapus'); }catch(e){ showToast(errorMessage(e), true); }
+}
+document.getElementById('btnAdminClaim').addEventListener('click', adminClaim);
+document.getElementById('btnAdminLogin').addEventListener('click', adminLogin);
+document.getElementById('btnAdminLogout').addEventListener('click', adminLogout);
+document.getElementById('btnAdminClean').addEventListener('click', adminCleanInactive);
+document.getElementById('btnAdminFeed').addEventListener('click', adminClearFeed);
+
+// ---------- Push SOS: daftar perangkat ----------
+let pushState = SOS_PUSH_URL ? 'belum dimulai' : 'mati (SOS_PUSH_URL kosong)';
+function pushSaveToken(token){
+  if(!token || !uid) return;
+  locStore('push_token', token);
+  setDocFast(doc(db, ...locBase(), 'fcm', locDeviceId()), { token, name:(locMyName() || sosName()), at:Date.now() }, { merge:true });
+}
+async function pushInit(){
+  if(!locNative() || !SOS_PUSH_URL) return;
+  let P = null; try{ P = capPlugin('PushNotifications'); }catch(e){}
+  if(!P){ pushState = 'plugin tidak ada di APK (build ulang)'; return; }
+  try{
+    try{ await P.createChannel({ id:'sos', name:'SOS Darurat', description:'Alarm darurat dari anggota', importance:5, visibility:1, vibration:true, lights:true }); }catch(e){}
+    let perm = await P.checkPermissions();
+    if(perm.receive !== 'granted') perm = await P.requestPermissions();
+    if(perm.receive !== 'granted'){ pushState = 'izin notifikasi ditolak'; return; }
+    await P.addListener('registration', (t)=>{ pushState = 'terdaftar'; pushSaveToken(t && t.value); });
+    await P.addListener('registrationError', (e)=>{ pushState = 'gagal daftar: ' + ((e && (e.error || e.message)) || ''); });
+    await P.addListener('pushNotificationReceived', (n)=>{
+      const d = (n && n.data) || {};
+      if(d.type !== 'sos') return;
+      const key = (d.senderId || '') + '_push';
+      sosAlertShow({ id:d.senderId || 'push', name:d.name, lat:d.lat ? Number(d.lat) : null, lng:d.lng ? Number(d.lng) : null, startedAt:Date.now(), updatedAt:Date.now() });
+    });
+    await P.register();
+    pushState = 'mendaftar…';
+  }catch(e){ pushState = 'error: ' + ((e && e.message) || e); }
+}
+function sosTestAlarm(){
+  sosAudioUnlock(); sirenStart();
+  try{ navigator.vibrate && navigator.vibrate([600, 250, 600, 250, 600]); }catch(e){}
+  setTimeout(sirenStop, 3500);
+  showToast('Tes: harusnya terdengar sirine & HP bergetar');
+}
+document.getElementById('btnSosTest').addEventListener('click', sosTestAlarm);
 // ---------- SOS DARURAT: notifikasi Telegram, sirine ke anggota lain, kamera merekam, tahan offline ----------
 const SOS_SEG_MS = 15000;          // panjang tiap potongan video
 const SOS_RELOCK_MS = 3 * 60 * 1000;
 let sosOn = false, sosStartedAt = 0, sosStream = null, sosRec = null, sosSeq = 0, sosSent = 0;
+let sosLastPush = 0;
 let sosWatchId = null, sosPos = null, sosWake = null, sosCountTimer = null, sosTickTimer = null;
 let sosLastDoc = 0, sosLastTgLoc = 0, sosLocSent = false, sosLastFlush = 0, sosCamMsg = '—';
 let sosRemote = [], sosMine = null, sosSeen = new Set(), sosAlertId = null, sosFlushing = false;
@@ -2943,7 +3124,7 @@ async function sosQDel(ids){ if(!ids.length) return; const d = await sosDb(); re
 async function sosEnqueue(it){
   it.at = Date.now();
   try{
-    if(it.kind === 'liveedit'){ const all = await sosQAll(); await sosQDel(all.filter(x=>x.kind === 'liveedit').map(x=>x.id)); }
+    if(it.kind === 'liveedit' || it.kind === 'push'){ const all = await sosQAll(); await sosQDel(all.filter(x=>x.kind === it.kind).map(x=>x.id)); }
     await sosQAdd(it);
     const vids = (await sosQAll()).filter(x=>x.kind === 'video');
     if(vids.length > 60) await sosQDel(vids.slice(0, vids.length - 60).map(x=>x.id));
@@ -2951,6 +3132,14 @@ async function sosEnqueue(it){
   sosFlush();
 }
 async function sosSendItem(it){
+  if(it.kind === 'push'){
+    if(!SOS_PUSH_URL) return 'drop';
+    const isGas = /script\.google\.com/.test(SOS_PUSH_URL);
+    const url = isGas ? SOS_PUSH_URL : SOS_PUSH_URL.replace(/\/$/, '') + '/sos';
+    const payload = JSON.stringify({ ...JSON.parse(it.body), key:SOS_PUSH_KEY });
+    const r = await fetch(url, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body:payload });
+    return r.ok ? 'ok' : ((r.status === 429 || r.status >= 500) ? 'retry' : 'drop');
+  }
   if(!tgConfigured()) return 'drop';
   const chat = TELEGRAM_CONFIG.chatId;
   let method, body, headers;
@@ -3041,7 +3230,7 @@ async function sosCamStart(){
     const v = sosEl('sosPreview'); v.srcObject = sosStream; v.play().catch(()=>{});
     sosCamMsg = '🔴 merekam';
     sosRecLoop();
-  }catch(e){ console.warn('kamera SOS', e); sosStream = null; sosCamMsg = 'tidak bisa dibuka (izin kamera ditolak?)'; }
+  }catch(e){ console.warn('kamera SOS', e); sosStream = null; sosCamMsg = 'tidak bisa dibuka — APK belum punya izin kamera (build ulang APK) atau izin ditolak'; }
   sosRenderStatus();
 }
 function sosRecLoop(){
@@ -3127,6 +3316,9 @@ async function sosWakeSet(on){
     if('wakeLock' in navigator && !sosWake) sosWake = await navigator.wakeLock.request('screen');
   }catch(e){ sosWake = null; }
 }
+function sosPushBody(repeat){
+  return JSON.stringify({ name:sosName(), lat: sosPos ? sosPos.lat : null, lng: sosPos ? sosPos.lng : null, senderId:locDeviceId(), repeat:!!repeat });
+}
 function sosTextStart(){
   const t = new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
   return [
@@ -3148,6 +3340,7 @@ async function sosStart(){
   locStore('sos_live_msg', null);
   sosPos = locLastPos ? { lat:locLastPos.lat, lng:locLastPos.lng, acc:locLastPos.acc || 0 } : null;
   sosEl('sosActive').classList.remove('hidden');
+  if(SOS_PUSH_URL){ sosLastPush = Date.now(); sosEnqueue({ kind:'push', body:sosPushBody(false) }); }
   sosEnqueue({ kind:'msg', text:sosTextStart() });
   if(sosPos){ sosLocSent = true; sosLastTgLoc = Date.now(); sosEnqueue({ kind:'loc', lat:sosPos.lat, lng:sosPos.lng, acc:sosPos.acc }); }
   sosPushDoc();
@@ -3174,6 +3367,7 @@ function sosTick(){
   const now = Date.now();
   if(now - sosLastDoc >= 60000) sosPushDoc();
   if(now - sosLastFlush >= 15000) sosFlush();
+  if(sosOn && SOS_PUSH_URL && now - sosLastPush >= 45000){ sosLastPush = now; sosEnqueue({ kind:'push', body:sosPushBody(true) }); }   // bunyi ulang tiap 45 dtk
   if(sosOn && !sosWake && document.visibilityState === 'visible') sosWakeSet(true);
   sosRenderStatus();
 }
@@ -3210,6 +3404,7 @@ async function sosRenderStatus(){
   sosEl('sosElapsed').textContent = `Berjalan ${locFmtDur(Date.now() - sosStartedAt)} • mulai ${locClock(sosStartedAt)}`;
   sosEl('sosLocState').textContent = sosPos ? `${sosPos.lat.toFixed(5)}, ${sosPos.lng.toFixed(5)} (±${sosPos.acc} m)` : 'mencari sinyal GPS…';
   sosEl('sosCamState').textContent = sosCamMsg;
+  sosEl('sosPreview').style.display = sosStream ? 'block' : 'none';
   let pend = 0; try{ pend = (await sosQAll()).length; }catch(e){}
   sosEl('sosQState').textContent = (navigator.onLine === false ? '📴 offline — ' : '') + `${pend} menunggu terkirim`;
   const acks = sosMine && sosMine.ack ? Object.values(sosMine.ack).map(a=>a.name).filter(Boolean) : [];
@@ -3242,6 +3437,7 @@ function sosAttachListener(){
   if(locStore('sos_state') && !sosOn) sosResume();
 }
 function sosAlertFill(r){
+  sosEl('saAdminEnd').classList.toggle('hidden', !isAdmin());
   const p = (typeof r.lat === 'number') ? { lat:r.lat, lng:r.lng } : null;
   sosEl('saTitle').textContent = `SOS dari ${r.name || 'anggota'}!`;
   sosEl('saSub').innerHTML = `Mulai ${locClock(r.startedAt)} • diperbarui ${locRel(r.updatedAt)}<br>${p ? '📍 Lokasi terbaru tersedia' : '📍 Lokasi belum didapat'}${typeof r.battery === 'number' ? ' • 🔋 ' + r.battery + '%' : ''}${r.cam ? '<br>🎥 Kamera merekam — cek video di grup Telegram' : ''}`;
@@ -3307,6 +3503,12 @@ sosEl('sosSave').addEventListener('click', sosSaveLocal);
 sosEl('sosSiren').addEventListener('click', ()=>{ if(sosSiren) sirenStop(); else sirenStart(); sosRenderStatus(); });
 sosEl('saAck').addEventListener('click', sosAck);
 sosEl('saMute').addEventListener('click', sirenStop);
+sosEl('saAdminEnd').addEventListener('click', ()=>{
+  const r = sosRemote.find(x=>x.id === sosAlertId); if(!r || !isAdmin()) return;
+  if(!confirm('Akhiri status SOS ini untuk semua anggota?')) return;
+  setDocFast(sosDocRef(r.id), { active:false, ended:Date.now(), updatedAt:Date.now() }, { merge:true });
+  sosAlertHide(); showToast('SOS diakhiri oleh admin');
+});
 sosEl('saClose').addEventListener('click', ()=>{
   const r = sosRemote.find(x=>x.id === sosAlertId);
   if(r) locStore('sos_dis_' + r.id + '_' + r.startedAt, '1');
