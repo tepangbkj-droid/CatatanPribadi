@@ -341,6 +341,79 @@
   .tab-btn.active{color:var(--violet-dark);background:var(--violet-soft);}
   .tab-btn.active.tab-emas{color:var(--amber-dark);background:var(--amber-soft);}
 
+
+  /* ===== Sidebar menu (biru elegan) ===== */
+  .sb-open{display:none;width:40px;height:40px;border-radius:13px;border:1px solid rgba(217,181,107,.55);flex:0 0 auto;
+    background:linear-gradient(150deg,#13286B,#0B1738);color:#CFE4FF;align-items:center;justify-content:center;
+    box-shadow:0 8px 18px -8px rgba(18,46,140,.75),inset 0 1px 0 rgba(255,255,255,.12);}
+  .sb-open .sb-ic{width:20px;height:20px;}
+  .sb-open:active{transform:scale(.94);}
+  body.nav-sidebar .sb-open{display:flex;}
+  body.nav-sidebar .brand{gap:10px;}
+  body.nav-sidebar .tabbar{display:none;}
+  body.nav-sidebar{padding-bottom:44px;}
+  body.nav-sidebar .fab{bottom:calc(22px + env(safe-area-inset-bottom));}
+  body.nav-sidebar .sos-fab{bottom:calc(22px + env(safe-area-inset-bottom));}
+  body.nav-sidebar .toast{bottom:calc(30px + env(safe-area-inset-bottom));}
+
+  .sb-scrim{position:fixed;inset:0;z-index:940;background:rgba(5,10,28,.5);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .3s;}
+  .sb-scrim.show{opacity:1;pointer-events:auto;}
+  .sb{--sb-w:288px;position:fixed;top:0;bottom:0;left:0;z-index:950;width:var(--sb-w);max-width:86vw;
+    display:flex;flex-direction:column;color:#C9D6F2;
+    padding:calc(14px + env(safe-area-inset-top)) 12px calc(14px + env(safe-area-inset-bottom));
+    background:
+      radial-gradient(260px 200px at 0% 0%, rgba(59,155,255,.20), transparent 70%),
+      radial-gradient(240px 220px at 100% 100%, rgba(46,100,255,.16), transparent 70%),
+      linear-gradient(168deg,#0B1534 0%,#0C1B47 52%,#091533 100%);
+    border-right:1px solid rgba(140,175,255,.14);border-radius:0 26px 26px 0;
+    box-shadow:24px 0 60px -20px rgba(4,10,35,.85),inset -1px 0 0 rgba(217,181,107,.18);
+    transform:translateX(-104%);transition:transform .38s cubic-bezier(.22,.8,.2,1),width .38s cubic-bezier(.22,.8,.2,1);
+    overflow:hidden;font-family:var(--font-sans);}
+  .sb.open{transform:translateX(0);}
+  .sb.collapsed{--sb-w:78px;}
+  .sb-head{display:flex;align-items:center;gap:11px;padding:4px 6px 14px;min-height:56px;}
+  .sb-logo{width:40px;height:40px;border-radius:13px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:19px;
+    background:linear-gradient(150deg,#3B9BFF,#2557E8 60%,#1A2F9E);
+    box-shadow:0 0 0 1px rgba(217,181,107,.65),0 8px 22px -6px rgba(46,120,255,.85);}
+  .sb-title{display:flex;flex-direction:column;min-width:0;white-space:nowrap;flex:1;transition:opacity .2s;}
+  .sb-title b{font-family:var(--font-head);font-size:17px;color:#fff;font-weight:600;letter-spacing:.2px;}
+  .sb-title small{font-size:10.5px;letter-spacing:1.6px;text-transform:uppercase;color:#D9B56B;margin-top:2px;}
+  .sb-collapse{width:30px;height:30px;border-radius:10px;border:1px solid rgba(140,175,255,.2);background:rgba(255,255,255,.05);color:#9DB8F0;
+    display:flex;align-items:center;justify-content:center;flex:0 0 auto;transition:transform .38s,background .2s;}
+  .sb-collapse .sb-ic{width:16px;height:16px;}
+  .sb-collapse:active{background:rgba(255,255,255,.12);}
+  .sb.collapsed .sb-collapse{transform:rotate(180deg);}
+  .sb-search{display:flex;align-items:center;gap:9px;height:42px;padding:0 12px;margin:0 2px 10px;border-radius:14px;
+    background:rgba(255,255,255,.055);border:1px solid rgba(140,175,255,.16);color:#8EA6DA;overflow:hidden;}
+  .sb-search .sb-ic{width:18px;height:18px;flex:0 0 auto;}
+  .sb-search input{flex:1;min-width:0;border:none;outline:none;background:transparent;color:#EAF1FF;font-size:14px;font-family:inherit;}
+  .sb-search input::placeholder{color:#6F86BE;}
+  .sb-scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:2px 0 8px;scrollbar-width:none;}
+  .sb-scroll::-webkit-scrollbar{display:none;}
+  .sb-sec{font-size:10.5px;letter-spacing:1.8px;text-transform:uppercase;color:#6F86BE;padding:14px 12px 7px;white-space:nowrap;transition:opacity .2s;}
+  .sb-item{position:relative;display:flex;align-items:center;gap:13px;width:100%;height:46px;padding:0 12px;margin:2px 0;border:none;border-radius:14px;
+    background:transparent;color:#A9BBE3;font-size:14.5px;font-weight:500;font-family:inherit;text-align:left;white-space:nowrap;overflow:hidden;
+    transition:background .25s,color .25s;-webkit-tap-highlight-color:transparent;}
+  .sb-item .sb-ic{width:21px;height:21px;flex:0 0 auto;transition:transform .25s,filter .25s;}
+  .sb-item span{transition:opacity .2s;}
+  .sb-item:active{background:rgba(255,255,255,.07);}
+  .sb-item.active{color:#fff;font-weight:600;background:linear-gradient(90deg,rgba(59,155,255,.30),rgba(59,155,255,.06) 70%,transparent);}
+  .sb-item.active .sb-ic{color:#7DBBFF;filter:drop-shadow(0 0 7px rgba(80,160,255,.9));}
+  .sb-item.active::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:3.5px;border-radius:0 4px 4px 0;
+    background:linear-gradient(180deg,#9BD0FF,#3B9BFF);box-shadow:0 0 14px 2px rgba(59,155,255,.85);}
+  .sb-item.hide{display:none;}
+  .sb-foot{border-top:1px solid rgba(217,181,107,.22);padding-top:10px;margin-top:4px;}
+  .sb-foot .sb-item{height:42px;font-size:14px;}
+  .sb-ver{font-size:10.5px;color:#566EA8;text-align:center;padding:6px 0 0;letter-spacing:.8px;white-space:nowrap;overflow:hidden;}
+  .sb.collapsed .sb-title,.sb.collapsed .sb-item span,.sb.collapsed .sb-sec,.sb.collapsed .sb-ver{opacity:0;}
+  .sb.collapsed .sb-sec{height:1px;padding:0;margin:10px 14px;background:rgba(140,175,255,.16);overflow:hidden;font-size:0;}
+  .sb.collapsed .sb-head{flex-direction:column;gap:10px;padding-bottom:10px;}
+  .sb.collapsed .sb-title{display:none;}
+  .sb.collapsed .sb-search{padding:0;justify-content:center;}
+  .sb.collapsed .sb-search input{display:none;}
+  .sb.collapsed .sb-item{padding:0;justify-content:center;gap:0;}
+  .sb.collapsed .sb-item span{display:none;}
+
   /* Saran AI */
   .hero.hero-ai{
     background:linear-gradient(150deg,#0B8F6A 0%,#0FAE73 40%,#2E8BFF 100%);
@@ -721,7 +794,7 @@
 
 </style>
 </head>
-<body>
+<body class="nav-sidebar">
 
 <div id="updateBanner" class="update-banner hidden" role="status">
   <span id="updateBannerText">🚀 Versi baru tersedia.</span>
@@ -743,6 +816,7 @@
   <div class="topbar">
     <div class="topbar-inner">
       <div class="brand">
+        <button class="sb-open" id="btnSbOpen" aria-label="Buka menu"><svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h10"/><path d="M4 17h16"/></svg></button>
         <div class="brand-mark">💰</div>
         <div class="brand-text">
           <span class="brand-name">Buku Kas</span>
@@ -1097,6 +1171,33 @@
   </div>
 </div>
 
+
+<div class="sb-scrim" id="sbScrim"></div>
+<nav class="sb" id="sb" aria-label="Menu utama">
+  <div class="sb-head">
+    <div class="sb-logo">💰</div>
+    <div class="sb-title"><b>Buku Kas</b><small>Keluarga</small></div>
+    <button class="sb-collapse" id="sbCollapse" aria-label="Ciutkan menu"><svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+  </div>
+  <label class="sb-search" id="sbSearchBox"><svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input id="sbSearch" type="search" placeholder="Cari menu" autocomplete="off"></label>
+  <div class="sb-scroll">
+    <div class="sb-sec">Keuangan</div>
+    <button class="sb-item" data-sb="kas"><svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg><span>Kas</span></button>
+    <button class="sb-item" data-sb="emas"><svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/></svg><span>Emas</span></button>
+    <button class="sb-item" data-sb="tabungan"><svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"/><path d="M2 9v1c0 1.1.9 2 2 2h1"/><path d="M16 11h.01"/></svg><span>Tabungan</span></button>
+    <button class="sb-item" data-sb="hutang"><svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>Hutang</span></button>
+    <div class="sb-sec">Lainnya</div>
+    <button class="sb-item" data-sb="kucing"><svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.07 1 2.24 1 3.44C21 17.9 16.97 21 12 21s-9-3-9-7.56c0-1.25.5-2.4 1-3.44 0 0-1.89-6.42-.5-7 1.39-.58 4.72.23 6.5 2.23A9.04 9.04 0 0 1 12 5Z"/><path d="M8 14v.5"/><path d="M16 14v.5"/><path d="M11.25 16.25h1.5L12 17l-.75-.75Z"/></svg><span>Kucing</span></button>
+    <button class="sb-item" data-sb="lokasi"><svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span>Lokasi</span></button>
+    <button class="sb-item" data-sb="ai"><svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/></svg><span>Saran AI</span></button>
+  </div>
+  <div class="sb-foot">
+    <button class="sb-item" id="sbNotif"><svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span>Notifikasi</span></button>
+    <button class="sb-item" id="sbSettings"><svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg><span>Pengaturan</span></button>
+    <div class="sb-ver" id="sbVer"></div>
+  </div>
+</nav>
+
 <div id="globalLoading" class="loading-dot hidden">Memuat…</div>
 
 <!-- Modal: Transaction -->
@@ -1436,6 +1537,7 @@
       <div class="field"><input type="text" id="accCodeInput" placeholder="Ketik kode akses baru" autocomplete="off"></div>
       <button class="btn btn-ghost" id="btnAccGen">🔐 Buat hash kode akses</button>
       <div class="field-hint" id="accOut" style="margin:10px 0 14px;word-break:break-all;user-select:all;"></div>
+      <button class="btn btn-ghost" id="btnNavStyle" style="margin-bottom:10px;">🧭 Gaya menu: Sidebar</button>
       <button class="btn btn-ghost" id="btnCheckUpdate">🔄 Cek pembaruan</button>
     </div>
   </div>
@@ -1558,7 +1660,7 @@ const SOS_PUSH_KEY = "Tepangbkjaja305";
 // Kosong = gembok MATI. Untuk mengaktifkan: buka app → Pengaturan → Info → "Buat kode akses",
 // salin hasil hash-nya ke ACCESS_CODE_HASH di bawah, lalu pasang aturan di firestore.rules (lihat KEAMANAN.md).
 const ACCESS_SALT = "catatanpribadi-v1";
-const ACCESS_CODE_HASH = "e4282f19ca78db07227f83526cc8429c1e1d4410bbdf55d422dfbc9c24b71187";
+const ACCESS_CODE_HASH = "";
 // =====================================================================
 
 function isPlaceholder(v){ return !v || String(v).startsWith('GANTI_'); }
@@ -1571,7 +1673,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.8.4';
+const APP_VERSION = '2.9.0';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -4937,11 +5039,76 @@ function setActiveTab(tab){
   document.getElementById('topbarTag').textContent = TAB_DEFS[tab].tag;
   if(tab === 'ai') renderAIHeader();
   if(tab === 'lokasi') onLokasiTabShown();
+  try{ syncSidebar(tab); }catch(e){}
   window.scrollTo({ top:0 });
 }
 Object.entries(TAB_DEFS).forEach(([key, def])=>{
   document.getElementById(def.btn).addEventListener('click', ()=>setActiveTab(key));
 });
+
+
+// ===== Sidebar menu =====
+const sbEl = document.getElementById('sb');
+const sbScrim = document.getElementById('sbScrim');
+const sbLS = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : v; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
+};
+function syncSidebar(tab){
+  sbEl.querySelectorAll('[data-sb]').forEach(b=>b.classList.toggle('active', b.dataset.sb === tab));
+}
+function openSb(){ if(!document.body.classList.contains('nav-sidebar')) return; sbEl.classList.add('open'); sbScrim.classList.add('show'); }
+function closeSb(){ sbEl.classList.remove('open'); sbScrim.classList.remove('show'); const q = document.getElementById('sbSearch'); if(q && q.value){ q.value=''; sbFilter(''); } }
+function sbFilter(q){
+  q = q.trim().toLowerCase();
+  sbEl.querySelectorAll('.sb-scroll [data-sb]').forEach(b=>b.classList.toggle('hide', !!q && !b.textContent.toLowerCase().includes(q)));
+  sbEl.querySelectorAll('.sb-sec').forEach(h=>{
+    let n = h.nextElementSibling, any = false;
+    while(n && !n.classList.contains('sb-sec')){ if(!n.classList.contains('hide')) any = true; n = n.nextElementSibling; }
+    h.style.display = any ? '' : 'none';
+  });
+}
+function applyNavStyle(){
+  const side = sbLS.get('bk_nav', 'side') !== 'bottom';
+  document.body.classList.toggle('nav-sidebar', side);
+  if(!side) closeSb();
+  const b = document.getElementById('btnNavStyle'); if(b) b.textContent = '🧭 Gaya menu: ' + (side ? 'Sidebar' : 'Tab bawah');
+}
+sbEl.classList.toggle('collapsed', sbLS.get('bk_sbc', '0') === '1');
+document.getElementById('sbVer').textContent = 'v' + APP_VERSION;
+sbEl.querySelectorAll('[data-sb]').forEach(b=>b.addEventListener('click', ()=>{ setActiveTab(b.dataset.sb); closeSb(); }));
+document.getElementById('btnSbOpen').addEventListener('click', openSb);
+sbScrim.addEventListener('click', closeSb);
+document.getElementById('sbCollapse').addEventListener('click', ()=>{
+  const c = sbEl.classList.toggle('collapsed'); sbLS.set('bk_sbc', c ? '1' : '0');
+});
+document.getElementById('sbSearchBox').addEventListener('click', ()=>{
+  if(sbEl.classList.contains('collapsed')){ sbEl.classList.remove('collapsed'); sbLS.set('bk_sbc','0'); }
+  document.getElementById('sbSearch').focus();
+});
+document.getElementById('sbSearch').addEventListener('input', (e)=>sbFilter(e.target.value));
+document.getElementById('sbNotif').addEventListener('click', ()=>{ closeSb(); document.getElementById('btnNotif').click(); });
+document.getElementById('sbSettings').addEventListener('click', ()=>{ closeSb(); document.getElementById('btnSettings').click(); });
+document.getElementById('btnNavStyle').addEventListener('click', ()=>{
+  sbLS.set('bk_nav', sbLS.get('bk_nav', 'side') === 'bottom' ? 'side' : 'bottom'); applyNavStyle();
+});
+document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeSb(); });
+// geser dari tepi kiri untuk membuka, geser ke kiri untuk menutup
+(function(){
+  let sx = null, sy = 0, mode = '';
+  document.addEventListener('touchstart', (e)=>{
+    const t = e.touches[0]; sx = t.clientX; sy = t.clientY;
+    mode = sbEl.classList.contains('open') ? 'close' : (t.clientX < 16 && document.body.classList.contains('nav-sidebar') ? 'open' : '');
+  }, { passive:true });
+  document.addEventListener('touchmove', (e)=>{
+    if(!mode || sx === null) return;
+    const t = e.touches[0], dx = t.clientX - sx, dy = Math.abs(t.clientY - sy);
+    if(mode === 'open' && dx > 60 && dy < 40){ openSb(); sx = null; }
+    else if(mode === 'close' && dx < -60 && dy < 60){ closeSb(); sx = null; }
+  }, { passive:true });
+})();
+applyNavStyle();
+syncSidebar(activeTab);
 
 document.getElementById('btnFab').addEventListener('click', ()=>{
   if(activeTab === 'emas'){
