@@ -1571,7 +1571,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.8.1';
+const APP_VERSION = '2.8.2';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -2012,7 +2012,7 @@ function attachListeners(){
     render();
   });
   attachLokasiListener();
-  attachSosListener();
+  sosAttachListener();
   attachAdminListener();
   pushInit();
   document.getElementById('btnSos').classList.remove('hidden');
@@ -3053,7 +3053,8 @@ function pushSaveToken(token){
   setDocFast(doc(db, ...locBase(), 'fcm', locDeviceId()), { token, name:(locMyName() || sosName()), at:Date.now() }, { merge:true });
 }
 async function pushInit(){
-  if(!locNative() || !SOS_PUSH_URL) return;
+  if(!SOS_PUSH_URL){ pushState = 'mati (SOS_PUSH_URL kosong)'; return; }
+  if(!locNative()){ pushState = 'tidak aktif: app dibuka di browser/TWA lama, bukan APK native baru'; return; }
   let P = null; try{ P = capPlugin('PushNotifications'); }catch(e){}
   if(!P){ pushState = 'plugin tidak ada di APK (build ulang)'; return; }
   try{
