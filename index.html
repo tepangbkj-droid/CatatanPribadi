@@ -358,43 +358,43 @@
 
   .sb-scrim{position:fixed;inset:0;z-index:940;background:rgba(5,10,28,.5);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .3s;}
   .sb-scrim.show{opacity:1;pointer-events:auto;}
-  .sb{--sb-w:288px;position:fixed;top:0;bottom:0;left:0;z-index:950;width:var(--sb-w);max-width:86vw;
+  .sb{--sb-w:236px;position:fixed;top:0;bottom:0;left:0;z-index:950;width:var(--sb-w);max-width:74vw;
     display:flex;flex-direction:column;color:#C9D6F2;
-    padding:calc(14px + env(safe-area-inset-top)) 12px calc(14px + env(safe-area-inset-bottom));
+    padding:calc(12px + env(safe-area-inset-top)) 9px calc(12px + env(safe-area-inset-bottom));
     background:
       radial-gradient(260px 200px at 0% 0%, rgba(59,155,255,.20), transparent 70%),
       radial-gradient(240px 220px at 100% 100%, rgba(46,100,255,.16), transparent 70%),
       linear-gradient(168deg,#0B1534 0%,#0C1B47 52%,#091533 100%);
-    border-right:1px solid rgba(140,175,255,.14);border-radius:0 26px 26px 0;
+    border-right:1px solid rgba(140,175,255,.14);border-radius:0 22px 22px 0;
     box-shadow:24px 0 60px -20px rgba(4,10,35,.85),inset -1px 0 0 rgba(217,181,107,.18);
     transform:translateX(-104%);transition:transform .38s cubic-bezier(.22,.8,.2,1),width .38s cubic-bezier(.22,.8,.2,1);
     overflow:hidden;font-family:var(--font-sans);}
   .sb.open{transform:translateX(0);}
-  .sb.collapsed{--sb-w:78px;}
-  .sb-head{display:flex;align-items:center;gap:11px;padding:4px 6px 14px;min-height:56px;}
-  .sb-logo{width:40px;height:40px;border-radius:13px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:19px;
+  .sb.collapsed{--sb-w:64px;}
+  .sb-head{display:flex;align-items:center;gap:11px;padding:2px 4px 12px;min-height:48px;}
+  .sb-logo{width:36px;height:36px;border-radius:12px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:19px;
     background:linear-gradient(150deg,#3B9BFF,#2557E8 60%,#1A2F9E);
     box-shadow:0 0 0 1px rgba(217,181,107,.65),0 8px 22px -6px rgba(46,120,255,.85);}
   .sb-title{display:flex;flex-direction:column;min-width:0;white-space:nowrap;flex:1;transition:opacity .2s;}
-  .sb-title b{font-family:var(--font-head);font-size:17px;color:#fff;font-weight:600;letter-spacing:.2px;}
-  .sb-title small{font-size:10.5px;letter-spacing:1.6px;text-transform:uppercase;color:#D9B56B;margin-top:2px;}
-  .sb-collapse{width:30px;height:30px;border-radius:10px;border:1px solid rgba(140,175,255,.2);background:rgba(255,255,255,.05);color:#9DB8F0;
+  .sb-title b{font-family:var(--font-head);font-size:15.5px;color:#fff;font-weight:600;letter-spacing:.2px;}
+  .sb-title small{font-size:9.5px;letter-spacing:1.6px;text-transform:uppercase;color:#D9B56B;margin-top:2px;}
+  .sb-collapse{width:28px;height:28px;border-radius:10px;border:1px solid rgba(140,175,255,.2);background:rgba(255,255,255,.05);color:#9DB8F0;
     display:flex;align-items:center;justify-content:center;flex:0 0 auto;transition:transform .38s,background .2s;}
   .sb-collapse .sb-ic{width:16px;height:16px;}
   .sb-collapse:active{background:rgba(255,255,255,.12);}
   .sb.collapsed .sb-collapse{transform:rotate(180deg);}
-  .sb-search{display:flex;align-items:center;gap:9px;height:42px;padding:0 12px;margin:0 2px 10px;border-radius:14px;
+  .sb-search{display:flex;align-items:center;gap:9px;height:38px;padding:0 11px;margin:0 1px 8px;border-radius:12px;
     background:rgba(255,255,255,.055);border:1px solid rgba(140,175,255,.16);color:#8EA6DA;overflow:hidden;}
   .sb-search .sb-ic{width:18px;height:18px;flex:0 0 auto;}
-  .sb-search input{flex:1;min-width:0;border:none;outline:none;background:transparent;color:#EAF1FF;font-size:14px;font-family:inherit;}
+  .sb-search input{flex:1;min-width:0;border:none;outline:none;background:transparent;color:#EAF1FF;font-size:13.5px;font-family:inherit;}
   .sb-search input::placeholder{color:#6F86BE;}
   .sb-scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:2px 0 8px;scrollbar-width:none;}
   .sb-scroll::-webkit-scrollbar{display:none;}
-  .sb-sec{font-size:10.5px;letter-spacing:1.8px;text-transform:uppercase;color:#6F86BE;padding:14px 12px 7px;white-space:nowrap;transition:opacity .2s;}
-  .sb-item{position:relative;display:flex;align-items:center;gap:13px;width:100%;height:46px;padding:0 12px;margin:2px 0;border:none;border-radius:14px;
-    background:transparent;color:#A9BBE3;font-size:14.5px;font-weight:500;font-family:inherit;text-align:left;white-space:nowrap;overflow:hidden;
+  .sb-sec{font-size:10.5px;letter-spacing:1.8px;text-transform:uppercase;color:#6F86BE;padding:12px 10px 6px;white-space:nowrap;transition:opacity .2s;}
+  .sb-item{position:relative;display:flex;align-items:center;gap:12px;width:100%;height:42px;padding:0 11px;margin:1px 0;border:none;border-radius:12px;
+    background:transparent;color:#A9BBE3;font-size:14px;font-weight:500;font-family:inherit;text-align:left;white-space:nowrap;overflow:hidden;
     transition:background .25s,color .25s;-webkit-tap-highlight-color:transparent;}
-  .sb-item .sb-ic{width:21px;height:21px;flex:0 0 auto;transition:transform .25s,filter .25s;}
+  .sb-item .sb-ic{width:20px;height:20px;flex:0 0 auto;transition:transform .25s,filter .25s;}
   .sb-item span{transition:opacity .2s;}
   .sb-item:active{background:rgba(255,255,255,.07);}
   .sb-item.active{color:#fff;font-weight:600;background:linear-gradient(90deg,rgba(59,155,255,.30),rgba(59,155,255,.06) 70%,transparent);}
@@ -403,7 +403,7 @@
     background:linear-gradient(180deg,#9BD0FF,#3B9BFF);box-shadow:0 0 14px 2px rgba(59,155,255,.85);}
   .sb-item.hide{display:none;}
   .sb-foot{border-top:1px solid rgba(217,181,107,.22);padding-top:10px;margin-top:4px;}
-  .sb-foot .sb-item{height:42px;font-size:14px;}
+  .sb-foot .sb-item{height:40px;font-size:13.5px;}
   .sb-ver{font-size:10.5px;color:#566EA8;text-align:center;padding:6px 0 0;letter-spacing:.8px;white-space:nowrap;overflow:hidden;}
   .sb.collapsed .sb-title,.sb.collapsed .sb-item span,.sb.collapsed .sb-sec,.sb.collapsed .sb-ver{opacity:0;}
   .sb.collapsed .sb-sec{height:1px;padding:0;margin:10px 14px;background:rgba(140,175,255,.16);overflow:hidden;font-size:0;}
@@ -413,6 +413,67 @@
   .sb.collapsed .sb-search input{display:none;}
   .sb.collapsed .sb-item{padding:0;justify-content:center;gap:0;}
   .sb.collapsed .sb-item span{display:none;}
+
+
+  /* ===== Mengendara ===== */
+  .tab-btn.active.tab-ride{color:#1B4FC4;background:#E3EDFF;}
+  .rd-hero{background:radial-gradient(260px 180px at 100% 0%,rgba(80,160,255,.35),transparent 70%),linear-gradient(150deg,#0B1534,#12306F 60%,#1B4FC4);
+    color:#fff;border-radius:var(--radius-l);padding:20px;box-shadow:0 18px 34px -18px rgba(18,48,140,.7);border:1px solid rgba(217,181,107,.35);}
+  .rd-hero .lab{font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:#D9B56B;}
+  .rd-speedrow{display:flex;align-items:baseline;gap:8px;margin:6px 0 2px;}
+  .rd-speed{font-family:var(--font-head);font-size:64px;font-weight:700;line-height:1;}
+  .rd-unit{font-size:15px;color:#A9C6FF;}
+  .rd-state{font-size:13px;color:#C9DAFF;}
+  .rd-stats{font-size:12.5px;color:#9DB8F0;margin-top:3px;min-height:16px;}
+  .rd-go{width:100%;margin-top:14px;border:none;border-radius:16px;padding:14px;font-size:15px;font-weight:700;color:#fff;font-family:inherit;
+    background:linear-gradient(135deg,#3B9BFF,#2557E8);box-shadow:0 12px 24px -10px rgba(46,120,255,.8);}
+  .rd-go.stop{background:linear-gradient(135deg,#F0355A,#C21B3D);box-shadow:0 12px 24px -10px rgba(240,53,90,.7);}
+  .rd-go:active{transform:scale(.99);}
+  .rd-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-m);padding:16px;margin-top:14px;box-shadow:0 8px 18px -14px rgba(34,26,61,.4);}
+  .rd-h{font-family:var(--font-head);font-size:15px;font-weight:600;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
+  .rd-card .field{margin-bottom:10px;}
+  .rd-row2{display:flex;gap:10px;}.rd-row2 .field{flex:1;min-width:0;}
+  .rd-muted{font-size:12px;color:var(--ink-soft);margin-top:6px;line-height:1.45;}
+  .rd-warn{font-size:12.5px;color:var(--rose);margin-top:6px;line-height:1.45;}
+  .rd-btns{display:flex;gap:8px;flex-wrap:wrap;}.rd-btns .btn{flex:1;min-width:120px;}
+  .rd-fuelbar{height:12px;border-radius:99px;background:#E6EEFF;overflow:hidden;margin-top:12px;}
+  .rd-fuelbar div{height:100%;border-radius:99px;background:linear-gradient(90deg,#3B9BFF,#2557E8);}
+  .rd-fuelrow{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px;font-size:13px;color:var(--ink-soft);}
+  .rd-fuelrow b{font-size:22px;color:var(--ink);font-family:var(--font-head);}
+  .rd-cat{margin-top:10px;padding:9px 12px;border-radius:12px;font-size:13px;font-weight:600;}
+  .rd-cat small{display:block;font-weight:400;opacity:.8;margin-top:2px;}
+  .rd-cat.irit{background:var(--emerald-soft);color:#0A8C5A;}.rd-cat.wajar{background:#E3EDFF;color:#1B4FC4;}.rd-cat.boros{background:var(--rose-soft);color:#C21B3D;}
+  .rd-m{padding:11px 12px;border:1px solid var(--line);border-radius:14px;margin-bottom:9px;}
+  .rd-mh{display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600;}
+  .rd-mh em{font-style:normal;font-size:11px;padding:3px 9px;border-radius:99px;background:#E3EDFF;color:#1B4FC4;}
+  .rd-m.segera .rd-mh em{background:var(--amber-soft);color:var(--amber-dark);}
+  .rd-m.lewat .rd-mh em{background:var(--rose-soft);color:#C21B3D;}
+  .rd-m.belum .rd-mh em{background:#EEF0F6;color:var(--ink-soft);}
+  .rd-bar{height:7px;border-radius:99px;background:#EDF1FA;overflow:hidden;margin:9px 0 7px;}
+  .rd-bar div{height:100%;border-radius:99px;background:linear-gradient(90deg,#3B9BFF,#2557E8);}
+  .rd-m.segera .rd-bar div{background:linear-gradient(90deg,#F5A324,#E08600);}
+  .rd-m.lewat .rd-bar div{background:linear-gradient(90deg,#F0355A,#C21B3D);}
+  .rd-mf{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .rd-mf small{font-size:11.5px;color:var(--ink-soft);line-height:1.4;}
+  .rd-done{flex:0 0 auto;border:1px solid #BCD3FF;background:#EEF4FF;color:#1B4FC4;border-radius:10px;padding:6px 10px;font-size:12px;font-weight:600;font-family:inherit;}
+  .rd-iv{display:flex;align-items:center;gap:6px;margin:8px 0;font-size:13px;}
+  .rd-iv span{flex:1;min-width:0;}.rd-iv input{width:66px;padding:8px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;text-align:center;}
+  .rd-iv small{color:var(--ink-soft);}
+  details.rd-det summary{font-size:13px;color:#1B4FC4;font-weight:600;padding:6px 0;cursor:pointer;}
+  .rd-sw{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;font-size:14px;}
+  .rd-sw small{display:block;color:var(--ink-soft);font-size:11.5px;margin-top:2px;}
+  .rd-sw input{width:22px;height:22px;accent-color:#2557E8;flex:0 0 auto;}
+  .rd-ride{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed var(--line);font-size:13.5px;}
+  .rd-ride small{color:var(--ink-soft);}
+  .rd-card .btn-primary{background:linear-gradient(135deg,#3B9BFF,#2557E8);box-shadow:0 10px 22px -10px rgba(46,120,255,.75);}
+  .rd-card .btn-ghost:hover{background:#E3EDFF;}
+  .rd-alert{position:fixed;inset:0;z-index:99500;background:linear-gradient(160deg,#8E0A24,#D90429 60%,#FF4D6D);color:#fff;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;}
+  .rd-alert-card{max-width:360px;width:100%;}
+  .rd-alert h2{font-family:var(--font-head);font-size:24px;margin:0 0 8px;}
+  .rd-alert p{margin:0 0 6px;font-size:15px;line-height:1.5;}
+  .rd-count{font-family:var(--font-head);font-size:88px;font-weight:700;line-height:1;margin:14px 0;}
+  .rd-alert button{width:100%;border:none;border-radius:16px;padding:15px;font-size:16px;font-weight:700;font-family:inherit;margin-top:10px;}
+  .rd-alert .ok{background:#fff;color:#8E0A24;}.rd-alert .sos{background:rgba(0,0,0,.28);color:#fff;border:1px solid rgba(255,255,255,.5);}
 
   /* Saran AI */
   .hero.hero-ai{
@@ -1140,6 +1201,71 @@
       <div class="field-hint" id="locWebHint" style="margin-top:16px;">ℹ️ Aplikasi web hanya bisa melacak selama app terbuka (layar menyala atau app di depan). Saat app ditutup/dikunci, yang terlihat adalah lokasi terakhir beserta waktunya. Gerak (diam, jalan, berkendara) dan riwayat perjalanan dihitung otomatis dari kecepatan GPS.</div>
     </div>
 
+    <div id="viewRide" class="view-pane">
+      <div class="rd-hero fade-up">
+        <div class="lab">🏍️ Mengendara</div>
+        <div class="rd-speedrow"><span class="rd-speed" id="rdSpeed">0</span><span class="rd-unit">km/j</span></div>
+        <div class="rd-state" id="rdState">Siap berangkat.</div>
+        <div class="rd-stats" id="rdStats"></div>
+        <button class="rd-go" id="rdGo">▶ Mulai berkendara</button>
+      </div>
+
+      <div class="rd-card">
+        <div class="rd-h">📍 Tujuan</div>
+        <div class="field"><input type="text" id="rdDest" maxlength="120" placeholder="mis. Stasiun Tebet, Jakarta" autocomplete="off"></div>
+        <div class="rd-btns">
+          <button class="btn btn-ghost" id="rdDestSet">📍 Simpan tujuan</button>
+          <button class="btn btn-primary" id="rdDestMaps">🧭 Buka Google Maps</button>
+        </div>
+        <div class="rd-muted" id="rdDestInfo"></div>
+      </div>
+
+      <div class="rd-card">
+        <div class="rd-h">🏍️ Motor saya</div>
+        <div class="rd-row2">
+          <div class="field"><label>Jenis</label>
+            <select id="rdType"><option value="matic">Matic</option><option value="bebek">Bebek</option><option value="sport">Sport</option><option value="trail">Trail / Adventure</option></select></div>
+          <div class="field"><label>Model</label><input type="text" id="rdName" maxlength="30" placeholder="mis. Vario 125"></div>
+        </div>
+        <div class="rd-row2">
+          <div class="field"><label>Tangki (liter)</label><input type="number" inputmode="decimal" id="rdTank" min="1" step="0.1"></div>
+          <div class="field"><label>Odometer (km)</label><input type="number" inputmode="decimal" id="rdOdo" min="0" step="0.1" placeholder="0"></div>
+        </div>
+        <button class="btn btn-primary" id="rdSaveBike" style="width:100%;">Simpan data motor</button>
+        <div class="rd-muted">Jarak perjalanan otomatis ditambahkan ke odometer.</div>
+      </div>
+
+      <div class="rd-card">
+        <div class="rd-h">⛽ Bensin</div>
+        <div class="rd-btns">
+          <button class="btn btn-ghost" id="rdFillFull">✅ Baru isi penuh</button>
+          <button class="btn btn-primary" id="rdPhotoBtn">📷 Foto indikator</button>
+        </div>
+        <input type="file" id="rdPhoto" accept="image/*" capture="environment" class="hidden">
+        <div class="rd-muted" id="rdFill"></div>
+        <div id="rdFuel"></div>
+        <div class="rd-warn" id="rdAiHint"></div>
+      </div>
+
+      <div class="rd-card">
+        <div class="rd-h">🔧 Perawatan</div>
+        <div id="rdMaint"></div>
+        <details class="rd-det"><summary>Atur interval</summary><div id="rdIntervals"></div></details>
+      </div>
+
+      <div class="rd-card">
+        <div class="rd-h">🛡️ Keamanan</div>
+        <label class="rd-sw"><span>Deteksi berhenti mendadak<small>Saat melaju lalu tiba-tiba berhenti atau terbentur.</small></span><input type="checkbox" id="rdDetect"></label>
+        <label class="rd-sw"><span>SOS otomatis<small>Jika tidak menjawab dalam 20 detik.</small></span><input type="checkbox" id="rdAutoSos"></label>
+        <button class="btn btn-ghost" id="rdTest" style="width:100%;margin-top:6px;">🔔 Tes peringatan</button>
+      </div>
+
+      <div class="rd-card">
+        <div class="rd-h">🛣️ Perjalanan terakhir</div>
+        <div id="rdRides"></div>
+      </div>
+    </div>
+
     <div id="viewAI" class="view-pane">
       <div class="hero hero-ai fade-up">
         <div class="hero-label">🤖 Ringkasan saran finansial</div>
@@ -1166,12 +1292,24 @@
       <button class="tab-btn" id="btnTabHutang" data-tab="hutang"><span class="tab-ic">📒</span>Hutang</button>
       <button class="tab-btn" id="btnTabKucing" data-tab="kucing"><span class="tab-ic">🐱</span>Kucing</button>
       <button class="tab-btn" id="btnTabLokasi" data-tab="lokasi"><span class="tab-ic">📍</span>Lokasi</button>
+      <button class="tab-btn" id="btnTabRide" data-tab="ride"><span class="tab-ic">🏍️</span>Motor</button>
       <button class="tab-btn" id="btnTabAI" data-tab="ai"><span class="tab-ic">🤖</span>AI</button>
     </div>
   </div>
 </div>
 
 
+<div class="rd-alert hidden" id="rdAlert">
+  <div class="rd-alert-card">
+    <div style="font-size:54px;">⚠️</div>
+    <h2>Kamu baik-baik saja?</h2>
+    <p id="rdAlertMsg"></p>
+    <p id="rdAlertSub" style="opacity:.9;font-size:13.5px;"></p>
+    <div class="rd-count" id="rdAlertCount">20</div>
+    <button class="ok" id="rdAlertOk">Saya baik-baik saja</button>
+    <button class="sos" id="rdAlertSos">🆘 Kirim SOS sekarang</button>
+  </div>
+</div>
 <div class="sb-scrim" id="sbScrim"></div>
 <nav class="sb" id="sb" aria-label="Menu utama">
   <div class="sb-head">
@@ -1189,6 +1327,7 @@
     <div class="sb-sec">Lainnya</div>
     <button class="sb-item" data-sb="kucing"><svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.07 1 2.24 1 3.44C21 17.9 16.97 21 12 21s-9-3-9-7.56c0-1.25.5-2.4 1-3.44 0 0-1.89-6.42-.5-7 1.39-.58 4.72.23 6.5 2.23A9.04 9.04 0 0 1 12 5Z"/><path d="M8 14v.5"/><path d="M16 14v.5"/><path d="M11.25 16.25h1.5L12 17l-.75-.75Z"/></svg><span>Kucing</span></button>
     <button class="sb-item" data-sb="lokasi"><svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span>Lokasi</span></button>
+    <button class="sb-item" data-sb="ride"><svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg><span>Mengendara</span></button>
     <button class="sb-item" data-sb="ai"><svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/></svg><span>Saran AI</span></button>
   </div>
   <div class="sb-foot">
@@ -1660,7 +1799,7 @@ const SOS_PUSH_KEY = "Tepangbkjaja305";
 // Kosong = gembok MATI. Untuk mengaktifkan: buka app → Pengaturan → Info → "Buat kode akses",
 // salin hasil hash-nya ke ACCESS_CODE_HASH di bawah, lalu pasang aturan di firestore.rules (lihat KEAMANAN.md).
 const ACCESS_SALT = "catatanpribadi-v1";
-const ACCESS_CODE_HASH = "e4282f19ca78db07227f83526cc8429c1e1d4410bbdf55d422dfbc9c24b71187";
+const ACCESS_CODE_HASH = "";
 // =====================================================================
 
 function isPlaceholder(v){ return !v || String(v).startsWith('GANTI_'); }
@@ -1673,7 +1812,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.9.0';
+const APP_VERSION = '2.10.0';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -2377,6 +2516,7 @@ function locOnPosition(pos){
   if(raw === null) raw = 0;
   locSpeed = locPrev ? 0.6*raw + 0.4*locSpeed : raw;
   locPrev = cur;
+  try{ rideOnFix({ lat:cur.lat, lng:cur.lng, acc, speed:raw, t }); }catch(e){}
 
   // mode dengan konfirmasi 2 sampel agar tidak berkedip
   let modeChanged = false;
@@ -5021,6 +5161,7 @@ const TAB_DEFS = {
   hutang:   { view:'viewHutang',    btn:'btnTabHutang',    tag:'Catatan hutang & piutang',    fab:'mode-hutang', cls:'tab-hutang' },
   kucing:   { view:'viewKucing',     btn:'btnTabKucing',    tag:'Rawat kucing bareng 🐾',       cls:'tab-cat' },
   lokasi:   { view:'viewLokasi',    btn:'btnTabLokasi',   tag:'Cek lokasi bersama',          cls:'tab-loc' },
+  ride:     { view:'viewRide',      btn:'btnTabRide',      tag:'Mengendara aman & servis motor', cls:'tab-ride' },
   ai:       { view:'viewAI',        btn:'btnTabAI',        tag:'Saran finansial dari AI',     cls:'tab-ai' }
 };
 function setActiveTab(tab){
@@ -5039,6 +5180,7 @@ function setActiveTab(tab){
   document.getElementById('topbarTag').textContent = TAB_DEFS[tab].tag;
   if(tab === 'ai') renderAIHeader();
   if(tab === 'lokasi') onLokasiTabShown();
+  if(tab === 'ride'){ try{ rideRenderAll(); }catch(e){ console.error('ride', e); } }
   try{ syncSidebar(tab); }catch(e){}
   window.scrollTo({ top:0 });
 }
@@ -5046,6 +5188,423 @@ Object.entries(TAB_DEFS).forEach(([key, def])=>{
   document.getElementById(def.btn).addEventListener('click', ()=>setActiveTab(key));
 });
 
+
+// ===== Mengendara: logika murni (bisa diuji tanpa DOM) =====
+const RIDE_TYPES = {
+  matic:  { label:'Matic',        bench:{ irit:50, wajar:38 }, kmpl:45 },
+  bebek:  { label:'Bebek',        bench:{ irit:55, wajar:42 }, kmpl:50 },
+  sport:  { label:'Sport',        bench:{ irit:38, wajar:28 }, kmpl:32 },
+  trail:  { label:'Trail / Adventure', bench:{ irit:36, wajar:26 }, kmpl:30 }
+};
+function rideMaintDefaults(type){
+  const m = {
+    oli:    { label:'Ganti oli mesin',    ic:'🛢️', km:2000, days:60 },
+    servis: { label:'Servis bulanan',     ic:'🔧', km:0,    days:30 }
+  };
+  if(type === 'matic') m.gardan = { label:'Ganti oli gardan', ic:'⚙️', km:8000, days:180 };
+  else m.rantai = { label:'Lumasi & kencangkan rantai', ic:'⛓️', km:500, days:14 };
+  return m;
+}
+// Berhenti mendadak: kecepatan >= 35 km/j turun >= 30 km/j sampai < 8 km/j dalam <= 4 detik
+function rideDetectStop(buf, cur){
+  if(!cur || cur.v >= 8) return null;
+  const win = buf.filter(p => cur.t - p.t > 0 && cur.t - p.t <= 4000);
+  if(!win.length) return null;
+  let top = win[0]; win.forEach(p => { if(p.v > top.v) top = p; });
+  if(top.v >= 35 && top.v - cur.v >= 30) return { from:Math.round(top.v), to:Math.round(cur.v), secs:Math.round((cur.t - top.t)/100)/10 };
+  return null;
+}
+// Status perawatan: progres = yang lebih dulu tercapai antara km dan hari
+function rideMaintStatus(it, odo, now){
+  if(!it || it.lastAt == null) return { state:'belum', pct:0, text:'Belum dicatat' };
+  const usedKm = (it.km > 0 && it.lastOdo != null && odo > 0) ? Math.max(0, odo - it.lastOdo) : 0;
+  const usedDays = Math.max(0, (now - it.lastAt) / 86400000);
+  const pk = it.km > 0 ? usedKm / it.km : 0, pd = it.days > 0 ? usedDays / it.days : 0;
+  const pct = Math.max(pk, pd);
+  const remKm = it.km > 0 ? Math.round(it.km - usedKm) : null;
+  const remDays = it.days > 0 ? Math.ceil(it.days - usedDays) : null;
+  const parts = [];
+  if(remKm !== null) parts.push(remKm >= 0 ? `sisa ${remKm.toLocaleString('id-ID')} km` : `lewat ${(-remKm).toLocaleString('id-ID')} km`);
+  if(remDays !== null) parts.push(remDays >= 0 ? `${remDays} hari lagi` : `lewat ${-remDays} hari`);
+  return { state: pct >= 1 ? 'lewat' : pct >= 0.8 ? 'segera' : 'aman', pct:Math.min(pct, 1), text:parts.join(' • ') };
+}
+// km/l dari: odometer saat isi penuh -> odometer saat foto, dan liter terpakai (tangki - sisa)
+function rideConsumption(fillOdo, fuelOdo, tank, litersLeft){
+  if(fillOdo == null || fuelOdo == null || !(tank > 0) || litersLeft == null) return null;
+  const km = fuelOdo - fillOdo, used = tank - litersLeft;
+  if(km < 10 || used < 0.3) return null;
+  return km / used;
+}
+function rideCategory(type, kmpl){
+  const b = (RIDE_TYPES[type] || RIDE_TYPES.matic).bench;
+  if(kmpl >= b.irit) return { key:'irit', label:'Irit 👍' };
+  if(kmpl >= b.wajar) return { key:'wajar', label:'Wajar ✅' };
+  return { key:'boros', label:'Boros ⚠️' };
+}
+function rideHaversineKm(a, b){
+  const R = 6371, rad = Math.PI/180;
+  const dLat = (b.lat - a.lat)*rad, dLng = (b.lng - a.lng)*rad;
+  const x = Math.sin(dLat/2)**2 + Math.cos(a.lat*rad)*Math.cos(b.lat*rad)*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(x));
+}
+
+// ===== Mengendara =====
+const RIDE_KEY = 'bk_ride';
+function rideLoad(){
+  let st = {}; try{ st = JSON.parse(localStorage.getItem(RIDE_KEY) || '{}') || {}; }catch(e){}
+  st.bike = Object.assign({ type:'matic', name:'', tank:5 }, st.bike || {});
+  st.odo = Number(st.odo) || 0;
+  st.set = Object.assign({ detect:true, autoSos:true }, st.set || {});
+  st.rides = Array.isArray(st.rides) ? st.rides : [];
+  st.dest = st.dest || null;
+  const defs = rideMaintDefaults(st.bike.type);
+  st.maint = st.maint || {};
+  Object.keys(defs).forEach(k=>{
+    const o = st.maint[k] || {};
+    st.maint[k] = { lastAt: o.lastAt ?? null, lastOdo: o.lastOdo ?? null, km: o.km ?? defs[k].km, days: o.days ?? defs[k].days };
+  });
+  Object.keys(st.maint).forEach(k=>{ if(!defs[k]) delete st.maint[k]; });
+  return st;
+}
+let rideSt = rideLoad();
+function rideSave(){ try{ localStorage.setItem(RIDE_KEY, JSON.stringify(rideSt)); }catch(e){} }
+const rideEl = (id)=>document.getElementById(id);
+const rideFmtKm = (n)=>Number(n).toLocaleString('id-ID', { maximumFractionDigits:1 });
+
+// ---- sesi berkendara (volatil) ----
+let rideOn = false, rideStartAt = 0, rideDistM = 0, rideMaxKmh = 0, rideMoveMs = 0;
+let rideLast = null, rideLastT = 0, rideKmh = 0, rideBuf = [];
+let rideWebWatch = null, rideNatWatch = null, rideLastAlert = 0, rideTimer = null;
+
+function rideOnFix(f){
+  if(!rideOn || !f || !isFinite(f.lat) || !isFinite(f.lng)) return;
+  const t = f.t || Date.now();
+  if(t - rideLastT < 700) return;                      // buang duplikat dari dua sumber GPS
+  if(f.acc && f.acc > 60) return;                      // titik terlalu kasar
+  let v = (typeof f.speed === 'number' && isFinite(f.speed) && f.speed >= 0) ? f.speed : null;
+  if(rideLast && v === null){
+    const dt = (t - rideLast.t)/1000;
+    if(dt > 0.3) v = locDistanceM(rideLast, { lat:f.lat, lng:f.lng })/dt;
+  }
+  const kmh = Math.max(0, (v || 0) * 3.6);
+  if(rideLast){
+    const d = locDistanceM(rideLast, { lat:f.lat, lng:f.lng }), dt = t - rideLast.t;
+    if(d >= 3 && d < 600 && dt < 30000){ rideDistM += d; if(kmh > 3) rideMoveMs += dt; }
+  }
+  rideLast = { lat:f.lat, lng:f.lng, t }; rideLastT = t; rideKmh = kmh;
+  if(kmh > rideMaxKmh) rideMaxKmh = kmh;
+  rideBuf.push({ t, v:kmh }); rideBuf = rideBuf.filter(p => t - p.t <= 8000);
+  if(rideSt.set.detect && t - rideStartAt > 10000 && Date.now() - rideLastAlert > 60000){
+    const ev = rideDetectStop(rideBuf.slice(0, -1), { t, v:kmh });
+    if(ev) rideAlertOpen({ kind:'stop', ...ev });
+  }
+  rideRenderLive();
+}
+function rideMotion(e){
+  if(!rideOn || !rideSt.set.detect) return;
+  const a = e.accelerationIncludingGravity; if(!a) return;
+  const g = Math.hypot(a.x || 0, a.y || 0, a.z || 0);
+  if(g > 45 && rideKmh >= 20 && Date.now() - rideLastT < 5000 && Date.now() - rideLastAlert > 60000){
+    rideAlertOpen({ kind:'impact', from:Math.round(rideKmh), g:Math.round(g/9.81*10)/10 });
+  }
+}
+function rideStartGps(){
+  if(navigator.geolocation && rideWebWatch === null){
+    rideWebWatch = navigator.geolocation.watchPosition(
+      (p)=>rideOnFix({ lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy, speed:p.coords.speed, t:p.timestamp }),
+      (err)=>{ if(err && err.code === 1) showToast('Izin lokasi ditolak — aktifkan untuk mode mengendara.', true); },
+      { enableHighAccuracy:true, maximumAge:0, timeout:30000 });
+  }
+  if(locNative()){
+    try{
+      locBG().addWatcher({
+        backgroundTitle:'Buku Kas — mengendara',
+        backgroundMessage:'Memantau perjalanan & deteksi berhenti mendadak.',
+        requestPermissions:true, stale:false, distanceFilter:0
+      }, (loc, err)=>{
+        if(err || !loc) return;
+        rideOnFix({ lat:loc.latitude, lng:loc.longitude, acc:loc.accuracy, speed:(typeof loc.speed === 'number' ? loc.speed : null), t:loc.time || Date.now() });
+      }).then(id=>{ if(rideOn) rideNatWatch = id; else locBG().removeWatcher({ id }).catch(()=>{}); }).catch(()=>{});
+    }catch(e){ console.warn('ride native gps', e); }
+  }
+  window.addEventListener('devicemotion', rideMotion);
+}
+function rideStopGps(){
+  if(rideWebWatch !== null){ try{ navigator.geolocation.clearWatch(rideWebWatch); }catch(e){} rideWebWatch = null; }
+  if(rideNatWatch !== null){ try{ locBG().removeWatcher({ id:rideNatWatch }).catch(()=>{}); }catch(e){} rideNatWatch = null; }
+  window.removeEventListener('devicemotion', rideMotion);
+}
+function rideStart(){
+  if(rideOn) return;
+  if(!navigator.geolocation && !locNative()){ showToast('Perangkat ini tidak mendukung GPS.', true); return; }
+  rideOn = true; rideStartAt = Date.now(); rideDistM = 0; rideMaxKmh = 0; rideMoveMs = 0;
+  rideLast = null; rideLastT = 0; rideKmh = 0; rideBuf = [];
+  rideStartGps();
+  rideTimer = setInterval(rideRenderLive, 1000);
+  showToast('Mode mengendara aktif 🏍️ Hati-hati di jalan!');
+  rideRenderLive();
+}
+function rideStop(){
+  if(!rideOn) return;
+  rideOn = false; clearInterval(rideTimer); rideStopGps();
+  const km = rideDistM/1000, secs = Math.round((Date.now() - rideStartAt)/1000);
+  if(km >= 0.1){
+    rideSt.odo = Math.round((rideSt.odo + km)*10)/10;
+    rideSt.rides.unshift({ at:rideStartAt, km:Math.round(km*100)/100, secs, max:Math.round(rideMaxKmh), avg: rideMoveMs > 0 ? Math.round(km/(rideMoveMs/3600000)) : 0 });
+    rideSt.rides = rideSt.rides.slice(0, 15);
+    rideSave();
+    showToast(`Perjalanan selesai: ${rideFmtKm(km)} km`);
+  }else showToast('Mode mengendara dimatikan');
+  rideRenderAll(); rideCheckMaint();
+}
+function rideRenderLive(){
+  const sp = rideEl('rdSpeed'); if(!sp) return;
+  sp.textContent = rideOn ? Math.round(rideKmh) : '0';
+  const go = rideEl('rdGo');
+  go.textContent = rideOn ? '⏹ Selesai berkendara' : '▶ Mulai berkendara';
+  go.classList.toggle('stop', rideOn);
+  const st = rideEl('rdState');
+  if(!rideOn){ st.textContent = 'Siap berangkat. Deteksi berhenti mendadak ' + (rideSt.set.detect ? 'aktif.' : 'mati.'); rideEl('rdStats').textContent = ''; return; }
+  const secs = Math.round((Date.now() - rideStartAt)/1000), mm = String(Math.floor(secs/60)).padStart(2,'0'), ss = String(secs%60).padStart(2,'0');
+  st.textContent = rideLastT ? 'Sedang berkendara' : 'Mencari sinyal GPS…';
+  let line = `${rideFmtKm(rideDistM/1000)} km • ${mm}:${ss} • maks ${Math.round(rideMaxKmh)} km/j`;
+  if(rideSt.dest && rideLast){
+    const left = rideHaversineKm(rideLast, rideSt.dest) * 1.3;
+    const avg = rideMoveMs > 60000 ? Math.max(15, (rideDistM/1000)/(rideMoveMs/3600000)) : 30;
+    line += ` • tujuan ±${rideFmtKm(left)} km (~${Math.max(1, Math.round(left/avg*60))} mnt)`;
+  }
+  rideEl('rdStats').textContent = line;
+}
+
+// ---- peringatan berhenti mendadak ----
+let rideAlertOn = false, rideAlertTimer = null, rideAlertBeep = null, rideAlertCount = 0, rideAlertTest = false, rideAudio = null;
+function rideBeep(){
+  try{
+    rideAudio = rideAudio || new (window.AudioContext || window.webkitAudioContext)();
+    const o = rideAudio.createOscillator(), g = rideAudio.createGain();
+    o.type = 'square'; o.frequency.value = 880; g.gain.value = 0.18;
+    o.connect(g); g.connect(rideAudio.destination); o.start(); o.stop(rideAudio.currentTime + 0.25);
+  }catch(e){}
+  try{ navigator.vibrate && navigator.vibrate([300, 150, 300]); }catch(e){}
+}
+function rideAlertOpen(info, isTest){
+  if(rideAlertOn) return;
+  rideAlertOn = true; rideAlertTest = !!isTest; rideLastAlert = Date.now(); rideAlertCount = 20;
+  rideEl('rdAlertMsg').textContent = info.kind === 'impact'
+    ? `Terdeteksi benturan keras saat melaju ±${info.from} km/j.`
+    : `Kecepatan turun mendadak dari ${info.from} ke ${info.to} km/j dalam ${info.secs} detik.`;
+  rideEl('rdAlert').classList.remove('hidden');
+  const auto = rideSt.set.autoSos && !rideAlertTest;
+  rideEl('rdAlertSub').textContent = auto ? 'Jika tidak ada respons, SOS otomatis dikirim ke keluarga.' : (rideAlertTest ? 'Ini hanya tes — SOS tidak dikirim.' : 'Ketuk tombol jika kamu baik-baik saja.');
+  rideEl('rdAlertCount').textContent = rideAlertCount;
+  appNotify('⚠️ Berhenti mendadak terdeteksi', 'Kamu baik-baik saja? Buka app untuk membatalkan.', true);
+  rideBeep(); rideAlertBeep = setInterval(rideBeep, 1100);
+  rideAlertTimer = setInterval(()=>{
+    rideAlertCount--; rideEl('rdAlertCount').textContent = Math.max(0, rideAlertCount);
+    if(rideAlertCount <= 0){
+      const doSos = auto; rideAlertClose();
+      if(doSos){ showToast('Tidak ada respons — mengirim SOS', true); sosStart(); }
+    }
+  }, 1000);
+}
+function rideAlertClose(){
+  rideAlertOn = false; clearInterval(rideAlertTimer); clearInterval(rideAlertBeep);
+  rideEl('rdAlert').classList.add('hidden');
+  try{ navigator.vibrate && navigator.vibrate(0); }catch(e){}
+}
+
+// ---- tujuan ----
+function rideMapsUrl(q){ return 'https://www.google.com/maps/dir/?api=1&travelmode=two-wheeler&destination=' + encodeURIComponent(q); }
+async function rideSetDest(){
+  const q = rideEl('rdDest').value.trim();
+  if(!q){ rideSt.dest = null; rideSave(); rideRenderAll(); return; }
+  const btn = rideEl('rdDestSet'); btn.disabled = true; btn.textContent = 'Mencari…';
+  try{
+    const r = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=id&q=' + encodeURIComponent(q));
+    const j = await r.json();
+    if(!j.length) throw new Error('Tempat tidak ditemukan. Coba tulis lebih lengkap.');
+    rideSt.dest = { q, name:String(j[0].display_name || q).split(',').slice(0, 3).join(','), lat:Number(j[0].lat), lng:Number(j[0].lon) };
+    rideSave(); showToast('Tujuan disimpan 📍');
+  }catch(e){ showToast((e && e.message) || 'Gagal mencari tujuan', true); }
+  btn.disabled = false; btn.textContent = '📍 Simpan tujuan';
+  rideRenderAll();
+}
+function rideOpenMaps(){
+  const q = rideEl('rdDest').value.trim() || (rideSt.dest && rideSt.dest.q);
+  if(!q){ showToast('Isi tujuan dulu', true); return; }
+  window.open(rideMapsUrl(q), '_blank');
+}
+
+// ---- bensin (foto + AI) ----
+function rideFileToJpeg(file, maxSide){
+  return new Promise((resolve, reject)=>{
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = ()=>{
+      const sc = Math.min(1, maxSide/Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width*sc); c.height = Math.round(img.height*sc);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL('image/jpeg', 0.82).split(',')[1]);
+    };
+    img.onerror = ()=>{ URL.revokeObjectURL(url); reject(new Error('Foto tidak bisa dibaca.')); };
+    img.src = url;
+  });
+}
+async function callAIVision(prompt, b64){
+  const cfg = loadAIConfig();
+  if(!cfg.provider || !cfg.apiKey) throw new Error('Isi API key AI dulu di ⚙ Pengaturan → AI (Gemini atau Claude).');
+  const model = (cfg.model || '').trim() || AI_DEFAULT_MODELS[cfg.provider];
+  if(cfg.provider === 'gemini'){
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+      method:'POST', headers:{ 'Content-Type':'application/json', 'x-goog-api-key':cfg.apiKey },
+      body: JSON.stringify({ contents:[{ role:'user', parts:[{ text:prompt }, { inline_data:{ mime_type:'image/jpeg', data:b64 } }] }], generationConfig:{ temperature:0.2, maxOutputTokens:400 } })
+    });
+    const d = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(d?.error?.message || ('HTTP ' + res.status));
+    return (d.candidates?.[0]?.content?.parts || []).map(p=>p.text || '').join('').trim();
+  }
+  if(cfg.provider === 'claude'){
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'x-api-key':cfg.apiKey, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
+      body: JSON.stringify({ model, max_tokens:400, messages:[{ role:'user', content:[{ type:'image', source:{ type:'base64', media_type:'image/jpeg', data:b64 } }, { type:'text', text:prompt }] }] })
+    });
+    const d = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(d?.error?.message || ('HTTP ' + res.status));
+    return (d.content || []).filter(b=>b.type === 'text').map(b=>b.text).join('').trim();
+  }
+  if(cfg.provider === 'openrouter'){
+    const res = await fetch(OPENAI_COMPAT_URLS.openrouter, {
+      method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + cfg.apiKey },
+      body: JSON.stringify({ model, max_tokens:400, messages:[{ role:'user', content:[{ type:'text', text:prompt }, { type:'image_url', image_url:{ url:'data:image/jpeg;base64,' + b64 } }] }] })
+    });
+    const d = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(d?.error?.message || ('HTTP ' + res.status));
+    return String(d.choices?.[0]?.message?.content || '').trim();
+  }
+  throw new Error('Penyedia AI ini tidak bisa membaca foto. Pakai Gemini atau Claude di ⚙ Pengaturan → AI.');
+}
+async function rideAnalyzePhoto(file){
+  const box = rideEl('rdFuel'); box.innerHTML = '<div class="rd-muted">⏳ AI sedang membaca indikator bensin…</div>';
+  try{
+    const b64 = await rideFileToJpeg(file, 1024);
+    const t = RIDE_TYPES[rideSt.bike.type] || RIDE_TYPES.matic;
+    const prompt = `Ini foto indikator bensin (fuel gauge) di dashboard motor ${t.label} ${rideSt.bike.name || ''}. Kapasitas tangki ±${rideSt.bike.tank} liter. Perkirakan sisa bensin. Balas HANYA JSON tanpa teks lain: {"percent": angka 0-100, "liters": angka, "confidence": "tinggi|sedang|rendah", "note": "1 kalimat singkat Bahasa Indonesia"}. Jika foto bukan indikator bensin, balas {"error":"alasannya"}.`;
+    const txt = await callAIVision(prompt, b64);
+    const m = txt.match(/\{[\s\S]*\}/); if(!m) throw new Error('Jawaban AI tidak terbaca. Coba foto lagi lebih jelas.');
+    const j = JSON.parse(m[0]);
+    if(j.error) throw new Error(j.error);
+    let pct = Math.max(0, Math.min(100, Number(j.percent))); if(!isFinite(pct)) throw new Error('AI tidak memberi angka. Coba foto lagi.');
+    let lit = Number(j.liters); if(!isFinite(lit)) lit = rideSt.bike.tank * pct/100;
+    lit = Math.max(0, Math.min(rideSt.bike.tank, lit));
+    rideSt.fuel = { pct:Math.round(pct), liters:Math.round(lit*10)/10, at:Date.now(), odo:rideSt.odo, note:String(j.note || ''), conf:String(j.confidence || '') };
+    rideSave(); rideRenderAll();
+  }catch(e){ console.error('foto bensin', e); box.innerHTML = '<div class="rd-warn">⚠️ ' + String((e && e.message) || e).replace(/</g, '&lt;') + '</div>'; }
+}
+function rideRenderFuel(){
+  const box = rideEl('rdFuel'); if(!box) return;
+  const f = rideSt.fuel, t = RIDE_TYPES[rideSt.bike.type] || RIDE_TYPES.matic;
+  if(!f){ box.innerHTML = '<div class="rd-muted">Belum ada estimasi. Ambil foto indikator bensin di dashboard.</div>'; return; }
+  const kmpl = rideConsumption(rideSt.fill && rideSt.fill.odo, f.odo, rideSt.bike.tank, f.liters);
+  const cat = kmpl ? rideCategory(rideSt.bike.type, kmpl) : null;
+  const range = Math.round(f.liters * (kmpl || t.kmpl));
+  const when = new Date(f.at).toLocaleString('id-ID', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+  box.innerHTML = `
+    <div class="rd-fuelbar"><div style="width:${f.pct}%"></div></div>
+    <div class="rd-fuelrow"><b>${f.pct}%</b><span>≈ ${f.liters} liter • cukup ±${range} km</span></div>
+    ${cat ? `<div class="rd-cat ${cat.key}">Konsumsi ${cat.label} — ${rideFmtKm(kmpl)} km/l <small>(acuan ${t.label}: wajar ≥ ${t.bench.wajar}, irit ≥ ${t.bench.irit})</small></div>`
+          : `<div class="rd-muted">Untuk menilai irit/boros: tekan “Baru isi penuh” saat mengisi sampai penuh, lalu foto lagi setelah berkendara ≥ 10 km.</div>`}
+    <div class="rd-muted">${f.note ? f.note + ' • ' : ''}Tingkat yakin: ${f.conf || '-'} • ${when}. Ini perkiraan AI, bukan angka pasti.</div>`;
+}
+
+// ---- perawatan ----
+function rideRenderMaint(){
+  const box = rideEl('rdMaint'); if(!box) return;
+  const defs = rideMaintDefaults(rideSt.bike.type), now = Date.now();
+  box.innerHTML = Object.keys(defs).map(k=>{
+    const it = rideSt.maint[k], s = rideMaintStatus(it, rideSt.odo, now);
+    const pill = { aman:'Aman', segera:'Segera', lewat:'Lewat!', belum:'Belum dicatat' }[s.state];
+    const last = it.lastAt ? `Terakhir: ${new Date(it.lastAt).toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'2-digit' })}${it.lastOdo != null && rideSt.odo ? ' • ' + rideFmtKm(it.lastOdo) + ' km' : ''}` : 'Tekan ✔ jika baru saja dilakukan';
+    return `<div class="rd-m ${s.state}">
+      <div class="rd-mh"><span>${defs[k].ic} ${defs[k].label}</span><em>${pill}</em></div>
+      <div class="rd-bar"><div style="width:${Math.round(s.pct*100)}%"></div></div>
+      <div class="rd-mf"><small>${s.text ? s.text + ' • ' : ''}${last}</small><button class="rd-done" data-done="${k}">✔ Sudah</button></div>
+    </div>`;
+  }).join('');
+  const iv = rideEl('rdIntervals');
+  iv.innerHTML = Object.keys(defs).map(k=>`<div class="rd-iv"><span>${defs[k].label}</span>
+    <input type="number" inputmode="numeric" min="0" data-k="${k}" data-f="km" value="${rideSt.maint[k].km}"><small>km</small>
+    <input type="number" inputmode="numeric" min="0" data-k="${k}" data-f="days" value="${rideSt.maint[k].days}"><small>hari</small></div>`).join('')
+    + '<div class="rd-muted">Isi 0 untuk mengabaikan salah satu. Pengingat muncul saat salah satu batas hampir/sudah tercapai.</div>';
+}
+function rideCheckMaint(){
+  const defs = rideMaintDefaults(rideSt.bike.type), now = Date.now();
+  let sent; try{ sent = JSON.parse(localStorage.getItem('bk_ride_notif') || '{}'); }catch(e){ sent = {}; }
+  Object.keys(defs).forEach(k=>{
+    const s = rideMaintStatus(rideSt.maint[k], rideSt.odo, now);
+    if(s.state !== 'segera' && s.state !== 'lewat') return;
+    if(now - (sent[k] || 0) < 20*3600000) return;
+    sent[k] = now;
+    appNotify(`🔧 ${defs[k].label}`, s.state === 'lewat' ? `Sudah lewat jadwal (${s.text}).` : `Sebentar lagi (${s.text}).`, false);
+  });
+  try{ localStorage.setItem('bk_ride_notif', JSON.stringify(sent)); }catch(e){}
+}
+
+// ---- render & event ----
+function rideRenderAll(){
+  if(!rideEl('viewRide')) return;
+  const b = rideSt.bike;
+  rideEl('rdType').value = b.type; rideEl('rdName').value = b.name; rideEl('rdTank').value = b.tank; rideEl('rdOdo').value = rideSt.odo || '';
+  rideEl('rdDetect').checked = !!rideSt.set.detect; rideEl('rdAutoSos').checked = !!rideSt.set.autoSos;
+  const d = rideSt.dest;
+  if(document.activeElement !== rideEl('rdDest')) rideEl('rdDest').value = d ? d.q : rideEl('rdDest').value;
+  rideEl('rdDestInfo').textContent = d ? `📍 ${d.name}` : 'Opsional. Kosongkan jika tidak punya tujuan.';
+  rideEl('rdFill').textContent = rideSt.fill ? `Isi penuh terakhir: ${new Date(rideSt.fill.at).toLocaleDateString('id-ID', { day:'numeric', month:'short' })} • ${rideFmtKm(rideSt.fill.odo)} km` : '';
+  const c = loadAIConfig(); rideEl('rdAiHint').textContent = (c.provider === 'gemini' || c.provider === 'claude' || c.provider === 'openrouter') && c.apiKey ? '' : 'Foto butuh API key Gemini atau Claude di ⚙ Pengaturan → AI.';
+  rideRenderFuel(); rideRenderMaint(); rideRenderLive();
+  rideEl('rdRides').innerHTML = rideSt.rides.length ? rideSt.rides.slice(0, 5).map(r=>`<div class="rd-ride"><span>${new Date(r.at).toLocaleDateString('id-ID', { day:'numeric', month:'short' })} • ${rideFmtKm(r.km)} km</span><small>${Math.round(r.secs/60)} mnt • maks ${r.max} km/j</small></div>`).join('') : '<div class="rd-muted">Belum ada perjalanan tercatat.</div>';
+}
+function rideInit(){
+  if(!rideEl('viewRide')) return;
+  rideEl('rdGo').addEventListener('click', ()=> rideOn ? rideStop() : rideStart());
+  rideEl('rdDestSet').addEventListener('click', rideSetDest);
+  rideEl('rdDestMaps').addEventListener('click', rideOpenMaps);
+  rideEl('rdSaveBike').addEventListener('click', ()=>{
+    const oldType = rideSt.bike.type;
+    rideSt.bike = { type:rideEl('rdType').value, name:rideEl('rdName').value.trim().slice(0, 30), tank:Math.max(1, Number(rideEl('rdTank').value) || 5) };
+    const odo = Number(rideEl('rdOdo').value); if(isFinite(odo) && odo >= 0) rideSt.odo = odo;
+    if(oldType !== rideSt.bike.type){
+      const defs = rideMaintDefaults(rideSt.bike.type), keep = rideSt.maint, nm = {};
+      Object.keys(defs).forEach(k=>{ nm[k] = keep[k] || { lastAt:null, lastOdo:null, km:defs[k].km, days:defs[k].days }; });
+      rideSt.maint = nm;
+    }
+    rideSave(); rideRenderAll(); rideCheckMaint(); showToast('Data motor tersimpan ✅');
+  });
+  rideEl('rdFillFull').addEventListener('click', ()=>{
+    rideSt.fill = { odo:rideSt.odo, at:Date.now() }; rideSt.fuel = null; rideSave(); rideRenderAll();
+    showToast('Dicatat: tangki penuh ⛽');
+  });
+  rideEl('rdPhotoBtn').addEventListener('click', ()=>rideEl('rdPhoto').click());
+  rideEl('rdPhoto').addEventListener('change', (e)=>{ const f = e.target.files && e.target.files[0]; e.target.value = ''; if(f) rideAnalyzePhoto(f); });
+  rideEl('rdMaint').addEventListener('click', (e)=>{
+    const b = e.target.closest('[data-done]'); if(!b) return;
+    const it = rideSt.maint[b.dataset.done]; it.lastAt = Date.now(); it.lastOdo = rideSt.odo;
+    rideSave(); rideRenderMaint(); showToast('Tercatat ✔');
+  });
+  rideEl('rdIntervals').addEventListener('change', (e)=>{
+    const i = e.target.closest('input[data-k]'); if(!i) return;
+    rideSt.maint[i.dataset.k][i.dataset.f] = Math.max(0, Number(i.value) || 0); rideSave(); rideRenderMaint(); rideCheckMaint();
+  });
+  rideEl('rdDetect').addEventListener('change', (e)=>{ rideSt.set.detect = e.target.checked; rideSave(); rideRenderLive(); });
+  rideEl('rdAutoSos').addEventListener('change', (e)=>{ rideSt.set.autoSos = e.target.checked; rideSave(); });
+  rideEl('rdTest').addEventListener('click', ()=>rideAlertOpen({ kind:'stop', from:52, to:3, secs:2.5 }, true));
+  rideEl('rdAlertOk').addEventListener('click', rideAlertClose);
+  rideEl('rdAlertSos').addEventListener('click', ()=>{ const t = rideAlertTest; rideAlertClose(); if(!t) sosStart(); else showToast('Ini tes — SOS tidak dikirim.'); });
+  rideRenderAll();
+  setTimeout(rideCheckMaint, 5000);
+}
+
+try{ rideInit(); }catch(e){ console.error("rideInit", e); }
 
 // ===== Sidebar menu =====
 const sbEl = document.getElementById('sb');
