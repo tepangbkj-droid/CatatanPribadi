@@ -859,16 +859,17 @@
   .more-btn.less{border-style:solid;border-color:var(--line);color:var(--ink-soft);font-weight:600;}
   /* ===== v3: peta ===== */
   #locMap{height:380px;}
+  .loc-mapbox{position:relative;z-index:0;isolation:isolate;}
   .loc-mapbox{border-radius:20px;box-shadow:0 14px 30px -18px rgba(34,26,61,.55);}
   .leaflet-container{font-family:var(--font-sans);}
   .leaflet-control-zoom{border:none !important;box-shadow:0 4px 14px rgba(0,0,0,.25) !important;border-radius:14px !important;overflow:hidden;}
   .leaflet-control-zoom a{width:36px !important;height:36px !important;line-height:36px !important;font-size:18px !important;}
   .leaflet-popup-content-wrapper{border-radius:14px;box-shadow:0 10px 26px -8px rgba(0,0,0,.4);}
   .leaflet-popup-content{margin:12px 14px;font-size:13px;line-height:1.45;}
-  .mk-tools{position:absolute;left:10px;bottom:26px;z-index:1001;display:flex;flex-direction:column;gap:8px;}
-  .mk-tools button{width:42px;height:42px;border-radius:14px;border:2px solid transparent;background:rgba(255,255,255,.97);box-shadow:0 4px 14px rgba(0,0,0,.28);font-size:19px;padding:0;cursor:pointer;}
+  .mk-tools{position:absolute;left:10px;bottom:26px;z-index:1001;display:flex;flex-direction:column;gap:7px;}
+  .mk-tools button{width:38px;height:38px;border-radius:12px;border:2px solid transparent;background:rgba(255,255,255,.97);box-shadow:0 4px 14px rgba(0,0,0,.28);font-size:17px;padding:0;cursor:pointer;}
   .mk-tools button.on{border-color:var(--violet);background:var(--violet-soft);}
-  .mk-hint{position:absolute;left:62px;right:62px;bottom:12px;z-index:1000;text-align:center;background:rgba(34,26,61,.82);color:#fff;font-size:11.5px;padding:6px 10px;border-radius:12px;pointer-events:none;}
+  .mk-hint{position:absolute;left:58px;right:58px;top:10px;z-index:1000;text-align:center;background:rgba(34,26,61,.88);color:#fff;font-size:12px;padding:7px 12px;border-radius:99px;cursor:pointer;line-height:1.3;}
   .mk-hint.hidden{display:none;}
   .mk-ico{width:26px;height:26px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 7px rgba(0,0,0,.35);border:2px solid #fff;}
   .mk-ico.sig{background:#1F2937;}
@@ -1368,7 +1369,7 @@
         <div class="rd-h">⛽ Bensin</div>
         <div class="rd-btns">
           <button class="btn btn-ghost" id="rdFillFull">✅ Baru isi penuh</button>
-          <button class="btn btn-primary" id="rdPhotoBtn">📷 Foto indikator</button>
+          <button class="btn btn-primary" id="rdPhotoBtn">📷 Foto dashboard / spidometer</button>
         </div>
         <input type="file" id="rdPhoto" accept="image/*" capture="environment" class="hidden">
         <div class="rd-muted" id="rdFill"></div>
@@ -1941,7 +1942,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.11.1';
+const APP_VERSION = '2.11.2';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -3194,7 +3195,7 @@ document.getElementById('btnLocRestart').addEventListener('click', locRestartGps
 function onLokasiTabShown(){
   locEnsureMap();
   renderLokasi();
-  if(locMap) setTimeout(()=>{ locMap.invalidateSize(); }, 120);
+  if(locMap) setTimeout(()=>{ locMap.invalidateSize(); if(locMk) mkRefresh(locMk); }, 120);
 }
 function locSetSeg(seg){
   locSeg = seg;
@@ -5386,10 +5387,10 @@ async function ovpLoadBox(s, w, n, e){
   while(ovp.pending){ try{ await ovp.pending; }catch(err){} }
   if(ovp.cells.some(c=>Date.now() - c.t < 15*60*1000 && s >= c.s && w >= c.w && n <= c.n && e <= c.e)) return true;
   if(Date.now() - ovp.lastErrAt < 6000) return false;
-  const dy = (n - s)*0.5, dx = (e - w)*0.5;
+  const dy = (n - s)*0.25, dx = (e - w)*0.25;
   const S = s - dy, W = w - dx, N = n + dy, E = e + dx;
   const bb = `${S.toFixed(5)},${W.toFixed(5)},${N.toFixed(5)},${E.toFixed(5)}`;
-  const q = `[out:json][timeout:20];(node["highway"="traffic_signals"](${bb});node["man_made"="surveillance"](${bb});node["highway"="speed_camera"](${bb}););out body 700;`;
+  const q = `[out:json][timeout:20];(node["highway"="traffic_signals"](${bb});node["man_made"="surveillance"](${bb});node["highway"="speed_camera"](${bb}););out body 1500;`;
   const job = ovpQuery(q);
   ovp.pending = job;
   try{
@@ -5428,6 +5429,8 @@ function mkAttach(map, key){
   c.styleI = Math.max(0, MK_STYLES.findIndex(s=>s.id === sid));
   ['sig','cctv'].forEach(k=>{ if(locStore('mk_on_' + k) === 'off') c.on[k] = false; });
   c.hint = L.DomUtil.create('div', 'mk-hint hidden', map.getContainer());
+  L.DomEvent.disableClickPropagation(c.hint);
+  c.hint.addEventListener('click', ()=>{ ovp.lastErrAt = 0; ovp.cells = []; mkRefresh(c); });
   mkApplyStyle(c, false);
   map.on('moveend', ()=>{ clearTimeout(c.t); c.t = setTimeout(()=>mkRefresh(c), 700); });
   MKS.push(c);
@@ -5446,10 +5449,13 @@ function mkHint(c, txt){ if(!c.hint) return; c.hint.textContent = txt || ''; c.h
 async function mkRefresh(c, retry){
   if(!c.map || !c.map._loaded) return;
   if(!c.on.sig && !c.on.cctv){ c.sig.clearLayers(); c.cam.clearLayers(); mkHint(c, ''); return; }
-  if(c.map.getZoom() < 15){ c.sig.clearLayers(); c.cam.clearLayers(); mkHint(c, 'Dekatkan peta (zoom ≥ 15) untuk melihat lampu merah & CCTV'); return; }
+  if(c.map.getZoom() < 13){ c.sig.clearLayers(); c.cam.clearLayers(); mkHint(c, '🔍 Dekatkan peta sedikit lagi untuk melihat lampu merah & CCTV'); return; }
   mkHint(c, '⏳ Memuat lampu merah & CCTV…');
-  const b = c.map.getBounds();
-  const ok = await ovpLoadBox(b.getSouth(), b.getWest(), b.getNorth(), b.getEast());
+  const b = c.map.getBounds(), ctr = b.getCenter();
+  let S = b.getSouth(), N = b.getNorth(), W = b.getWest(), E = b.getEast();
+  if(N - S > 0.05){ S = ctr.lat - 0.025; N = ctr.lat + 0.025; }
+  if(E - W > 0.05){ W = ctr.lng - 0.025; E = ctr.lng + 0.025; }
+  const ok = await ovpLoadBox(S, W, N, E);
   mkDraw(c);
   if(!ok){
     mkHint(c, `Data lampu/CCTV gagal dimuat (${ovp.lastErr || 'jaringan'}). Mencoba lagi…`);
@@ -6466,17 +6472,18 @@ async function callAIVision(prompt, b64){
   if(cfg.provider === 'gemini'){
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
       method:'POST', headers:{ 'Content-Type':'application/json', 'x-goog-api-key':cfg.apiKey },
-      body: JSON.stringify({ contents:[{ role:'user', parts:[{ text:prompt }, { inline_data:{ mime_type:'image/jpeg', data:b64 } }] }], generationConfig:{ temperature:0.2, maxOutputTokens:400 } })
+      body: JSON.stringify({ contents:[{ role:'user', parts:[{ text:prompt }, { inline_data:{ mime_type:'image/jpeg', data:b64 } }] }], generationConfig:{ temperature:0.2, maxOutputTokens:4096 } })
     });
     const d = await res.json().catch(()=>({}));
     if(!res.ok) throw new Error(d?.error?.message || ('HTTP ' + res.status));
+    if(d.promptFeedback && d.promptFeedback.blockReason) throw new Error('Foto ditolak oleh AI (' + d.promptFeedback.blockReason + '). Coba foto lain.');
     return (d.candidates?.[0]?.content?.parts || []).map(p=>p.text || '').join('').trim();
   }
   if(cfg.provider === 'claude'){
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method:'POST',
       headers:{ 'Content-Type':'application/json', 'x-api-key':cfg.apiKey, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-      body: JSON.stringify({ model, max_tokens:400, messages:[{ role:'user', content:[{ type:'image', source:{ type:'base64', media_type:'image/jpeg', data:b64 } }, { type:'text', text:prompt }] }] })
+      body: JSON.stringify({ model, max_tokens:700, messages:[{ role:'user', content:[{ type:'image', source:{ type:'base64', media_type:'image/jpeg', data:b64 } }, { type:'text', text:prompt }] }] })
     });
     const d = await res.json().catch(()=>({}));
     if(!res.ok) throw new Error(d?.error?.message || ('HTTP ' + res.status));
@@ -6485,7 +6492,7 @@ async function callAIVision(prompt, b64){
   if(cfg.provider === 'openrouter'){
     const res = await fetch(OPENAI_COMPAT_URLS.openrouter, {
       method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + cfg.apiKey },
-      body: JSON.stringify({ model, max_tokens:400, messages:[{ role:'user', content:[{ type:'text', text:prompt }, { type:'image_url', image_url:{ url:'data:image/jpeg;base64,' + b64 } }] }] })
+      body: JSON.stringify({ model, max_tokens:700, messages:[{ role:'user', content:[{ type:'text', text:prompt }, { type:'image_url', image_url:{ url:'data:image/jpeg;base64,' + b64 } }] }] })
     });
     const d = await res.json().catch(()=>({}));
     if(!res.ok) throw new Error(d?.error?.message || ('HTTP ' + res.status));
@@ -6493,37 +6500,58 @@ async function callAIVision(prompt, b64){
   }
   throw new Error('Penyedia AI ini tidak bisa membaca foto. Pakai Gemini atau Claude di ⚙ Pengaturan → AI.');
 }
+let ridePendingOdo = null;
+const rideNum = (x)=>{ if(x === null || x === undefined || x === '') return NaN; const n = Number(String(x).replace(/[^\d,]/g, '').replace(',', '.')); return isFinite(n) ? n : NaN; };
 async function rideAnalyzePhoto(file){
-  const box = rideEl('rdFuel'); box.innerHTML = '<div class="rd-muted">⏳ AI sedang membaca indikator bensin…</div>';
+  const box = rideEl('rdFuel'); box.innerHTML = '<div class="rd-muted">⏳ AI sedang membaca foto dashboard…</div>';
   try{
-    const b64 = await rideFileToJpeg(file, 1024);
+    const b64 = await rideFileToJpeg(file, 1600);
     const t = RIDE_TYPES[rideSt.bike.type] || RIDE_TYPES.matic;
-    const prompt = `Ini foto indikator bensin (fuel gauge) di dashboard motor ${t.label} ${rideSt.bike.name || ''}. Kapasitas tangki ±${rideSt.bike.tank} liter. Perkirakan sisa bensin. Balas HANYA JSON tanpa teks lain: {"percent": angka 0-100, "liters": angka, "confidence": "tinggi|sedang|rendah", "note": "1 kalimat singkat Bahasa Indonesia"}. Jika foto bukan indikator bensin, balas {"error":"alasannya"}.`;
+    const prompt = `Ini foto dashboard / spidometer motor ${t.label} ${rideSt.bike.name || ''}. Kapasitas tangki ±${rideSt.bike.tank} liter. Baca apa yang terlihat jelas: (1) ODOMETER total dalam km (angka ODO, BUKAN trip A/B), (2) indikator bensin (fuel gauge) untuk memperkirakan sisa bensin, (3) kecepatan pada spidometer bila terlihat. Isi null untuk hal yang tidak terlihat. Balas HANYA JSON tanpa teks lain: {"odometer_km": angka atau null, "percent": angka 0-100 atau null, "liters": angka atau null, "speed_kmh": angka atau null, "confidence": "tinggi|sedang|rendah", "note": "1 kalimat singkat Bahasa Indonesia"}. Jika tidak ada satu pun yang terbaca, balas {"error":"alasannya"}.`;
     const txt = await callAIVision(prompt, b64);
-    const m = txt.match(/\{[\s\S]*\}/); if(!m) throw new Error('Jawaban AI tidak terbaca. Coba foto lagi lebih jelas.');
+    const m = String(txt).match(/\{[\s\S]*\}/); if(!m) throw new Error('Jawaban AI tidak terbaca. Coba foto lagi: dekat, terang, dan tanpa pantulan cahaya.');
     const j = JSON.parse(m[0]);
     if(j.error) throw new Error(j.error);
-    let pct = Math.max(0, Math.min(100, Number(j.percent))); if(!isFinite(pct)) throw new Error('AI tidak memberi angka. Coba foto lagi.');
-    let lit = Number(j.liters); if(!isFinite(lit)) lit = rideSt.bike.tank * pct/100;
-    lit = Math.max(0, Math.min(rideSt.bike.tank, lit));
-    rideSt.fuel = { pct:Math.round(pct), liters:Math.round(lit*10)/10, at:Date.now(), odo:rideSt.odo, note:String(j.note || ''), conf:String(j.confidence || '') };
-    rideSave(); rideRenderAll();
-  }catch(e){ console.error('foto bensin', e); box.innerHTML = '<div class="rd-warn">⚠️ ' + String((e && e.message) || e).replace(/</g, '&lt;') + '</div>'; }
+    const odo = rideNum(j.odometer_km), pctRaw = rideNum(j.percent);
+    const hasOdo = isFinite(odo) && odo > 0 && odo < 2000000, hasFuel = isFinite(pctRaw);
+    if(!hasOdo && !hasFuel) throw new Error('Tidak ada angka odometer atau indikator bensin yang terbaca. Coba foto lebih dekat & terang.');
+    if(hasOdo) ridePendingOdo = { km:odo, conf:String(j.confidence || ''), note:String(j.note || '') };
+    if(hasFuel){
+      const pct = Math.max(0, Math.min(100, pctRaw));
+      let lit = rideNum(j.liters); if(!isFinite(lit)) lit = rideSt.bike.tank * pct/100;
+      lit = Math.max(0, Math.min(rideSt.bike.tank, lit));
+      rideSt.fuel = { pct:Math.round(pct), liters:Math.round(lit*10)/10, at:Date.now(), odo:rideSt.odo, note:String(j.note || ''), conf:String(j.confidence || '') };
+      rideSave();
+    }
+    rideRenderAll();
+  }catch(e){ console.error('foto dashboard', e); box.innerHTML = '<div class="rd-warn">⚠️ ' + String((e && e.message) || e).replace(/</g, '&lt;') + '</div>'; }
+}
+function rideOdoPendingHtml(){
+  if(!ridePendingOdo) return '';
+  const o = ridePendingOdo;
+  return `<div class="rd-card" style="margin:0 0 10px;padding:12px;"><div class="rd-fuelrow"><b>${rideFmtKm(o.km)} km</b><span>odometer terbaca dari foto${o.conf ? ' (yakin: ' + o.conf + ')' : ''}</span></div>
+    <div class="rd-btns" style="margin-top:8px;"><button class="btn btn-teal" data-odoapply="1">✔ Pakai sebagai odometer</button><button class="btn btn-ghost" data-odoskip="1">Abaikan</button></div></div>`;
+}
+function rideBindOdo(box){
+  const ap = box.querySelector('[data-odoapply]'), sk = box.querySelector('[data-odoskip]');
+  if(ap) ap.onclick = ()=>{ rideSt.odo = Math.round(ridePendingOdo.km*10)/10; ridePendingOdo = null; rideSave(); rideRenderAll(); showToast('Odometer diperbarui'); };
+  if(sk) sk.onclick = ()=>{ ridePendingOdo = null; rideRenderAll(); };
 }
 function rideRenderFuel(){
   const box = rideEl('rdFuel'); if(!box) return;
   const f = rideSt.fuel, t = RIDE_TYPES[rideSt.bike.type] || RIDE_TYPES.matic;
-  if(!f){ box.innerHTML = '<div class="rd-muted">Belum ada estimasi. Ambil foto indikator bensin di dashboard.</div>'; return; }
+  if(!f){ box.innerHTML = rideOdoPendingHtml() + '<div class="rd-muted">Belum ada estimasi. Foto dashboard motor (odometer & indikator bensin).</div>'; rideBindOdo(box); return; }
   const kmpl = rideConsumption(rideSt.fill && rideSt.fill.odo, f.odo, rideSt.bike.tank, f.liters);
   const cat = kmpl ? rideCategory(rideSt.bike.type, kmpl) : null;
   const range = Math.round(f.liters * (kmpl || t.kmpl));
   const when = new Date(f.at).toLocaleString('id-ID', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-  box.innerHTML = `
+  box.innerHTML = rideOdoPendingHtml() + `
     <div class="rd-fuelbar"><div style="width:${f.pct}%"></div></div>
     <div class="rd-fuelrow"><b>${f.pct}%</b><span>≈ ${f.liters} liter • cukup ±${range} km</span></div>
     ${cat ? `<div class="rd-cat ${cat.key}">Konsumsi ${cat.label} — ${rideFmtKm(kmpl)} km/l <small>(acuan ${t.label}: wajar ≥ ${t.bench.wajar}, irit ≥ ${t.bench.irit})</small></div>`
           : `<div class="rd-muted">Untuk menilai irit/boros: tekan “Baru isi penuh” saat mengisi sampai penuh, lalu foto lagi setelah berkendara ≥ 10 km.</div>`}
     <div class="rd-muted">${f.note ? f.note + ' • ' : ''}Tingkat yakin: ${f.conf || '-'} • ${when}. Ini perkiraan AI, bukan angka pasti.</div>`;
+  rideBindOdo(box);
 }
 
 // ---- perawatan ----
