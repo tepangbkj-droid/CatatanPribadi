@@ -8,9 +8,17 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/members/$(request.auth.uid));
     }
 
+    // --- OPSI TERKUAT (disarankan): batasi ke akun Google keluarga ---
+    // Jika nanti app memakai Login Google, ganti isMember() di bawah dengan:
+    //   request.auth != null
+    //   && request.auth.token.email_verified == true
+    //   && request.auth.token.email in ['ayah@gmail.com', 'ibu@gmail.com', 'adik@gmail.com']
+    // Dengan cara ini hash kode akses tidak lagi menjadi satu-satunya kunci.
+
     // Dokumen anggota hanya bisa dibuat kalau kode akses benar.
     // GANTI nilai di bawah dengan hash dari app (Pengaturan > Info > Buat hash kode akses),
     // dan nilai yang SAMA harus ada di ACCESS_CODE_HASH di index.html.
+    // PENTING: jangan simpan repo ini sebagai PUBLIK bila hash terisi (lihat KEAMANAN.md).
     match /members/{uid} {
       allow create: if request.auth != null
         && request.auth.uid == uid
@@ -20,9 +28,18 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // Semua data app (kas, emas, kucing, lokasi, riwayat, tempat, kabar) hanya untuk anggota.
+    // Semua data app (kas, emas, kucing, lokasi, riwayat, tempat, CCTV, kabar) hanya untuk anggota.
+    // Batas ukuran dokumen & jumlah field mencegah "sampah" besar dikirim lewat akun yang bocor.
     match /bukukas_shared/{document=**} {
-      allow read, write: if isMember();
+      allow read: if isMember();
+      allow create, update: if isMember()
+        && request.resource.data.keys().size() <= 60;
+      allow delete: if isMember();
+    }
+
+    // Semua jalur lain ditolak.
+    match /{other=**} {
+      allow read, write: if false;
     }
   }
 }

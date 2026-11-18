@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+*.keystore
+android.keystore
+SIMPAN-SEBAGAI-SECRET-*.txt
+.env
