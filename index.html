@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://cdnjs.cloudflare.com; media-src 'self' blob: data:; connect-src 'self' https://*.googleapis.com wss://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://api.telegram.org https://nominatim.openstreetmap.org https://router.project-osrm.org https://overpass-api.de https://api.gold-api.com https://open.er-api.com https://api.frankfurter.app https://cdn.jsdelivr.net https://*.workers.dev https://script.google.com https://script.googleusercontent.com https://api.anthropic.com https://api.groq.com https://openrouter.ai; frame-src https://*.firebaseapp.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; manifest-src 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://cdnjs.cloudflare.com; media-src 'self' blob: data:; connect-src 'self' https://*.googleapis.com wss://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://api.telegram.org https://nominatim.openstreetmap.org https://router.project-osrm.org https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://api.gold-api.com https://open.er-api.com https://api.frankfurter.app https://cdn.jsdelivr.net https://*.workers.dev https://script.google.com https://script.googleusercontent.com https://api.anthropic.com https://api.groq.com https://openrouter.ai; frame-src https://*.firebaseapp.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; manifest-src 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <script>if(window.top!==window.self){document.documentElement.style.display="none";try{window.top.location=window.self.location;}catch(e){}}</script>
 <title>Buku Kas — Catatan Keuangan &amp; Tabungan Emas</title>
@@ -1941,7 +1941,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.11.0';
+const APP_VERSION = '2.11.1';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -5354,8 +5354,8 @@ async function geoPump(){
 function geoClearQueue(){ geo.q.splice(0).forEach(i=>i.res(null)); }
 
 // ----- Data OpenStreetMap: lampu lalu lintas & kamera pengawas (Overpass) -----
-const OVP_URL = 'https://overpass-api.de/api/interpreter';
-const ovp = { cells:[], items:new Map(), busy:false, lastErrAt:0 };
+const OVP_URLS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://overpass.private.coffee/api/interpreter'];
+const ovp = { cells:[], items:new Map(), pending:null, lastErrAt:0, lastErr:'' };
 function ovpKind(it){
   const t = it.tags || {};
   if(t.highway === 'traffic_signals') return 'sig';
@@ -5363,28 +5363,44 @@ function ovpKind(it){
   if(t.man_made === 'surveillance' && t.surveillance !== 'indoor') return 'cam';
   return null;
 }
+async function ovpQuery(q){
+  let lastErr = '';
+  for(const url of OVP_URLS){
+    try{
+      const ctl = new AbortController(), to = setTimeout(()=>ctl.abort(), 20000);
+      const r = await fetch(url, { method:'POST', body:'data=' + encodeURIComponent(q), headers:{ 'Content-Type':'application/x-www-form-urlencoded' }, signal:ctl.signal });
+      clearTimeout(to);
+      if(!r.ok){ lastErr = 'HTTP ' + r.status; continue; }
+      const j = await r.json();
+      if(j && Array.isArray(j.elements)) return j;
+      lastErr = 'respons kosong';
+    }catch(e){ lastErr = (e && e.name === 'AbortError') ? 'waktu habis' : 'koneksi gagal'; }
+  }
+  throw new Error(lastErr || 'gagal');
+}
 async function ovpLoadBox(s, w, n, e){
   if((n - s) > 0.06 || (e - w) > 0.06) return false;       // area terlalu luas
   const now = Date.now();
   if(ovp.cells.some(c=>now - c.t < 15*60*1000 && s >= c.s && w >= c.w && n <= c.n && e <= c.e)) return true;
-  if(ovp.busy || now - ovp.lastErrAt < 20000) return false;
-  ovp.busy = true;
+  // permintaan lain sedang berjalan: tunggu dulu, lalu cek ulang (bukan ditolak)
+  while(ovp.pending){ try{ await ovp.pending; }catch(err){} }
+  if(ovp.cells.some(c=>Date.now() - c.t < 15*60*1000 && s >= c.s && w >= c.w && n <= c.n && e <= c.e)) return true;
+  if(Date.now() - ovp.lastErrAt < 6000) return false;
   const dy = (n - s)*0.5, dx = (e - w)*0.5;
   const S = s - dy, W = w - dx, N = n + dy, E = e + dx;
   const bb = `${S.toFixed(5)},${W.toFixed(5)},${N.toFixed(5)},${E.toFixed(5)}`;
   const q = `[out:json][timeout:20];(node["highway"="traffic_signals"](${bb});node["man_made"="surveillance"](${bb});node["highway"="speed_camera"](${bb}););out body 700;`;
+  const job = ovpQuery(q);
+  ovp.pending = job;
   try{
-    const ctl = new AbortController(), to = setTimeout(()=>ctl.abort(), 22000);
-    const r = await fetch(OVP_URL, { method:'POST', body:'data=' + encodeURIComponent(q), headers:{ 'Content-Type':'application/x-www-form-urlencoded' }, signal:ctl.signal });
-    clearTimeout(to);
-    if(!r.ok) throw new Error('HTTP ' + r.status);
-    const j = await r.json();
-    (j.elements || []).forEach(el=>{ if(el.type === 'node' && typeof el.lat === 'number') ovp.items.set(el.id, { id:el.id, lat:el.lat, lng:el.lon, tags:el.tags || {} }); });
-    ovp.cells.push({ s:S, w:W, n:N, e:E, t:now });
+    const j = await job;
+    j.elements.forEach(el=>{ if(el.type === 'node' && typeof el.lat === 'number') ovp.items.set(el.id, { id:el.id, lat:el.lat, lng:el.lon, tags:el.tags || {} }); });
+    ovp.cells.push({ s:S, w:W, n:N, e:E, t:Date.now() });
     if(ovp.cells.length > 24) ovp.cells.shift();
+    ovp.lastErr = '';
     return true;
-  }catch(err){ ovp.lastErrAt = Date.now(); return false; }
-  finally{ ovp.busy = false; }
+  }catch(err){ ovp.lastErrAt = Date.now(); ovp.lastErr = (err && err.message) || 'gagal'; return false; }
+  finally{ ovp.pending = null; }
 }
 
 // ----- Gaya peta + lapisan -----
@@ -5427,14 +5443,24 @@ function mkApplyStyle(c, announce){
   if(announce) showToast('Peta: ' + s.label);
 }
 function mkHint(c, txt){ if(!c.hint) return; c.hint.textContent = txt || ''; c.hint.classList.toggle('hidden', !txt); }
-async function mkRefresh(c){
+async function mkRefresh(c, retry){
   if(!c.map || !c.map._loaded) return;
   if(!c.on.sig && !c.on.cctv){ c.sig.clearLayers(); c.cam.clearLayers(); mkHint(c, ''); return; }
   if(c.map.getZoom() < 15){ c.sig.clearLayers(); c.cam.clearLayers(); mkHint(c, 'Dekatkan peta (zoom ≥ 15) untuk melihat lampu merah & CCTV'); return; }
+  mkHint(c, '⏳ Memuat lampu merah & CCTV…');
   const b = c.map.getBounds();
   const ok = await ovpLoadBox(b.getSouth(), b.getWest(), b.getNorth(), b.getEast());
   mkDraw(c);
-  mkHint(c, ok ? '' : 'Data lampu/CCTV belum bisa dimuat (cek internet). Coba geser peta lagi.');
+  if(!ok){
+    mkHint(c, `Data lampu/CCTV gagal dimuat (${ovp.lastErr || 'jaringan'}). Mencoba lagi…`);
+    if(!retry){ clearTimeout(c.rt); c.rt = setTimeout(()=>mkRefresh(c, true), 7000); }
+    return;
+  }
+  const bb = c.map.getBounds().pad(0.3); let ns = 0, nc = 0;
+  for(const it of ovp.items.values()){ if(!bb.contains([it.lat, it.lng])) continue; const k = ovpKind(it); if(k === 'sig') ns++; else if(k === 'cam') nc++; }
+  nc += locCctv.filter(x=>bb.contains([x.lat, x.lng])).length;
+  mkHint(c, `🚦 ${ns} lampu • 📹 ${nc} CCTV di area ini${(ns + nc) === 0 ? ' (data OpenStreetMap di sini masih kosong)' : ''}`);
+  clearTimeout(c.ht); c.ht = setTimeout(()=>mkHint(c, ''), 6000);
 }
 function mkSigPopup(it){
   const h = (typeof rideSt !== 'undefined' && rideSt.lights && rideSt.lights[it.id]) || [];
@@ -6116,7 +6142,7 @@ function rlEnsure(lat, lng){
   if(RL.q && locDistanceM(RL.q, { lat, lng }) < 500 && now - RL.q.t < 10*60*1000) return;
   RL.q = { lat, lng, t:now };
   const d = 0.012;
-  ovpLoadBox(lat - d, lng - d, lat + d, lng + d).then(ok=>{ if(!ok) RL.q = null; });
+  ovpLoadBox(lat - d, lng - d, lat + d, lng + d).then(ok=>{ if(!ok) RL.q = null; else if(typeof nv !== 'undefined' && nv.mk) mkDraw(nv.mk); });
 }
 function rlOnFix(f){
   rlEnsure(f.lat, f.lng);
