@@ -143,7 +143,7 @@ async function login(env) {
       if (!first) first = e;
     }
   }
-  throw { ...first, tried: combos.map((c) => c.join("+")) };
+  throw { ...first, tried: combos.map((c) => c.join("+")), accountLen: String(env.ACCOUNT || "").trim().length, pwdLen: pwd.length };
 }
 
 async function loginWith(env, loginType, pwdValue) {
