@@ -8,3 +8,4 @@ workers_dev = true
 [vars]
 ALLOW_ORIGIN = "https://tepangbkj-droid.github.io"
 TIMEZONE = "7"
+LOGIN_TYPE = "USER"
