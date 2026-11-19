@@ -102,8 +102,8 @@ async function loginWith(env, loginType) {
   if (!env.ACCOUNT || !env.PASSWORD) throw { step: "config", error: "ACCOUNT/PASSWORD belum diisi" };
 
   const body = new URLSearchParams({
-    userName: env.ACCOUNT,
-    pwd: env.PASSWORD, // portal mengirim password apa adanya (setPwdValue dikomentari di core-51.js)
+    userName: String(env.ACCOUNT).trim(),
+    pwd: String(env.PASSWORD).trim(), // portal mengirim password apa adanya (setPwdValue dikomentari di core-51.js)
     loginType,
     loginUrl: PORTAL + "/",
     timeZone: env.TIMEZONE || "7",
@@ -173,7 +173,7 @@ async function fetchPos(env, s) {
     custid: env.CUSTID || s.loginId,
     mapType: "GOOGLE",
     option: "en",
-    user_id: env.USER_ID,
+    user_id: String(env.USER_ID).trim(),
     callback: "startTrack",
     mds: s.mds,
     t: String(Date.now()),
@@ -212,6 +212,56 @@ async function fetchPos(env, s) {
     heartbeatMs: parseTime(fields.heart_time, env.TIMEZONE || "7"),
     fields,
   };
+}
+
+// Sumber utama: loadUser (format sudah terbukti dari portal). Field: jingdu/weidu/sudu/datetime/heart_time/alarm.
+async function fetchLoadUser(env, s) {
+  const q = new URLSearchParams({
+    method: "loadUser",
+    callback: "loadUserCallBack",
+    school_id: env.SCHOOL_ID || s.loginId,
+    custid: env.CUSTID || s.loginId,
+    user_id: String(env.USER_ID).trim(),
+    mds: s.mds,
+  });
+  const headers = { "user-agent": UA, accept: "*/*", referer: `${PORTAL}/user/main.html` };
+  if (s.cookie) headers.cookie = s.cookie;
+  const res = await fetch(`${PORTAL}/GetDataService.aspx?${q}`, { headers });
+  const text = await res.text();
+  const m = text.match(/^[^(]*\(([\s\S]*)\)\s*;?\s*$/);
+  let j;
+  try {
+    j = JSON.parse(m ? m[1] : text);
+  } catch (e) {
+    return { ok: false, step: "loadUser", error: "balasan bukan JSON", status: res.status, sample: mask(text).slice(0, 300) };
+  }
+  const d = j && Array.isArray(j.data) ? j.data[0] : null;
+  if (!d) return { ok: false, step: "loadUser", error: (j && j.errorDescribe) || "data kosong (USER_ID salah?)", status: res.status };
+  const tz = env.TIMEZONE || "7";
+  return {
+    ok: true,
+    source: "loadUser",
+    fetchedAt: new Date().toISOString(),
+    name: d.user_name,
+    lat: Number(d.weidu),
+    lon: Number(d.jingdu),
+    speed: Number(d.sudu) || 0,
+    heading: null,
+    alarm: d.alarm,
+    positionTime: d.datetime,
+    positionMs: parseTime(d.datetime, tz),
+    heartbeat: d.heart_time,
+    heartbeatMs: parseTime(d.heart_time, tz),
+    fields: d,
+  };
+}
+
+// Coba loadUser dulu; jika gagal, pakai metode lama (TrackService).
+async function fetchAny(env, s) {
+  const a = await fetchLoadUser(env, s).catch((e) => ({ ok: false, step: "loadUser", error: String(e) }));
+  if (a.ok) return a;
+  const b = await fetchPos(env, s);
+  return b.ok ? b : { ...b, loadUserError: a.error || a.step };
 }
 
 let posCache = null; // { at, out }  cache 15 dtk supaya beberapa HP keluarga tidak membebani portal
@@ -257,11 +307,11 @@ export default {
           return json(shape({ ...posCache.out, cached: true }, raw), 200, env);
         }
         let s = await getSession(env, false);
-        let out = await fetchPos(env, s);
+        let out = await fetchAny(env, s);
         if (!out.ok) {
           // sesi mungkin kedaluwarsa: login ulang sekali lalu coba lagi
           s = await getSession(env, true);
-          out = await fetchPos(env, s);
+          out = await fetchAny(env, s);
         }
         if (out.ok) posCache = { at: Date.now(), out };
         return json(out.ok ? shape(out, raw) : out, out.ok ? 200 : 502, env);
