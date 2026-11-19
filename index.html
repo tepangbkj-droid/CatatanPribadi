@@ -1223,6 +1223,7 @@
         <summary style="font-weight:700;font-size:13.5px;cursor:pointer;">🛠️ Diagnostik GPS &amp; notifikasi</summary>
         <pre id="locDiag" style="white-space:pre-wrap;font-size:12px;line-height:1.55;margin:10px 0;color:var(--ink-soft);"></pre>
         <button class="btn btn-ghost" id="btnLocRestart" style="width:100%;">🔁 Coba ulang GPS</button>
+        <button class="btn btn-ghost" id="btnGpsTest" style="width:100%;margin-top:8px;">🛰️ Tes GPS tracker</button>
       </details>
       <div class="loc-strip" id="locStrip"></div>
       <div class="loc-mapbox">
@@ -1925,6 +1926,14 @@ const TELEGRAM_PROXY_KEY = "";
 const SOS_PUSH_URL = "https://script.google.com/macros/s/AKfycby_C572ajKQGw_vGQZd0-J9axNt0Q1Pc1EGLhS-xcmB6NULbEIw9ZJM0duq1A7TXCRP/exec";
 const SOS_PUSH_KEY = "Tepangbkjaja305";
 
+// ---- GPS Tracker (Cantrack) lewat Cloudflare Worker (folder gps-worker/) ----
+// GPS_WORKER_URL = alamat worker, mis. https://gps-worker.NAMAKAMU.workers.dev
+// GPS_WORKER_KEY = sama persis dengan secret GPS_APP_KEY di GitHub. Kosong = fitur mati.
+const GPS_WORKER_URL = "";
+const GPS_WORKER_KEY = "";
+const GPS_TRACKER_NAME = "Kendaraan";   // nama yang tampil di peta & daftar
+const GPS_MOVING_KMH = 5;               // di atas ini dianggap "bergerak"
+
 // ---- KODE AKSES (agar orang tak dikenal tidak bisa membuka data) ----
 // Kosong = gembok MATI. Untuk mengaktifkan: buka app → Pengaturan → Info → "Buat kode akses",
 // salin hasil hash-nya ke ACCESS_CODE_HASH di bawah, lalu pasang aturan di firestore.rules (lihat KEAMANAN.md).
@@ -1942,7 +1951,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.11.2';
+const APP_VERSION = '2.12.0';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -2489,6 +2498,7 @@ function locDayLabel(ms){
   return d.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'short' });
 }
 function locIni(name){ return escapeHtml((name || '?').trim().charAt(0).toUpperCase() || '?'); }
+function locMark(m){ return m && m.icon ? escapeHtml(m.icon) : locIni(m && m.name); }
 function locHasPos(m){ return !!m && m.sharing && typeof m.lat === 'number' && typeof m.lng === 'number'; }
 function locIsFresh(m){ return locHasPos(m) && m.updatedMs && (Date.now()-m.updatedMs) < LOC_STALE_MS; }
 function locPlaceAt(p){
@@ -2504,6 +2514,7 @@ function locClassify(v){ return v < 0.8 ? 'diam' : v < 2.3 ? 'jalan' : v < 6 ? '
 function locMembersEff(){
   const myId = locDeviceId();
   const list = locMembers.map(m=>({ ...m }));
+  const trk = gpsMember(); if(trk) list.push(trk);
   if(!locIsSharing()) return list;
   let me = list.find(m=>m.id === myId);
   if(!me){ me = { id:myId }; list.push(me); }
@@ -2513,6 +2524,38 @@ function locMembersEff(){
   return list;
 }
 const locAll = () => locMembersEff();
+
+// ----- GPS Tracker (Cantrack) via Cloudflare Worker -----
+// Ditampilkan sebagai "anggota" tambahan di peta & daftar. Dibaca tiap ~20 dtk selama tab Lokasi terbuka.
+const GPS_TRACKER_ID = 'gps-tracker', GPS_POLL_MIN_MS = 15000;
+let gpsTrk = null, gpsErr = '', gpsBusy = false, gpsLastTry = 0, gpsOkAt = 0;
+function gpsConfigured(){ return !!GPS_WORKER_URL && !!GPS_WORKER_KEY; }
+function gpsMember(){
+  if(!gpsConfigured() || !gpsTrk) return null;
+  const lat = Number(gpsTrk.lat), lng = Number(gpsTrk.lon);
+  if(!isFinite(lat) || !isFinite(lng) || (!lat && !lng)) return null;
+  const kmh = Math.max(0, Math.round(Number(gpsTrk.speed) || 0));
+  const updatedMs = Number(gpsTrk.positionMs) || Date.parse(gpsTrk.fetchedAt) || gpsOkAt;
+  return { id:GPS_TRACKER_ID, isTracker:true, name:GPS_TRACKER_NAME, icon:'🚗', color:'#F5A324', sharing:true,
+    lat, lng, accuracy:0, updatedMs, speedKmh:kmh, mode: kmh >= GPS_MOVING_KMH ? 'kendara' : 'diam' };
+}
+async function gpsPoll(force){
+  if(!gpsConfigured() || gpsBusy) return;
+  if(!force && Date.now() - gpsLastTry < GPS_POLL_MIN_MS) return;
+  gpsBusy = true; gpsLastTry = Date.now();
+  const ctl = new AbortController(), to = setTimeout(()=>ctl.abort(), 20000);
+  try{
+    const r = await fetch(GPS_WORKER_URL.replace(/\/+$/, '') + '/pos', { headers:{ 'x-api-key': GPS_WORKER_KEY }, cache:'no-store', signal:ctl.signal });
+    const j = await r.json().catch(()=>null);
+    if(!r.ok || !j || !j.ok) throw new Error(j && (j.error || j.step) ? `${j.step ? j.step + ': ' : ''}${j.error || 'gagal'}` : 'HTTP ' + r.status);
+    gpsTrk = j; gpsErr = ''; gpsOkAt = Date.now();
+  }catch(e){
+    gpsErr = e && e.name === 'AbortError' ? 'timeout' : ((e && e.message) || String(e));
+  }
+  clearTimeout(to);
+  gpsBusy = false;
+  renderLokasi();
+}
 
 function attachLokasiListener(){
   if(locListenerOn) return;
@@ -2584,7 +2627,7 @@ function locTickFn(){
     if(locTrip && now - locTrip.lastMoveAt >= LOC_TRIP_END_MS) locEndTrip();
     if(locLastPos && now - locLastWrite >= LOC_HEARTBEAT) locWriteState();
   }
-  if(activeTab === 'lokasi') renderLokasi();
+  if(activeTab === 'lokasi'){ gpsPoll(false); renderLokasi(); }
 }
 
 function locNotify(title, body){ if(locStore('loc_notif') === 'on') appNotify(title, body, false); }
@@ -3050,7 +3093,7 @@ function locSubscribeTrips(id){
 function locAvaHtml(m){
   const mi = MODE_INFO[m.mode], fresh = locIsFresh(m);
   const badge = fresh && m.mode && m.mode !== 'diam' && mi ? `<i class="loc-badge">${mi.ic}</i>` : '';
-  return `<div class="loc-ava${locHasPos(m) ? '' : ' off'}" style="background:${escapeHtml(m.color || '#14B8A6')};--ava:${escapeHtml(m.color || '#14B8A6')}"><span>${locIni(m.name)}</span>${badge}</div>`;
+  return `<div class="loc-ava${locHasPos(m) ? '' : ' off'}" style="background:${escapeHtml(m.color || '#14B8A6')};--ava:${escapeHtml(m.color || '#14B8A6')}"><span>${locMark(m)}</span>${badge}</div>`;
 }
 function renderLokasi(){
   if(!document.getElementById('locList')) return;
@@ -3066,7 +3109,7 @@ function renderLokasi(){
     : 'Lokasi hanya dibagikan setelah kamu menekan tombol di atas, dan bisa dimatikan kapan saja.';
 
   const live = locAll().filter(locHasPos);
-  document.getElementById('locHeroTitle').textContent = (n=>n ? `${n} orang berbagi lokasi` : 'Belum ada yang berbagi')(locAll().filter(m=>m.sharing).length);
+  document.getElementById('locHeroTitle').textContent = (n=>n ? `${n} orang berbagi lokasi` : 'Belum ada yang berbagi')(locAll().filter(m=>m.sharing && !m.isTracker).length);
   const mi = MODE_INFO[locMode];
   document.getElementById('locHeroAct').textContent = sharing ? mi.ic : '📍';
   document.getElementById('locHeroSub').textContent = sharing
@@ -3096,7 +3139,9 @@ function renderLokasi(){
       const pl = has ? locPlaceAt(m) : null;
       let l1, l2 = '';
       if(has){
-        l1 = fresh ? `${info.ic} ${info.label}${m.speedKmh && m.mode !== 'diam' ? ' • ' + m.speedKmh + ' km/j' : ''}` : '🕒 Terakhir terlihat';
+        l1 = m.isTracker
+          ? (fresh ? (m.mode === 'diam' ? '🅿️ Berhenti' : `🚗 Bergerak • ${m.speedKmh} km/j`) : '🕒 Terakhir terlihat')
+          : fresh ? `${info.ic} ${info.label}${m.speedKmh && m.mode !== 'diam' ? ' • ' + m.speedKmh + ' km/j' : ''}` : '🕒 Terakhir terlihat';
         if(pl) l1 += ` • di ${pl.icon || '📍'} ${pl.name}`;
         if(fresh && m.mode === 'diam' && m.modeSince) l1 += ` • sejak ${locClock(m.modeSince)}`;
         l2 = `${fresh ? '📍 Diperbarui' : '⏱️'} ${locRel(m.updatedMs)}${m.accuracy ? ' • ±' + m.accuracy + ' m' : ''}`;
@@ -3107,6 +3152,7 @@ function renderLokasi(){
       const extra = [];
       if(typeof m.battery === 'number') extra.push(`${m.charging ? '🔌' : (m.battery <= 15 ? '🪫' : '🔋')} ${m.battery}%`);
       if(has && myPos && !isMe) extra.push(`↔ ${locFmtDist(locDistanceM(myPos, m))} darimu`);
+      if(m.isTracker){ extra.unshift('🛰️ GPS tracker'); if(gpsErr) extra.push('⚠️ gagal memperbarui: ' + gpsErr); }
       const maps = has ? `https://www.google.com/maps?q=${m.lat},${m.lng}` : '';
       return `
         <div class="loc-row${locSelectedId===m.id?' sel':''}">
@@ -3122,8 +3168,8 @@ function renderLokasi(){
           <div class="loc-acts">
             ${has ? `<button class="link-btn teal" data-locact="focus" data-id="${escapeHtml(m.id)}">🗺️ Cek lokasi</button>
             <a class="link-btn" href="${maps}" target="_blank" rel="noopener">↗ Maps</a>` : ''}
-            <button class="link-btn" data-locact="hist" data-id="${escapeHtml(m.id)}">🧭 Riwayat</button>
-            ${!isMe ? `<button class="link-btn amber" data-locact="ping" data-id="${escapeHtml(m.id)}">🔔 Minta update</button>${isAdmin() ? `<button class="link-btn rose" data-locact="admindel" data-id="${escapeHtml(m.id)}">🗑️ Hapus</button>` : ''}` : `<button class="link-btn rose" data-locact="remove" data-id="${escapeHtml(m.id)}">🗑️ Hapus saya</button>`}
+            ${m.isTracker ? '' : `<button class="link-btn" data-locact="hist" data-id="${escapeHtml(m.id)}">🧭 Riwayat</button>`}
+            ${m.isTracker ? '' : !isMe ? `<button class="link-btn amber" data-locact="ping" data-id="${escapeHtml(m.id)}">🔔 Minta update</button>${isAdmin() ? `<button class="link-btn rose" data-locact="admindel" data-id="${escapeHtml(m.id)}">🗑️ Hapus</button>` : ''}` : `<button class="link-btn rose" data-locact="remove" data-id="${escapeHtml(m.id)}">🗑️ Hapus saya</button>`}
           </div>
         </div>`;
     }).join('');
@@ -3184,6 +3230,8 @@ function renderLocDiag(){
     `Capacitor API  : Plugins=${window.Capacitor && window.Capacitor.Plugins ? 'ya' : 'tidak'}, register=${window.Capacitor && window.Capacitor.registerPlugin ? 'ya' : 'tidak'}, bridge=${window.Capacitor && window.Capacitor.nativePromise ? 'ya' : 'tidak'}`,
     `Jalur plugin   : lokasi=${capVia.BackgroundGeolocation || '-'}, notif=${capVia.LocalNotifications || '-'}`,
     `Izin kamera    : ${locCamPerm}`,
+    `GPS tracker    : ${!gpsConfigured() ? 'belum diatur (isi GPS_WORKER_URL & GPS_WORKER_KEY di index.html)' : gpsErr ? 'ERROR ' + gpsErr : gpsTrk ? 'ok, data ' + locRel((gpsMember() || {}).updatedMs) : 'menunggu…'}`,
+    `  waktu portal : ${gpsTrk ? (gpsTrk.positionTime || '-') : '-'} | kecepatan mentah: ${gpsTrk ? gpsTrk.speed : '-'}`,
     `Push SOS       : ${pushState}`,
     `Admin          : ${adminErr ? 'ERROR ' + adminErr : !adminLoaded ? 'listener belum aktif' : !adminCfg ? 'belum ada admin' : isAdmin() ? 'kamu admin' : 'ada admin, kamu belum masuk'}`,
     `SOS kirim err : ${sosLastErr || '-'}`,
@@ -3192,7 +3240,14 @@ function renderLocDiag(){
   ].join('\n');
 }
 document.getElementById('btnLocRestart').addEventListener('click', locRestartGps);
+document.getElementById('btnGpsTest').addEventListener('click', async ()=>{
+  if(!gpsConfigured()){ showToast('Isi GPS_WORKER_URL & GPS_WORKER_KEY di index.html dulu', true); return; }
+  showToast('Mengetes GPS tracker…');
+  await gpsPoll(true);
+  if(gpsErr) showToast('GPS tracker gagal: ' + gpsErr, true); else showToast('GPS tracker tersambung ✅');
+});
 function onLokasiTabShown(){
+  gpsPoll(false);
   locEnsureMap();
   renderLokasi();
   if(locMap) setTimeout(()=>{ locMap.invalidateSize(); if(locMk) mkRefresh(locMk); }, 120);
@@ -5757,7 +5812,7 @@ function locPinIcon(m){
   const col = escapeHtml(m.color || '#14B8A6');
   return L.divIcon({
     className:'', iconSize:[36,36], iconAnchor:[18,36],
-    html:`<div class="loc-wrap${moving ? ' pulse' : ''}" style="--c:${col}"><i class="loc-ring"></i><div class="loc-pin" style="background:${col}"><span>${locIni(m.name)}</span>${badge}</div></div>`
+    html:`<div class="loc-wrap${moving ? ' pulse' : ''}" style="--c:${col}"><i class="loc-ring"></i><div class="loc-pin" style="background:${col}"><span>${locMark(m)}</span>${badge}</div></div>`
   });
 }
 function locUpdateMap(){
@@ -5852,13 +5907,13 @@ function renderLiveCard(m){
 function renderLokasiHistory(){
   const who = document.getElementById('locHistWho');
   if(!who) return;
-  const named = locAll().filter(m=>m.name);
+  const named = locAll().filter(m=>m.name && !m.isTracker);
   if(!locHistWho || !named.find(m=>m.id === locHistWho)){
     const pick = named.find(m=>m.id === locDeviceId()) || named[0];
     const nid = pick ? pick.id : null;
     if(nid !== locHistWho){ locHistWho = nid; locSubscribeTrips(nid); }
   }
-  who.innerHTML = named.map(m=>`<button class="${m.id === locHistWho ? 'active' : ''}" data-locact="histwho" data-id="${escapeHtml(m.id)}"><span class="wa" style="background:${escapeHtml(m.color || '#14B8A6')}">${locIni(m.name)}</span>${escapeHtml(m.id === locDeviceId() ? 'Aku' : m.name)}${locIsFresh(m) && m.tripSince ? '<i class="ld"></i>' : ''}</button>`).join('');
+  who.innerHTML = named.map(m=>`<button class="${m.id === locHistWho ? 'active' : ''}" data-locact="histwho" data-id="${escapeHtml(m.id)}"><span class="wa" style="background:${escapeHtml(m.color || '#14B8A6')}">${locMark(m)}</span>${escapeHtml(m.id === locDeviceId() ? 'Aku' : m.name)}${locIsFresh(m) && m.tripSince ? '<i class="ld"></i>' : ''}</button>`).join('');
   const selMember = named.find(m=>m.id === locHistWho);
   const liveBox = document.getElementById('locLive');
   if(liveBox) liveBox.innerHTML = renderLiveCard(selMember);
