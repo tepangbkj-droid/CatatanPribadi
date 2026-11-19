@@ -8,6 +8,7 @@
 //   APP_KEY    kata sandi buatanmu sendiri; aplikasi mengirimnya lewat header x-api-key
 //   SCHOOL_ID, CUSTID (opsional) isi hanya jika /pos gagal; default memakai login_id dari login
 //   LOGIN_TYPE (opsional) kosong = coba ENTERPRISE lalu USER otomatis; isi hanya untuk memaksa salah satunya
+//   PWD_MODE   (opsional) kosong = coba md5(md5(pwd)) lalu teks biasa; isi "md5" atau "plain" untuk memaksa
 //   TIMEZONE   (opsional) default 7
 //   ALLOW_ORIGIN (opsional) alamat aplikasimu untuk CORS (diisi otomatis dari wrangler.toml)
 //
@@ -83,27 +84,74 @@ function cookiesFrom(res, prev) {
   return Object.entries(jar).map(([k, v]) => `${k}=${v}`).join("; ");
 }
 
-// Tanpa LOGIN_TYPE: coba ENTERPRISE (tab Account) dulu, lalu USER bila ditolak.
-async function login(env) {
-  if (env.LOGIN_TYPE) return loginWith(env, env.LOGIN_TYPE);
-  try {
-    return await loginWith(env, "ENTERPRISE");
-  } catch (e1) {
-    if (!e1 || e1.step !== "login") throw e1;
-    try {
-      return await loginWith(env, "USER");
-    } catch (e2) {
-      throw { ...e1, tried: ["ENTERPRISE", "USER"] };
+// MD5 murni (tanpa dependensi) untuk meniru loginEncoding.js milik portal: pwd = md5(md5(password))
+function md5hex(str) {
+  const msg = new TextEncoder().encode(str);
+  const n = msg.length;
+  const total = (((n + 8) >> 6) + 1) << 6;
+  const buf = new Uint8Array(total);
+  buf.set(msg);
+  buf[n] = 0x80;
+  const dv = new DataView(buf.buffer);
+  dv.setUint32(total - 8, (n * 8) >>> 0, true);
+  dv.setUint32(total - 4, Math.floor((n * 8) / 4294967296), true);
+  const S = [7,12,17,22,7,12,17,22,7,12,17,22,7,12,17,22,5,9,14,20,5,9,14,20,5,9,14,20,5,9,14,20,4,11,16,23,4,11,16,23,4,11,16,23,4,11,16,23,6,10,15,21,6,10,15,21,6,10,15,21,6,10,15,21];
+  const K = Array.from({ length: 64 }, (_, i) => Math.floor(Math.abs(Math.sin(i + 1)) * 4294967296) >>> 0);
+  let a0 = 0x67452301, b0 = 0xefcdab89, c0 = 0x98badcfe, d0 = 0x10325476;
+  for (let off = 0; off < total; off += 64) {
+    const M = new Uint32Array(16);
+    for (let i = 0; i < 16; i++) M[i] = dv.getUint32(off + i * 4, true);
+    let A = a0, B = b0, C = c0, D = d0;
+    for (let i = 0; i < 64; i++) {
+      let F, g;
+      if (i < 16) { F = (B & C) | (~B & D); g = i; }
+      else if (i < 32) { F = (D & B) | (~D & C); g = (5 * i + 1) % 16; }
+      else if (i < 48) { F = B ^ C ^ D; g = (3 * i + 5) % 16; }
+      else { F = C ^ (B | ~D); g = (7 * i) % 16; }
+      F = (F + A + K[i] + M[g]) >>> 0;
+      A = D; D = C; C = B;
+      B = (B + (((F << S[i]) | (F >>> (32 - S[i]))) >>> 0)) >>> 0;
     }
+    a0 = (a0 + A) >>> 0; b0 = (b0 + B) >>> 0; c0 = (c0 + C) >>> 0; d0 = (d0 + D) >>> 0;
   }
+  let out = "";
+  for (const v of [a0, b0, c0, d0]) for (let i = 0; i < 4; i++) out += ((v >>> (i * 8)) & 255).toString(16).padStart(2, "0");
+  return out;
 }
 
-async function loginWith(env, loginType) {
+let loginCombo = null; // kombinasi yang pernah berhasil, dicoba lebih dulu
+
+// Tanpa LOGIN_TYPE / PWD_MODE: coba semua kombinasi (jenis login x bentuk password) sampai ada yang berhasil.
+async function login(env) {
+  const pwd = String(env.PASSWORD || "").trim();
+  const types = env.LOGIN_TYPE ? [env.LOGIN_TYPE] : ["ENTERPRISE", "USER"];
+  const modes = env.PWD_MODE === "plain" ? ["plain"] : env.PWD_MODE === "md5" ? ["md5"] : ["md5", "plain"];
+  const combos = [];
+  for (const m of modes) for (const t of types) combos.push([t, m]);
+  if (loginCombo) {
+    const i = combos.findIndex((c) => c[0] === loginCombo[0] && c[1] === loginCombo[1]);
+    if (i > 0) combos.unshift(combos.splice(i, 1)[0]);
+  }
+  let first = null;
+  for (const [t, m] of combos) {
+    try {
+      const s = await loginWith(env, t, m === "md5" ? md5hex(md5hex(pwd)) : pwd);
+      loginCombo = [t, m];
+      return s;
+    } catch (e) {
+      if (!e || e.step !== "login") throw e;
+      if (!first) first = e;
+    }
+  }
+  throw { ...first, tried: combos.map((c) => c.join("+")) };
+}
+
+async function loginWith(env, loginType, pwdValue) {
   if (!env.ACCOUNT || !env.PASSWORD) throw { step: "config", error: "ACCOUNT/PASSWORD belum diisi" };
 
   const body = new URLSearchParams({
     userName: String(env.ACCOUNT).trim(),
-    pwd: String(env.PASSWORD).trim(), // portal mengirim password apa adanya (setPwdValue dikomentari di core-51.js)
+    pwd: pwdValue,
     loginType,
     loginUrl: PORTAL + "/",
     timeZone: env.TIMEZONE || "7",
