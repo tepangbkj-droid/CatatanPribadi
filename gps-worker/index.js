@@ -8,7 +8,7 @@
 //   APP_KEY    kata sandi buatanmu sendiri; aplikasi mengirimnya lewat header x-api-key
 //   SCHOOL_ID, CUSTID (opsional) isi hanya jika /pos gagal; default memakai login_id dari login
 //   LOGIN_TYPE (opsional) kosong = coba ENTERPRISE lalu USER otomatis; isi hanya untuk memaksa salah satunya
-//   PWD_MODE   (opsional) kosong = coba md5(md5(pwd)) lalu teks biasa; isi "md5" atau "plain" untuk memaksa
+//   PWD_MODE   (opsional) kosong = password dikirim apa adanya (sesuai form portal); "md5" = md5(md5(pwd)); "auto" = coba keduanya
 //   TIMEZONE   (opsional) default 7
 //   ALLOW_ORIGIN (opsional) alamat aplikasimu untuk CORS (diisi otomatis dari wrangler.toml)
 //
@@ -120,12 +120,19 @@ function md5hex(str) {
 }
 
 let loginCombo = null; // kombinasi yang pernah berhasil, dicoba lebih dulu
+let loginFail = null;  // { at, err } hasil gagal terakhir: mencegah akun terkunci karena percobaan beruntun
+const LOGIN_FAIL_PAUSE_MS = 60 * 1000;
 
-// Tanpa LOGIN_TYPE / PWD_MODE: coba semua kombinasi (jenis login x bentuk password) sampai ada yang berhasil.
-async function login(env) {
+// Form login portal (login.js) mengirim password APA ADANYA (baris md5 dikomentari). Login IMEI memakai loginType=USER.
+// Default: coba USER lalu ENTERPRISE untuk IMEI (15 digit), sebaliknya untuk akun biasa. Setelah gagal, jeda 60 dtk.
+async function login(env, bypassFail) {
+  if (!bypassFail && loginFail && Date.now() - loginFail.at < LOGIN_FAIL_PAUSE_MS) {
+    throw { ...loginFail.err, paused: true, retryInSec: Math.ceil((LOGIN_FAIL_PAUSE_MS - (Date.now() - loginFail.at)) / 1000) };
+  }
   const pwd = String(env.PASSWORD || "").trim();
-  const types = env.LOGIN_TYPE ? [env.LOGIN_TYPE] : ["ENTERPRISE", "USER"];
-  const modes = env.PWD_MODE === "plain" ? ["plain"] : env.PWD_MODE === "md5" ? ["md5"] : ["md5", "plain"];
+  const acc = String(env.ACCOUNT || "").trim();
+  const types = env.LOGIN_TYPE ? [env.LOGIN_TYPE] : /^\d{15}$/.test(acc) ? ["USER", "ENTERPRISE"] : ["ENTERPRISE", "USER"];
+  const modes = env.PWD_MODE === "md5" ? ["md5"] : env.PWD_MODE === "auto" ? ["plain", "md5"] : ["plain"];
   const combos = [];
   for (const m of modes) for (const t of types) combos.push([t, m]);
   if (loginCombo) {
@@ -137,25 +144,30 @@ async function login(env) {
     try {
       const s = await loginWith(env, t, m === "md5" ? md5hex(md5hex(pwd)) : pwd);
       loginCombo = [t, m];
+      loginFail = null;
       return s;
     } catch (e) {
       if (!e || e.step !== "login") throw e;
       if (!first) first = e;
     }
   }
-  throw { ...first, tried: combos.map((c) => c.join("+")), accountLen: String(env.ACCOUNT || "").trim().length, pwdLen: pwd.length };
+  const err = { ...first, tried: combos.map((c) => c.join("+")), accountLen: acc.length, pwdLen: pwd.length };
+  loginFail = { at: Date.now(), err };
+  throw err;
 }
 
 async function loginWith(env, loginType, pwdValue) {
   if (!env.ACCOUNT || !env.PASSWORD) throw { step: "config", error: "ACCOUNT/PASSWORD belum diisi" };
 
+  // Kolom sama seperti form login portal (doSubmit di login.js): pwd_ dikosongkan, pwd berisi password
   const body = new URLSearchParams({
     userName: String(env.ACCOUNT).trim(),
-    pwd: pwdValue,
+    pwd_: "",
     loginType,
     loginUrl: PORTAL + "/",
+    pwd: pwdValue,
     timeZone: env.TIMEZONE || "7",
-    language: "en",
+    language: "cn",
     monitor: "0",
   });
 
@@ -208,9 +220,9 @@ async function loginWith(env, loginType, pwdValue) {
   return { mds, loginId, cookie, at: Date.now() };
 }
 
-async function getSession(env, force) {
+async function getSession(env, force, bypassFail) {
   if (!force && session && Date.now() - session.at < SESSION_TTL) return session;
-  session = await login(env);
+  session = await login(env, bypassFail);
   return session;
 }
 
@@ -345,7 +357,7 @@ export default {
     try {
       if (path === "/debug") {
         // Tes login saja. Tidak menampilkan token.
-        const s = await getSession(env, true);
+        const s = await getSession(env, true, true);
         return json({ ok: true, loginOk: true, hasCookie: !!s.cookie, userIdSet: !!env.USER_ID }, 200, env);
       }
 
