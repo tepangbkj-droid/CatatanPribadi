@@ -1,0 +1,34 @@
+name: Deploy GPS Worker
+
+# Jalan otomatis tiap file di gps-worker/ berubah, atau tap "Run workflow" manual di tab Actions.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'gps-worker/**'
+      - '.github/workflows/deploy-gps-worker.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Deploy kode + kirim rahasia dari GitHub Secrets ke Cloudflare (rahasia tidak pernah ada di kode).
+      - name: Deploy ke Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: gps-worker
+          command: deploy
+          secrets: |
+            ACCOUNT
+            PASSWORD
+            USER_ID
+            APP_KEY
+        env:
+          ACCOUNT: ${{ secrets.GPS_ACCOUNT }}
+          PASSWORD: ${{ secrets.GPS_PASSWORD }}
+          USER_ID: ${{ secrets.GPS_USER_ID }}
+          APP_KEY: ${{ secrets.GPS_APP_KEY }}
