@@ -324,6 +324,48 @@ async function fetchAny(env, s) {
   return b.ok ? b : { ...b, loadUserError: a.error || a.step };
 }
 
+// Cek apakah portal bisa dijangkau dari Cloudflare (membedakan "password salah" dari "diblokir")
+async function probePortal() {
+  try {
+    const r = await fetch(PORTAL + "/", { headers: { "user-agent": UA }, redirect: "manual" });
+    const t = await r.text().catch(() => "");
+    return {
+      status: r.status,
+      server: r.headers.get("server"),
+      cfRay: !!r.headers.get("cf-ray"),
+      looksLikeLoginPage: /LoginByUser\.aspx|loginformBase/i.test(t),
+      blocked: r.status === 403 || r.status === 503 || /captcha|access denied|forbidden|cloudflare/i.test(t.slice(0, 2000)),
+      sample: mask(t).slice(0, 120),
+    };
+  } catch (e) {
+    return { error: String(e) };
+  }
+}
+
+// CADANGAN: API resmi gaya Gpsoo (belum diuji). Dipakai bila login portal gagal.
+// Opsional: API_BASE (default http://api.gpsoo.net/1), IMEI (pilih satu perangkat).
+async function fetchOfficial(env) {
+  const base = env.API_BASE || "http://api.gpsoo.net/1";
+  const now = Math.floor(Date.now() / 1000);
+  const pwd = String(env.PASSWORD || "").trim();
+  const sig = md5hex(md5hex(pwd) + now);
+  const acc = String(env.ACCOUNT || "").trim();
+  const tk = await (await fetch(`${base}/auth/access_token?account=${encodeURIComponent(acc)}&time=${now}&signature=${sig}`)).json().catch(() => ({}));
+  if (!tk.access_token) return { ok: false, step: "official-auth", error: "token API resmi tidak didapat", reply: mask(JSON.stringify(tk)).slice(0, 200) };
+  const res = await (await fetch(`${base}/account/monitor?target=${encodeURIComponent(acc)}&map_type=GOOGLE&access_token=${tk.access_token}`)).json().catch(() => ({}));
+  const list = res.data || [];
+  const d = (env.IMEI && list.find((x) => String(x.imei || x.sn) === String(env.IMEI).trim())) || list[0];
+  if (!d) return { ok: false, step: "official-monitor", error: "daftar perangkat kosong", reply: mask(JSON.stringify(res)).slice(0, 200) };
+  const tz = env.TIMEZONE || "7";
+  const when = d.gps_time || d.hearttime || d.time;
+  return {
+    ok: true, source: "official", fetchedAt: new Date().toISOString(),
+    name: d.name || d.imei, lat: Number(d.lat ?? d.latitude), lon: Number(d.lng ?? d.lon ?? d.longitude),
+    speed: Number(d.speed) || 0, heading: d.course ?? d.direction ?? null, alarm: null,
+    positionTime: when, positionMs: parseTime(when, tz), heartbeat: when, heartbeatMs: parseTime(when, tz), fields: d,
+  };
+}
+
 let posCache = null; // { at, out }  cache 15 dtk supaya beberapa HP keluarga tidak membebani portal
 const POS_CACHE_MS = 15 * 1000;
 
@@ -356,9 +398,18 @@ export default {
 
     try {
       if (path === "/debug") {
-        // Tes login saja. Tidak menampilkan token.
-        const s = await getSession(env, true, true);
-        return json({ ok: true, loginOk: true, hasCookie: !!s.cookie, userIdSet: !!env.USER_ID }, 200, env);
+        // Selalu balas 200 berisi diagnosis lengkap (token disamarkan), supaya mudah dibaca/dibagikan.
+        const out = { ok: false, userIdSet: !!env.USER_ID, accountSet: !!env.ACCOUNT, passwordSet: !!env.PASSWORD };
+        out.portal = await probePortal();
+        try {
+          const s = await getSession(env, true, true);
+          out.loginOk = true; out.ok = true; out.hasCookie = !!s.cookie;
+          out.pos = await fetchAny(env, s).then((r) => (r.ok ? { ok: true, lat: r.lat, lon: r.lon, time: r.positionTime } : r)).catch((e) => ({ error: String(e) }));
+        } catch (e) {
+          out.loginOk = false; out.loginError = e && e.step ? e : { error: String(e) };
+        }
+        out.official = await fetchOfficial(env).then((r) => (r.ok ? { ok: true, lat: r.lat, lon: r.lon } : r)).catch((e) => ({ error: String(e) }));
+        return json(out, 200, env);
       }
 
       if (path === "/pos") {
@@ -366,12 +417,19 @@ export default {
         if (posCache && Date.now() - posCache.at < POS_CACHE_MS) {
           return json(shape({ ...posCache.out, cached: true }, raw), 200, env);
         }
-        let s = await getSession(env, false);
-        let out = await fetchAny(env, s);
-        if (!out.ok) {
-          // sesi mungkin kedaluwarsa: login ulang sekali lalu coba lagi
-          s = await getSession(env, true);
+        let out;
+        try {
+          let s = await getSession(env, false);
           out = await fetchAny(env, s);
+          if (!out.ok) {
+            // sesi mungkin kedaluwarsa: login ulang sekali lalu coba lagi
+            s = await getSession(env, true);
+            out = await fetchAny(env, s);
+          }
+        } catch (e) {
+          // login portal gagal: coba API resmi sebagai cadangan
+          const alt = await fetchOfficial(env).catch(() => null);
+          if (alt && alt.ok) out = alt; else throw e;
         }
         if (out.ok) posCache = { at: Date.now(), out };
         return json(out.ok ? shape(out, raw) : out, out.ok ? 200 : 502, env);
