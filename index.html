@@ -1933,6 +1933,9 @@ const GPS_WORKER_URL = "";
 const GPS_WORKER_KEY = "";
 const GPS_TRACKER_NAME = "Kendaraan";   // nama yang tampil di peta & daftar
 const GPS_MOVING_KMH = 5;               // di atas ini dianggap "bergerak"
+const GPS_AUTO_RIDE = true;             // tab Motor: mode berkendara mulai/berhenti otomatis dari GPS tracker
+const GPS_PARK_MS = 3 * 60 * 1000;      // berhenti ≥ 3 menit = perjalanan selesai
+const GPS_STALE_MS = 5 * 60 * 1000;     // data tracker lebih tua dari ini dianggap tidak terbaru
 
 // ---- KODE AKSES (agar orang tak dikenal tidak bisa membuka data) ----
 // Kosong = gembok MATI. Untuk mengaktifkan: buka app → Pengaturan → Info → "Buat kode akses",
@@ -1951,7 +1954,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.12.0';
+const APP_VERSION = '2.12.1';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -2554,7 +2557,23 @@ async function gpsPoll(force){
   }
   clearTimeout(to);
   gpsBusy = false;
-  renderLokasi();
+  try{ gpsFeedRide(); }catch(e){ console.warn('gps ride', e); }
+  if(activeTab === 'lokasi') renderLokasi();
+}
+// Menyambungkan tracker ke tab Motor: mulai/selesai berkendara otomatis, tanpa menekan tombol
+let gpsSlowSince = 0;
+function gpsFeedRide(){
+  if(!GPS_AUTO_RIDE) return;
+  const m = gpsMember(); if(!m) return;
+  const now = Date.now();
+  const fresh = !!m.updatedMs && now - m.updatedMs < GPS_STALE_MS;
+  const moving = fresh && m.speedKmh >= GPS_MOVING_KMH;
+  if(moving) gpsSlowSince = 0; else{ if(!gpsSlowSince) gpsSlowSince = now; rideAutoBlock = false; }
+  if(moving && !rideOn && !rideAutoBlock) rideStart(true);
+  if(rideOn && rideTracker){
+    if(fresh) rideOnFix({ lat:m.lat, lng:m.lng, t:m.updatedMs, speed:m.speedKmh/3.6, acc:0 });
+    if(!moving && now - gpsSlowSince >= GPS_PARK_MS) rideStop();
+  }
 }
 
 function attachLokasiListener(){
@@ -2604,6 +2623,7 @@ function attachLokasiListener(){
 
   if(locIsSharing() && locMyName()) locStartWatch();
   locTick = setInterval(locTickFn, 20000);
+  setTimeout(()=>gpsPoll(true), 3000);
   document.addEventListener('visibilitychange', ()=>{
     if(document.visibilityState === 'visible'){
       if(locIsSharing()) locPushNow(false);
@@ -2627,7 +2647,8 @@ function locTickFn(){
     if(locTrip && now - locTrip.lastMoveAt >= LOC_TRIP_END_MS) locEndTrip();
     if(locLastPos && now - locLastWrite >= LOC_HEARTBEAT) locWriteState();
   }
-  if(activeTab === 'lokasi'){ gpsPoll(false); renderLokasi(); }
+  if(document.visibilityState === 'visible') gpsPoll(false);
+  if(activeTab === 'lokasi') renderLokasi();
 }
 
 function locNotify(title, body){ if(locStore('loc_notif') === 'on') appNotify(title, body, false); }
@@ -6341,6 +6362,7 @@ const rideFmtKm = (n)=>Number(n).toLocaleString('id-ID', { maximumFractionDigits
 let rideOn = false, rideStartAt = 0, rideDistM = 0, rideMaxKmh = 0, rideMoveMs = 0;
 let rideLast = null, rideLastT = 0, rideKmh = 0, rideBuf = [];
 let rideWebWatch = null, rideNatWatch = null, rideLastAlert = 0, rideTimer = null;
+let rideTracker = false, rideAutoBlock = false;   // rideTracker: sesi ini bersumber dari GPS tracker, bukan GPS HP
 
 function rideOnFix(f){
   if(!rideOn || !f || !isFinite(f.lat) || !isFinite(f.lng)) return;
@@ -6355,13 +6377,13 @@ function rideOnFix(f){
   const kmh = Math.max(0, (v || 0) * 3.6);
   if(rideLast){
     const d = locDistanceM(rideLast, { lat:f.lat, lng:f.lng }), dt = t - rideLast.t;
-    if(d >= 3 && d < 600 && dt < 30000){ rideDistM += d; if(kmh > 3) rideMoveMs += dt; }
+    if(d >= 3 && d < (rideTracker ? 3000 : 600) && dt < (rideTracker ? 90000 : 30000)){ rideDistM += d; if(kmh > 3) rideMoveMs += dt; }
   }
   rideLast = { lat:f.lat, lng:f.lng, t }; rideLastT = t; rideKmh = kmh;
   if(kmh > rideMaxKmh) rideMaxKmh = kmh;
   rideBuf.push({ t, v:kmh }); rideBuf = rideBuf.filter(p => t - p.t <= 8000);
   try{ nvOnFix({ lat:f.lat, lng:f.lng, t, acc:f.acc || 0, kmh }); rlOnFix({ lat:f.lat, lng:f.lng, t, kmh }); }catch(e){ console.warn('nav', e); }
-  if(rideSt.set.detect && t - rideStartAt > 10000 && Date.now() - rideLastAlert > 60000){
+  if(rideSt.set.detect && !rideTracker && t - rideStartAt > 10000 && Date.now() - rideLastAlert > 60000){
     const ev = rideDetectStop(rideBuf.slice(0, -1), { t, v:kmh });
     if(ev) rideAlertOpen({ kind:'stop', ...ev });
   }
@@ -6401,20 +6423,22 @@ function rideStopGps(){
   if(rideNatWatch !== null){ try{ locBG().removeWatcher({ id:rideNatWatch }).catch(()=>{}); }catch(e){} rideNatWatch = null; }
   window.removeEventListener('devicemotion', rideMotion);
 }
-function rideStart(){
+function rideStart(viaTracker){
   if(rideOn) return;
-  if(!navigator.geolocation && !locNative()){ showToast('Perangkat ini tidak mendukung GPS.', true); return; }
+  if(viaTracker !== true && !navigator.geolocation && !locNative()){ showToast('Perangkat ini tidak mendukung GPS.', true); return; }
+  rideTracker = viaTracker === true;
   rideOn = true; rideStartAt = Date.now(); rideDistM = 0; rideMaxKmh = 0; rideMoveMs = 0;
   rideLast = null; rideLastT = 0; rideKmh = 0; rideBuf = [];
-  rideStartGps();
+  if(!rideTracker) rideStartGps();
   try{ nvOnRideStart(); }catch(e){ console.warn('nav start', e); }
   rideTimer = setInterval(()=>{ rideRenderLive(); try{ rlRender(); }catch(e){} }, 1000);
-  showToast('Mode mengendara aktif 🏍️ Hati-hati di jalan!');
+  showToast(rideTracker ? 'Berkendara terdeteksi dari GPS tracker 🏍️ Hati-hati di jalan!' : 'Mode mengendara aktif 🏍️ Hati-hati di jalan!');
   rideRenderLive();
 }
-function rideStop(){
+function rideStop(manual){
   if(!rideOn) return;
-  rideOn = false; clearInterval(rideTimer); rideStopGps();
+  if(manual === true && rideTracker) rideAutoBlock = true;   // jangan langsung mulai lagi selama motor masih jalan
+  rideOn = false; rideTracker = false; clearInterval(rideTimer); rideStopGps();
   try{ nvOnRideStop(); }catch(e){}
   const km = rideDistM/1000, secs = Math.round((Date.now() - rideStartAt)/1000);
   if(km >= 0.1){
@@ -6433,9 +6457,9 @@ function rideRenderLive(){
   go.textContent = rideOn ? '⏹ Selesai berkendara' : '▶ Mulai berkendara';
   go.classList.toggle('stop', rideOn);
   const st = rideEl('rdState');
-  if(!rideOn){ st.textContent = 'Siap berangkat. Deteksi berhenti mendadak ' + (rideSt.set.detect ? 'aktif.' : 'mati.'); rideEl('rdStats').textContent = ''; return; }
+  if(!rideOn){ st.textContent = (GPS_AUTO_RIDE && gpsConfigured() ? 'Siap berangkat. Mulai otomatis saat motor berjalan (GPS tracker). ' : 'Siap berangkat. ') + 'Deteksi berhenti mendadak ' + (rideSt.set.detect ? 'aktif.' : 'mati.'); rideEl('rdStats').textContent = ''; return; }
   const secs = Math.round((Date.now() - rideStartAt)/1000), mm = String(Math.floor(secs/60)).padStart(2,'0'), ss = String(secs%60).padStart(2,'0');
-  st.textContent = rideLastT ? 'Sedang berkendara' : 'Mencari sinyal GPS…';
+  st.textContent = rideLastT ? (rideTracker ? 'Sedang berkendara • dari GPS tracker' : 'Sedang berkendara') : 'Mencari sinyal GPS…';
   let line = `${rideFmtKm(rideDistM/1000)} km • ${mm}:${ss} • maks ${Math.round(rideMaxKmh)} km/j`;
   if(rideSt.dest && rideLast){
     const left = rideHaversineKm(rideLast, rideSt.dest) * 1.3;
@@ -6658,7 +6682,7 @@ function rideRenderAll(){
 }
 function rideInit(){
   if(!rideEl('viewRide')) return;
-  rideEl('rdGo').addEventListener('click', ()=> rideOn ? rideStop() : rideStart());
+  rideEl('rdGo').addEventListener('click', ()=> rideOn ? rideStop(true) : rideStart());
   rideEl('rdDestSet').addEventListener('click', rideSetDest);
   rideEl('rdDestMaps').addEventListener('click', rideOpenMaps);
   rideEl('rdNavGo').addEventListener('click', ()=>{ nv.route = null; nvPlanFromHere(); });
