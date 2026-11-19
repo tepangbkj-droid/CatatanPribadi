@@ -189,10 +189,24 @@ async function loginWith(env, loginType, pwdValue) {
 
   const mds =
     (hay.match(/[?&]mds=([0-9a-f]{32})/i) || hay.match(/mds\s*=\s*['"]([0-9a-f]{32})['"]/i) || [])[1];
-  const loginId =
+  let loginId =
     (hay.match(/login_id=([0-9a-f-]{36})/i) || hay.match(/custid=([0-9a-f-]{36})/i) || [])[1];
 
   let cookie = cookiesFrom(res, "");
+
+  // Login IMEI: balasan hanya berisi mds (redirect ke indexp.aspx), tanpa login_id.
+  // Cari id di halaman tujuan; kalau tidak ada, pakai USER_ID (di portal school_id = custid = objectid).
+  if (mds && !loginId) {
+    try {
+      const pr = await fetch(`${PORTAL}/user/indexp.aspx?mds=${mds}`, {
+        headers: { "user-agent": UA, cookie, referer: PORTAL + "/" },
+      });
+      const pt = await pr.text();
+      loginId = (pt.match(/(?:school_id|custid|login_id)=([0-9a-f-]{36})/i) || [])[1];
+      cookie = cookiesFrom(pr, cookie);
+    } catch (e) {}
+    if (!loginId && env.USER_ID) loginId = String(env.USER_ID).trim();
+  }
 
   if (!mds || !loginId) {
     throw {
