@@ -7,7 +7,7 @@
 //   USER_ID    ID perangkat di portal (objectid)
 //   APP_KEY    kata sandi buatanmu sendiri; aplikasi mengirimnya lewat header x-api-key
 //   SCHOOL_ID, CUSTID (opsional) isi hanya jika /pos gagal; default memakai login_id dari login
-//   LOGIN_TYPE (opsional) ENTERPRISE untuk login akun (default), USER untuk login IMEI/plat
+//   LOGIN_TYPE (opsional) kosong = coba ENTERPRISE lalu USER otomatis; isi hanya untuk memaksa salah satunya
 //   TIMEZONE   (opsional) default 7
 //   ALLOW_ORIGIN (opsional) alamat aplikasimu untuk CORS (diisi otomatis dari wrangler.toml)
 //
@@ -83,13 +83,28 @@ function cookiesFrom(res, prev) {
   return Object.entries(jar).map(([k, v]) => `${k}=${v}`).join("; ");
 }
 
+// Tanpa LOGIN_TYPE: coba ENTERPRISE (tab Account) dulu, lalu USER bila ditolak.
 async function login(env) {
+  if (env.LOGIN_TYPE) return loginWith(env, env.LOGIN_TYPE);
+  try {
+    return await loginWith(env, "ENTERPRISE");
+  } catch (e1) {
+    if (!e1 || e1.step !== "login") throw e1;
+    try {
+      return await loginWith(env, "USER");
+    } catch (e2) {
+      throw { ...e1, tried: ["ENTERPRISE", "USER"] };
+    }
+  }
+}
+
+async function loginWith(env, loginType) {
   if (!env.ACCOUNT || !env.PASSWORD) throw { step: "config", error: "ACCOUNT/PASSWORD belum diisi" };
 
   const body = new URLSearchParams({
     userName: env.ACCOUNT,
     pwd: env.PASSWORD, // portal mengirim password apa adanya (setPwdValue dikomentari di core-51.js)
-    loginType: env.LOGIN_TYPE || "ENTERPRISE",
+    loginType,
     loginUrl: PORTAL + "/",
     timeZone: env.TIMEZONE || "7",
     language: "en",
