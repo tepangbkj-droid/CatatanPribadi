@@ -1,0 +1,10 @@
+# Worker pelacak GPS (Cantrack) untuk aplikasi Buku Kas.
+# Dideploy otomatis oleh .github/workflows/deploy-gps-worker.yml
+name = "gps-worker"
+main = "index.js"
+compatibility_date = "2025-01-01"
+workers_dev = true
+
+[vars]
+ALLOW_ORIGIN = "https://tepangbkj-droid.github.io"
+TIMEZONE = "7"
