@@ -1958,7 +1958,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.12.1';
+const APP_VERSION = '2.12.2';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -2534,7 +2534,7 @@ const locAll = () => locMembersEff();
 
 // ----- GPS Tracker (Cantrack) via Cloudflare Worker -----
 // Ditampilkan sebagai "anggota" tambahan di peta & daftar. Dibaca tiap ~20 dtk selama tab Lokasi terbuka.
-const GPS_TRACKER_ID = 'gps-tracker', GPS_POLL_MIN_MS = 15000;
+const GPS_TRACKER_ID = 'gps-tracker', GPS_POLL_MIN_MS = 4000;
 let gpsTrk = null, gpsErr = '', gpsBusy = false, gpsLastTry = 0, gpsOkAt = 0;
 function gpsConfigured(){ return !!GPS_WORKER_URL && !!GPS_WORKER_KEY; }
 function gpsMember(){
@@ -2565,16 +2565,25 @@ async function gpsPoll(force, fresh){
   if(activeTab === 'lokasi') renderLokasi();
 }
 // Baris status tracker + tombol Segarkan di tab Lokasi
+function gpsAgo(ms){
+  if(!ms) return 'belum ada data';
+  const sec = Math.max(0, Math.round((Date.now() - ms) / 1000));
+  return sec < 60 ? sec + ' dtk lalu' : locRel(ms);
+}
 function renderGpsBar(){
   const bar = document.getElementById('gpsBar'); if(!bar) return;
   if(!gpsConfigured()){ bar.style.display = 'none'; return; }
   bar.style.display = 'block';
   const t = document.getElementById('gpsBarTxt'), m = gpsMember();
   if(!m){ t.textContent = gpsErr ? '🔴 Tracker belum terbaca: ' + gpsErr : '⏳ Memuat posisi tracker…'; return; }
-  const old = !m.updatedMs || Date.now() - m.updatedMs > GPS_STALE_MS;
+  const hbMs = Number(gpsTrk && gpsTrk.heartbeatMs) || 0;
+  const online = (hbMs && Date.now() - hbMs < GPS_STALE_MS) || (m.updatedMs && Date.now() - m.updatedMs < GPS_STALE_MS);
   const when = gpsTrk && gpsTrk.positionTime ? ` (${gpsTrk.positionTime})` : '';
-  t.textContent = (old ? `⚠️ Tracker offline, posisi terakhir ${locRel(m.updatedMs)}${when}` : `🟢 Tracker online, update ${locRel(m.updatedMs)}`)
-    + (gpsErr ? ` • gagal refresh: ${gpsErr}` : '');
+  let txt;
+  if(!online) txt = `⚠️ Tracker offline, posisi terakhir ${gpsAgo(m.updatedMs)}${when}`;
+  else if(m.speedKmh >= GPS_MOVING_KMH) txt = `🟢 Bergerak ${m.speedKmh} km/j, titik ${gpsAgo(m.updatedMs)}`;
+  else txt = `🟢 Tracker online (diam), titik ${gpsAgo(m.updatedMs)}`;
+  t.textContent = txt + (gpsErr ? ` • gagal refresh: ${gpsErr}` : '');
 }
 // Menyambungkan tracker ke tab Motor: mulai/selesai berkendara otomatis, tanpa menekan tombol
 let gpsSlowSince = 0;
@@ -2640,6 +2649,7 @@ function attachLokasiListener(){
   if(locIsSharing() && locMyName()) locStartWatch();
   locTick = setInterval(locTickFn, 20000);
   setTimeout(()=>gpsPoll(true), 3000);
+  setInterval(()=>{ if(document.visibilityState === 'visible' && activeTab === 'lokasi') gpsPoll(false); }, 5000);
   document.addEventListener('visibilitychange', ()=>{
     if(document.visibilityState === 'visible'){
       if(locIsSharing()) locPushNow(false);
