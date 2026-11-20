@@ -1225,6 +1225,10 @@
         <button class="btn btn-ghost" id="btnLocRestart" style="width:100%;">🔁 Coba ulang GPS</button>
         <button class="btn btn-ghost" id="btnGpsTest" style="width:100%;margin-top:8px;">🛰️ Tes GPS tracker</button>
       </details>
+      <div class="loc-card" id="gpsBar" style="margin-top:12px;padding:12px 16px;display:none;">
+        <div id="gpsBarTxt" style="font-size:13px;font-weight:600;line-height:1.5;"></div>
+        <button class="btn btn-ghost" id="btnGpsRefresh" style="width:100%;margin-top:8px;">🔄 Segarkan lokasi tracker</button>
+      </div>
       <div class="loc-strip" id="locStrip"></div>
       <div class="loc-mapbox">
         <div id="locMap"></div>
@@ -2542,13 +2546,13 @@ function gpsMember(){
   return { id:GPS_TRACKER_ID, isTracker:true, name:GPS_TRACKER_NAME, icon:'🚗', color:'#F5A324', sharing:true,
     lat, lng, accuracy:0, updatedMs, speedKmh:kmh, mode: kmh >= GPS_MOVING_KMH ? 'kendara' : 'diam' };
 }
-async function gpsPoll(force){
+async function gpsPoll(force, fresh){
   if(!gpsConfigured() || gpsBusy) return;
   if(!force && Date.now() - gpsLastTry < GPS_POLL_MIN_MS) return;
   gpsBusy = true; gpsLastTry = Date.now();
-  const ctl = new AbortController(), to = setTimeout(()=>ctl.abort(), 20000);
+  const ctl = new AbortController(), to = setTimeout(()=>ctl.abort(), fresh ? 35000 : 20000);
   try{
-    const r = await fetch(GPS_WORKER_URL.replace(/\/+$/, '') + '/pos', { headers:{ 'x-api-key': GPS_WORKER_KEY }, cache:'no-store', signal:ctl.signal });
+    const r = await fetch(GPS_WORKER_URL.replace(/\/+$/, '') + '/pos' + (fresh ? '?fresh=1' : ''), { headers:{ 'x-api-key': GPS_WORKER_KEY }, cache:'no-store', signal:ctl.signal });
     const j = await r.json().catch(()=>null);
     if(!r.ok || !j || !j.ok) throw new Error(j && (j.error || j.step) ? `${j.step ? j.step + ': ' : ''}${j.error || 'gagal'}` : 'HTTP ' + r.status);
     gpsTrk = j; gpsErr = ''; gpsOkAt = Date.now();
@@ -2559,6 +2563,18 @@ async function gpsPoll(force){
   gpsBusy = false;
   try{ gpsFeedRide(); }catch(e){ console.warn('gps ride', e); }
   if(activeTab === 'lokasi') renderLokasi();
+}
+// Baris status tracker + tombol Segarkan di tab Lokasi
+function renderGpsBar(){
+  const bar = document.getElementById('gpsBar'); if(!bar) return;
+  if(!gpsConfigured()){ bar.style.display = 'none'; return; }
+  bar.style.display = 'block';
+  const t = document.getElementById('gpsBarTxt'), m = gpsMember();
+  if(!m){ t.textContent = gpsErr ? '🔴 Tracker belum terbaca: ' + gpsErr : '⏳ Memuat posisi tracker…'; return; }
+  const old = !m.updatedMs || Date.now() - m.updatedMs > GPS_STALE_MS;
+  const when = gpsTrk && gpsTrk.positionTime ? ` (${gpsTrk.positionTime})` : '';
+  t.textContent = (old ? `⚠️ Tracker offline, posisi terakhir ${locRel(m.updatedMs)}${when}` : `🟢 Tracker online, update ${locRel(m.updatedMs)}`)
+    + (gpsErr ? ` • gagal refresh: ${gpsErr}` : '');
 }
 // Menyambungkan tracker ke tab Motor: mulai/selesai berkendara otomatis, tanpa menekan tombol
 let gpsSlowSince = 0;
@@ -2627,6 +2643,7 @@ function attachLokasiListener(){
   document.addEventListener('visibilitychange', ()=>{
     if(document.visibilityState === 'visible'){
       if(locIsSharing()) locPushNow(false);
+      gpsPoll(false);
       locWakeSet();
       renderLokasi();
     }
@@ -3145,6 +3162,7 @@ function renderLokasi(){
     return (a.name||'').localeCompare(b.name||'');
   });
 
+  renderGpsBar();
   // strip avatar
   document.getElementById('locStrip').innerHTML = sorted.filter(m=>m.name).map(m=>
     `<button class="loc-chip" data-locact="focus" data-id="${escapeHtml(m.id)}">${locAvaHtml(m)}<span class="nm">${escapeHtml(m.id===myId ? 'Aku' : m.name)}</span></button>`).join('');
@@ -3261,6 +3279,18 @@ function renderLocDiag(){
   ].join('\n');
 }
 document.getElementById('btnLocRestart').addEventListener('click', locRestartGps);
+document.getElementById('btnGpsRefresh').addEventListener('click', async ()=>{
+  const b = document.getElementById('btnGpsRefresh');
+  if(!gpsConfigured()){ showToast('Isi GPS_WORKER_URL & GPS_WORKER_KEY di index.html dulu', true); return; }
+  b.disabled = true; b.textContent = '⏳ Menyegarkan…';
+  await gpsPoll(true, true);
+  b.disabled = false; b.textContent = '🔄 Segarkan lokasi tracker';
+  const m = gpsMember();
+  if(gpsErr && !m) showToast('Gagal: ' + gpsErr, true);
+  else if(gpsErr) showToast('Gagal menyegarkan: ' + gpsErr + ' (menampilkan data lama)', true);
+  else showToast(m && m.updatedMs && Date.now() - m.updatedMs > GPS_STALE_MS ? 'Tersambung, tapi tracker belum mengirim data baru (offline)' : 'Lokasi tracker diperbarui ✅');
+  renderGpsBar();
+});
 document.getElementById('btnGpsTest').addEventListener('click', async ()=>{
   if(!gpsConfigured()){ showToast('Isi GPS_WORKER_URL & GPS_WORKER_KEY di index.html dulu', true); return; }
   showToast('Mengetes GPS tracker…');
