@@ -22,13 +22,23 @@ const SESSION_TTL = 10 * 60 * 1000; // login ulang tiap 10 menit
 
 let session = null; // { mds, loginId, cookie, at }
 
+// Asal (origin) yang diizinkan: ALLOW_ORIGIN (boleh beberapa, pisahkan koma) + asal bawaan APK Capacitor
+let curOrigin = null;
+function corsOrigin(env) {
+  const list = String((env && env.ALLOW_ORIGIN) || "").split(",").map((x) => x.trim()).filter(Boolean);
+  if (!list.length) return "*";
+  const apk = ["https://localhost", "http://localhost", "capacitor://localhost", "ionic://localhost"];
+  if (curOrigin && (list.includes(curOrigin) || apk.includes(curOrigin))) return curOrigin;
+  return list[0];
+}
+
 function json(body, status, env) {
   return new Response(JSON.stringify(body), {
     status: status || 200,
     headers: {
       "content-type": "application/json; charset=utf-8",
       "cache-control": "no-store",
-      "access-control-allow-origin": (env && env.ALLOW_ORIGIN) || "*",
+      "access-control-allow-origin": corsOrigin(env),
       "access-control-allow-headers": "x-api-key",
       "access-control-allow-methods": "GET, OPTIONS",
       vary: "Origin",
@@ -41,7 +51,7 @@ function preflight(env) {
   return new Response(null, {
     status: 204,
     headers: {
-      "access-control-allow-origin": (env && env.ALLOW_ORIGIN) || "*",
+      "access-control-allow-origin": corsOrigin(env),
       "access-control-allow-headers": "x-api-key",
       "access-control-allow-methods": "GET, OPTIONS",
       "access-control-max-age": "86400",
@@ -397,7 +407,8 @@ export default {
 
     // Bila ALLOW_ORIGIN diisi, tolak permintaan browser dari alamat lain
     const origin = req.headers.get("origin");
-    if (env.ALLOW_ORIGIN && origin && origin !== env.ALLOW_ORIGIN) {
+    curOrigin = origin;
+    if (env.ALLOW_ORIGIN && origin && corsOrigin(env) !== origin) {
       return json({ ok: false, error: "forbidden origin" }, 403, env);
     }
 
@@ -428,12 +439,13 @@ export default {
 
       if (path === "/pos") {
         if (!env.USER_ID) return json({ ok: false, error: "USER_ID belum diisi" }, 400, env);
-        if (posCache && Date.now() - posCache.at < POS_CACHE_MS) {
+        const fresh = u.searchParams.get("fresh") === "1"; // tombol "Segarkan": lewati cache + login ulang
+        if (!fresh && posCache && Date.now() - posCache.at < POS_CACHE_MS) {
           return json(shape({ ...posCache.out, cached: true }, raw), 200, env);
         }
         let out;
         try {
-          let s = await getSession(env, false);
+          let s = await getSession(env, fresh);
           out = await fetchAny(env, s);
           if (!out.ok) {
             // sesi mungkin kedaluwarsa: login ulang sekali lalu coba lagi
