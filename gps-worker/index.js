@@ -285,6 +285,7 @@ async function fetchPos(env, s) {
 
   return {
     ok: true,
+    source: "track",
     fetchedAt: new Date().toISOString(),
     lat: Number(fields.weidu),
     lon: Number(fields.jingdu),
@@ -341,11 +342,13 @@ async function fetchLoadUser(env, s) {
 }
 
 // Coba loadUser dulu; jika gagal, pakai metode lama (TrackService).
+// TrackService = sumber yang sama dengan peta live di portal (lebih real-time).
+// loadUser = data perangkat tersimpan (bisa tertinggal), dipakai hanya sebagai cadangan.
 async function fetchAny(env, s) {
-  const a = await fetchLoadUser(env, s).catch((e) => ({ ok: false, step: "loadUser", error: String(e) }));
+  const a = await fetchPos(env, s).catch((e) => ({ ok: false, step: "track", error: String(e) }));
   if (a.ok) return a;
-  const b = await fetchPos(env, s);
-  return b.ok ? b : { ...b, loadUserError: a.error || a.step };
+  const b = await fetchLoadUser(env, s);
+  return b.ok ? b : { ...b, trackError: a.error || a.step };
 }
 
 // Cek apakah portal bisa dijangkau dari Cloudflare (membedakan "password salah" dari "diblokir")
@@ -390,8 +393,8 @@ async function fetchOfficial(env) {
   };
 }
 
-let posCache = null; // { at, out }  cache 15 dtk supaya beberapa HP keluarga tidak membebani portal
-const POS_CACHE_MS = 15 * 1000;
+let posCache = null; // { at, out }  cache 4 dtk supaya beberapa HP keluarga tidak membebani portal
+const POS_CACHE_MS = 4 * 1000;
 
 // Keluaran untuk aplikasi: tanpa field mentah (bisa berisi IMEI dsb.) kecuali diminta ?raw=1
 function shape(out, raw) {
