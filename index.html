@@ -955,9 +955,29 @@
   .rl-dot{width:16px;height:16px;border-radius:50%;background:#FF3B5C;box-shadow:0 0 0 5px rgba(255,59,92,.3);animation:locBlink 1s infinite;}
   .rl-sub{font-size:12px;opacity:.88;margin-top:4px;line-height:1.4;}
   .rl-fine{font-size:10.5px;opacity:.65;margin-top:4px;}
+  /* ===== Banner SOS tracker & panel kontrol kendaraan ===== */
+  #gpsSosBanner{display:none;position:fixed;top:0;left:0;right:0;z-index:99999;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 12px;background:#D90429;color:#fff;box-shadow:0 4px 18px rgba(0,0,0,.35);animation:gpsSosPulse 1s ease-in-out infinite;}
+  #gpsSosBanner.show{display:block;}
+  #gpsSosBanner .sb-t{font-weight:800;font-size:15px;line-height:1.35;}
+  #gpsSosBanner .sb-s{font-size:12.5px;opacity:.95;margin-top:2px;}
+  #gpsSosBanner .sb-b{display:flex;gap:8px;margin-top:8px;}
+  #gpsSosBanner button,#gpsSosBanner a{flex:1;border:0;border-radius:10px;padding:8px 10px;font-weight:700;font-size:13px;background:#fff;color:#D90429;text-align:center;text-decoration:none;cursor:pointer;}
+  @keyframes gpsSosPulse{0%,100%{background:#D90429;}50%{background:#8D0220;}}
+  .kd-ctl-st{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 10px;font-size:12.5px;font-weight:600;}
+  .kd-chip{padding:4px 10px;border-radius:999px;background:var(--rose-soft);color:var(--ink);}
+  .kd-chip.bad{background:var(--rose);color:#fff;}
+  .kd-ctl-row{display:flex;gap:8px;align-items:stretch;margin-top:8px;}
+  .kd-ctl-row input{flex:1;min-width:0;}
+  .kd-ctl-row .btn{flex:1.2;}
+  .kd-reply{margin-top:10px;font-size:11.5px;white-space:pre-wrap;word-break:break-word;background:rgba(127,127,127,.12);border-radius:10px;padding:8px 10px;max-height:160px;overflow:auto;}
 </style>
 </head>
 <body class="nav-sidebar">
+<div id="gpsSosBanner" role="alert" aria-live="assertive">
+  <div class="sb-t">🚨 ALARM SOS DARI TRACKER KENDARAAN!</div>
+  <div class="sb-s" id="gpsSosInfo"></div>
+  <div class="sb-b"><a id="gpsSosMap" target="_blank" rel="noopener" href="#">🗺️ Buka lokasi</a><button type="button" id="gpsSosOk">Sembunyikan 5 mnt</button></div>
+</div>
 
 <div id="updateBanner" class="update-banner hidden" role="status">
   <span id="updateBannerText">🚀 Versi baru tersedia.</span>
@@ -1977,7 +1997,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.12.6';
+const APP_VERSION = '2.13.0';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -2575,6 +2595,7 @@ async function gpsPoll(force, fresh){
     const j = await r.json().catch(()=>null);
     if(!r.ok || !j || !j.ok) throw new Error(j && (j.error || j.step) ? `${j.step ? j.step + ': ' : ''}${j.error || 'gagal'}` : 'HTTP ' + r.status);
     gpsTrk = j; gpsErr = ''; gpsOkAt = Date.now();
+    try{ gpsSosUpdate(); }catch(e){}
     try{ gpsHistPush(); }catch(e){}
   }catch(e){
     gpsErr = e && e.name === 'AbortError' ? 'timeout' : ((e && e.message) || String(e));
@@ -2744,6 +2765,77 @@ function kdCmdSend(id){
   } else if(!confirm(c.label + '?\n\nAplikasi SMS akan terbuka dengan perintah: ' + text)) return;
   window.location.href = 'sms:' + encodeURIComponent(sim) + '?body=' + encodeURIComponent(text);
 }
+// ----- Banner SOS + kontrol perintah (POST /api/command di Worker) -----
+let gpsSosHideUntil = 0, gpsSosWasOn = false;
+function gpsSosUpdate(){
+  const bar = document.getElementById('gpsSosBanner'); if(!bar || !gpsTrk) return;
+  const on = gpsTrk.isSos === true;
+  if(!on){ bar.classList.remove('show'); gpsSosWasOn = false; gpsSosHideUntil = 0; return; }
+  const m = gpsMember();
+  document.getElementById('gpsSosInfo').textContent = (gpsTrk.positionTime ? 'Waktu titik: ' + gpsTrk.positionTime + ' • ' : '') + (m ? m.speedKmh + ' km/j' : '') + (gpsTrk.alarmText ? ' • ' + gpsTrk.alarmText.slice(0, 80) : '');
+  const a = document.getElementById('gpsSosMap');
+  if(m){ a.href = 'https://www.google.com/maps?q=' + m.lat + ',' + m.lng; a.style.display = ''; } else a.style.display = 'none';
+  if(Date.now() < gpsSosHideUntil){ bar.classList.remove('show'); return; }
+  bar.classList.add('show');
+  if(!gpsSosWasOn){ try{ navigator.vibrate && navigator.vibrate([500,200,500,200,900]); }catch(e){} }
+  gpsSosWasOn = true;
+}
+document.getElementById('gpsSosOk').addEventListener('click', ()=>{ gpsSosHideUntil = Date.now() + 5*60*1000; gpsSosUpdate(); });
+setInterval(()=>{ if(document.visibilityState === 'visible' && activeTab !== 'lokasi' && activeTab !== 'kendaraan') gpsPoll(false); }, 15000);
+
+let kdCmdBusy = false, kdLastReply = '', kdIntervalVal = '30';
+const KD_FAST_KMH = 10;   // di atas ini, Putus BBM diberi peringatan keras
+async function kdApiCommand(action, intervalSeconds){
+  if(!gpsConfigured()){ showToast('GPS belum disambungkan', true); return; }
+  if(kdCmdBusy) return;
+  kdCmdBusy = true; renderKendaraan();
+  const ctl = new AbortController(), to = setTimeout(()=>ctl.abort(), 40000);
+  try{
+    const body = { action }; if(action === 'set_interval') body.intervalSeconds = intervalSeconds;
+    const r = await fetch(GPS_WORKER_URL.replace(/\/+$/, '') + '/api/command', { method:'POST', headers:{ 'x-api-key':GPS_WORKER_KEY, 'content-type':'application/json' }, body:JSON.stringify(body), cache:'no-store', signal:ctl.signal });
+    const j = await r.json().catch(()=>null);
+    kdLastReply = j ? ('[' + fmtClockSec(Date.now()) + '] ' + (j.command || action) + '\nHTTP ' + (j.httpStatus || r.status) + '\n' + (j.reply || j.error || '(kosong)')) : 'HTTP ' + r.status;
+    if(r.ok && j && j.ok){ showToast('Perintah terkirim ✅'); setTimeout(()=>gpsPoll(true, true), 4000); }
+    else showToast('Gagal: ' + ((j && (j.error || j.reply)) || 'HTTP ' + r.status).toString().slice(0, 120), true);
+  }catch(e){
+    kdLastReply = 'Error: ' + (e && e.name === 'AbortError' ? 'timeout' : ((e && e.message) || e));
+    showToast('Gagal mengirim perintah', true);
+  }
+  clearTimeout(to); kdCmdBusy = false; renderKendaraan();
+}
+function kdCtlAction(act){
+  if(act === 'cut'){
+    const m = gpsMember(), kmh = m ? m.speedKmh : null;
+    let msg = 'Putus BBM kendaraan?\n\nMesin bisa mati mendadak. Pastikan kendaraan diam dan aman.';
+    if(kmh === null) msg = '⚠️ Posisi/kecepatan tracker belum terbaca.\n\n' + msg;
+    else if(kmh > KD_FAST_KMH) msg = '⚠️ PERINGATAN: kendaraan MASIH BERGERAK ' + kmh + ' km/j (di atas ' + KD_FAST_KMH + ' km/j). Memutus BBM sekarang bisa menyebabkan kecelakaan!\n\n' + msg;
+    if(!confirm(msg)) return;
+    kdApiCommand('cut_fuel');
+  } else if(act === 'restore'){
+    if(!confirm('Pulihkan BBM (sambungkan kembali)?')) return;
+    kdApiCommand('restore_fuel');
+  } else if(act === 'interval'){
+    const n = Number(kdIntervalVal);
+    if(!Number.isInteger(n) || n < 5 || n > 18000){ showToast('Isi rentang 5 – 18000 detik (bilangan bulat)', true); return; }
+    if(!confirm('Atur rentang upload lokasi tiap ' + n + ' detik?\n\nRentang pendek = lebih boros baterai & kuota SIM.')) return;
+    kdApiCommand('set_interval', n);
+  }
+}
+function kdCtlHtml(){
+  const t = gpsTrk || {};
+  const fuel = t.fuelCutSource === 'unknown' ? '❔ BBM: belum diketahui' : (t.fuelCut ? '⛔ BBM: TERPUTUS' : '✅ BBM: normal') + (t.fuelCutSource === 'lastCommand' ? ' (perkiraan dari perintah terakhir)' : '');
+  const dis = kdCmdBusy ? ' disabled' : '';
+  return '<div class="loc-card"><div style="font-weight:700;margin-bottom:4px;">🕹️ Kontrol tracker (online)</div>'
+    + '<div class="kd-ctl-st"><span class="kd-chip' + (t.isSos ? ' bad' : '') + '">' + (t.isSos ? '🚨 SOS AKTIF' : '🟢 Tidak ada SOS') + '</span><span class="kd-chip' + (t.fuelCut ? ' bad' : '') + '">' + fuel + '</span></div>'
+    + '<div class="kd-btns" style="margin-top:0;"><button class="btn btn-danger" data-kd="ctl" data-act="cut"' + dis + '>⛔ Putus BBM</button>'
+    + '<button class="btn btn-ghost" data-kd="ctl" data-act="restore"' + dis + '>✅ Pulihkan BBM</button></div>'
+    + '<div class="field-hint warn">Putus BBM hanya saat kendaraan diam & aman. Perintah dikirim lewat server Cantrack dan baru dijalankan saat tracker online.</div>'
+    + '<div class="kd-ctl-row"><input type="number" id="kdIntervalInput" min="5" max="18000" step="1" inputmode="numeric" placeholder="Detik (min 5)" value="' + escapeHtml(kdIntervalVal) + '">'
+    + '<button class="btn btn-ghost" data-kd="ctl" data-act="interval"' + dis + '>⏱️ Atur Rentang (Detik)</button></div>'
+    + (kdCmdBusy ? '<div style="font-size:12px;margin-top:8px;">⏳ Mengirim perintah…</div>' : '')
+    + (kdLastReply ? '<div class="kd-reply">' + escapeHtml(kdLastReply) + '</div>' : '')
+    + '</div>';
+}
 function renderKendaraan(){
   const el = document.getElementById('kdBody'); if(!el) return;
   const ae = document.activeElement;
@@ -2768,7 +2860,7 @@ function renderKendaraan(){
     + row('Arah', escapeHtml(gpsCompass(gpsTrk.heading)))
     + row('Waktu titik (portal)', escapeHtml(String(gpsTrk.positionTime || '-')) + ' • ' + gpsAgo(m.updatedMs))
     + row('Detak terakhir', escapeHtml(String(gpsTrk.heartbeat || '-')) + (hbMs ? ' • ' + gpsAgo(hbMs) : ''))
-    + row('Alarm', alarm)
+    + row('Alarm', (gpsTrk.isSos ? '🚨 <b>SOS</b> ' : '') + alarm)
     + row('Sumber data', gpsTrk.source === 'track' ? 'Live (peta portal)' : 'Tersimpan di portal (bisa tertinggal)')
     + row('Diambil dari server', fetched)
     + '</div>';
@@ -2787,7 +2879,7 @@ function renderKendaraan(){
     h += '<div class="loc-card"><div style="font-weight:700;margin-bottom:4px;">Riwayat titik (sesi ini)</div>' + rows
       + '<div style="font-size:11px;color:var(--ink-soft);margin-top:6px;">Kalau kendaraan diam tapi titiknya terus bergeser puluhan meter, sinyal GPS tracker kurang bagus.</div></div>';
   }
-  h += kdAlarmsHtml() + kdSmsHtml() + kdCmdHtml();
+  h += kdCtlHtml() + kdAlarmsHtml() + kdSmsHtml() + kdCmdHtml();
   if(gpsInfo){
     const rows = Object.entries(gpsInfo).map(([k, v])=>k + ' = ' + (v && typeof v === 'object' ? JSON.stringify(v) : v)).join('\n');
     h += '<details class="loc-card"><summary style="font-weight:700;cursor:pointer;">Info perangkat (dari portal)</summary><pre class="kd-raw">' + escapeHtml(rows || '(kosong)') + '</pre></details>';
@@ -2798,13 +2890,16 @@ function renderKendaraan(){
   h += '<details class="loc-card"><summary style="font-weight:700;cursor:pointer;">Data mentah dari tracker</summary><pre class="kd-raw">' + escapeHtml(raw || '(kosong)') + '</pre></details>';
   el.innerHTML = h;
 }
+document.getElementById('kdBody').addEventListener('input', (e)=>{ if(e.target && e.target.id === 'kdIntervalInput') kdIntervalVal = e.target.value; });
 document.getElementById('kdBody').addEventListener('change', (e)=>{
   if(e.target && e.target.dataset && e.target.dataset.kdcmd){ try{ localStorage.setItem('kd_cmd_' + e.target.dataset.kdcmd, e.target.value.trim()); }catch(err){} return; }
+  if(e.target && e.target.id === 'kdIntervalInput'){ kdIntervalVal = e.target.value; return; }
   if(e.target && e.target.id === 'kdSim'){ try{ localStorage.setItem('kd_sim', e.target.value.trim()); }catch(err){} renderKendaraan(); }
 });
 document.getElementById('kdBody').addEventListener('click', async (e)=>{
   const b = e.target.closest('[data-kd]'); if(!b) return;
   const act = b.dataset.kd, m = gpsMember();
+  if(act === 'ctl'){ kdCtlAction(b.dataset.act); return; }
   if(act === 'cmd'){ kdCmdSend(b.dataset.cmd); return; }
   if(act === 'alarms'){ gpsLoadAlarms(); renderKendaraan(); return; }
   if(act === 'map'){ setActiveTab('lokasi'); return; }
