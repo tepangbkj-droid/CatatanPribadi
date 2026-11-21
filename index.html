@@ -755,6 +755,19 @@
   .shop-grid .shop-item{min-width:0;}
   /* ===== Lokasi v2 ===== */
   .tab-btn.active.tab-loc{color:#0A7FB0;background:var(--blue-soft);}
+  .tab-btn.active.tab-kdr{color:#B45309;background:var(--amber-soft);}
+  .kd-hero{padding:18px;border-radius:var(--radius-m);background:linear-gradient(135deg,#F5A324,#E8741C);color:#fff;margin-top:12px;}
+  .kd-hero .kd-name{font-size:14px;font-weight:700;opacity:.95;}
+  .kd-hero .kd-speed{font-size:46px;font-weight:800;line-height:1.1;}
+  .kd-hero .kd-speed small{font-size:15px;font-weight:600;margin-left:4px;}
+  .kd-hero .kd-state{font-size:13px;font-weight:600;margin-top:4px;}
+  .kd-row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;}
+  .kd-row:last-child{border-bottom:none;}
+  .kd-row span:first-child{color:var(--ink-soft);flex:none;}
+  .kd-row span:last-child{font-weight:600;text-align:right;word-break:break-word;}
+  .kd-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+  .kd-btns .btn{flex:1;min-width:120px;}
+  .kd-raw{font-size:11px;white-space:pre-wrap;word-break:break-all;margin:8px 0 0;max-height:260px;overflow:auto;}
   .hero.hero-loc{background:linear-gradient(150deg,#0C8F83 0%,#14B8A6 45%,#2E8BFF 100%);box-shadow:0 16px 34px -14px rgba(20,184,166,0.55);}
   .loc-hero-row{display:flex;align-items:center;justify-content:space-between;gap:14px;position:relative;}
   .loc-hero-act{width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-size:28px;flex:0 0 auto;backdrop-filter:blur(4px);}
@@ -1401,6 +1414,10 @@
       </div>
     </div>
 
+    <div id="viewKendaraan" class="view-pane">
+      <div id="kdBody"></div>
+    </div>
+
     <div id="viewAI" class="view-pane">
       <div class="hero hero-ai fade-up">
         <div class="hero-label">🤖 Ringkasan saran finansial</div>
@@ -1427,6 +1444,7 @@
       <button class="tab-btn" id="btnTabHutang" data-tab="hutang"><span class="tab-ic">📒</span>Hutang</button>
       <button class="tab-btn" id="btnTabKucing" data-tab="kucing"><span class="tab-ic">🐱</span>Kucing</button>
       <button class="tab-btn" id="btnTabLokasi" data-tab="lokasi"><span class="tab-ic">📍</span>Lokasi</button>
+      <button class="tab-btn" id="btnTabKendaraan" data-tab="kendaraan"><span class="tab-ic">🚗</span>Kendaraan</button>
       <button class="tab-btn" id="btnTabRide" data-tab="ride"><span class="tab-ic">🏍️</span>Motor</button>
       <button class="tab-btn" id="btnTabAI" data-tab="ai"><span class="tab-ic">🤖</span>AI</button>
     </div>
@@ -1462,6 +1480,7 @@
     <div class="sb-sec">Lainnya</div>
     <button class="sb-item" data-sb="kucing"><svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.07 1 2.24 1 3.44C21 17.9 16.97 21 12 21s-9-3-9-7.56c0-1.25.5-2.4 1-3.44 0 0-1.89-6.42-.5-7 1.39-.58 4.72.23 6.5 2.23A9.04 9.04 0 0 1 12 5Z"/><path d="M8 14v.5"/><path d="M16 14v.5"/><path d="M11.25 16.25h1.5L12 17l-.75-.75Z"/></svg><span>Kucing</span></button>
     <button class="sb-item" data-sb="lokasi"><svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span>Lokasi</span></button>
+    <button class="sb-item" data-sb="kendaraan"><svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 16V11l2-5h10l2 5v5"/><path d="M3 16h18v3H3z"/><circle cx="7.5" cy="13" r=".6"/><circle cx="16.5" cy="13" r=".6"/></svg> Kendaraan ku</button>
     <button class="sb-item" data-sb="ride"><svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg><span>Mengendara</span></button>
     <button class="sb-item" data-sb="ai"><svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/></svg><span>Saran AI</span></button>
   </div>
@@ -1958,7 +1977,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.12.2';
+const APP_VERSION = '2.12.6';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -2556,6 +2575,7 @@ async function gpsPoll(force, fresh){
     const j = await r.json().catch(()=>null);
     if(!r.ok || !j || !j.ok) throw new Error(j && (j.error || j.step) ? `${j.step ? j.step + ': ' : ''}${j.error || 'gagal'}` : 'HTTP ' + r.status);
     gpsTrk = j; gpsErr = ''; gpsOkAt = Date.now();
+    try{ gpsHistPush(); }catch(e){}
   }catch(e){
     gpsErr = e && e.name === 'AbortError' ? 'timeout' : ((e && e.message) || String(e));
   }
@@ -2563,6 +2583,7 @@ async function gpsPoll(force, fresh){
   gpsBusy = false;
   try{ gpsFeedRide(); }catch(e){ console.warn('gps ride', e); }
   if(activeTab === 'lokasi') renderLokasi();
+  if(activeTab === 'kendaraan') renderKendaraan();
 }
 // Baris status tracker + tombol Segarkan di tab Lokasi
 function gpsAgo(ms){
@@ -2585,6 +2606,221 @@ function renderGpsBar(){
   else txt = `🟢 Tracker online (diam), titik ${gpsAgo(m.updatedMs)}`;
   t.textContent = txt + (gpsErr ? ` • gagal refresh: ${gpsErr}` : '');
 }
+// ===== Menu "Kendaraan ku": data GPS tracker =====
+const gpsHist = [];
+function gpsDist(a, b){
+  const R = 6371000, rad = Math.PI / 180, dLa = (b.lat - a.lat) * rad, dLo = (b.lng - a.lng) * rad;
+  const x = Math.sin(dLa / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLo / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(x));
+}
+function gpsHistPush(){
+  const m = gpsMember(); if(!m) return;
+  const last = gpsHist[gpsHist.length - 1];
+  if(last && last.ms === m.updatedMs) return;
+  gpsHist.push({ ms:m.updatedMs, lat:m.lat, lng:m.lng, kmh:m.speedKmh });
+  if(gpsHist.length > 60) gpsHist.shift();
+}
+function gpsCompass(v){
+  const d = Number(v); if(v === null || v === undefined || v === '' || !isFinite(d)) return '-';
+  const n = ['Utara','Timur laut','Timur','Tenggara','Selatan','Barat daya','Barat','Barat laut'];
+  return n[Math.round(((d % 360) + 360) % 360 / 45) % 8] + ' (' + Math.round(d) + '°)';
+}
+// Nama jenis alarm (dari PushTip.xml aplikasi Secumore; id sama dengan type_id alarm)
+const GPS_ALARM_NAMES = {
+  1:'SOS (darurat)',2:'Anti-maling',3:'Keluar pagar geo',4:'Masuk pagar geo',5:'Listrik terputus',6:'Kecepatan tinggi',
+  7:'Kecepatan rendah',8:'Batere lemah',9:'Getaran',10:'Kendaraan bergerak',11:'Perangkat reset',12:'Masuk area blind spot',
+  13:'Keluar area blind spot',14:'Pintu dibuka',15:'Pintu ditutup',16:'ACC (kontak) hidup',17:'Tabrakan',18:'Terguling',
+  19:'GEO',20:'Idle (mesin hidup, diam)',21:'Mengemudi lelah',22:'Gateway',23:'Diderek',24:'Berhenti terlalu lama',
+  25:'Bantuan darurat (4S)',26:'Gangguan OBD',27:'Alarm BBM',28:'Kondisi kendaraan abnormal',29:'Tegangan tinggi',
+  30:'Gangguan OBD berat',31:'Lepas dari pengawasan',32:'Alarm modul Bluetooth',33:'Gangguan sinyal GPS',
+  34:'Gangguan sinyal GSM',35:'Alarm fotolistrik',36:'Alarm abnormal',37:'Alarm offline',38:'Perangkat dilepas',
+  39:'Alarm parkir',40:'Alarm gangguan',41:'Start ilegal',48:'Alarm cabut-colok'
+};
+// ----- Info perangkat dari portal -----
+let gpsInfo = null, gpsInfoErr = '', gpsInfoAt = 0;
+async function gpsLoadInfo(){
+  if(!gpsConfigured() || Date.now() - gpsInfoAt < 300000) return;
+  gpsInfoAt = Date.now();
+  try{
+    const r = await fetch(GPS_WORKER_URL.replace(/\/+$/, '') + '/info', { headers:{ 'x-api-key': GPS_WORKER_KEY }, cache:'no-store' });
+    const j = await r.json().catch(()=>null);
+    if(!r.ok || !j || !j.ok) throw new Error(j && j.error ? j.error : 'HTTP ' + r.status);
+    gpsInfo = j.fields || {}; gpsInfoErr = '';
+    // isi nomor SIM otomatis kalau ada kunci "sim" berisi angka
+    try{
+      if(!kdSimGet()){
+        const k = Object.keys(gpsInfo).find(x => /sim/i.test(x) && /^\+?\d{8,15}$/.test(String(gpsInfo[x]).trim()));
+        if(k) localStorage.setItem('kd_sim', String(gpsInfo[k]).trim());
+      }
+    }catch(e){}
+  }catch(e){ gpsInfoErr = (e && e.message) || String(e); gpsInfoAt = 0; }
+  if(activeTab === 'kendaraan') renderKendaraan();
+}
+// ----- Daftar alarm tracker -----
+let gpsAlarms = null, gpsAlarmErr = '', gpsAlarmBusy = false;
+async function gpsLoadAlarms(){
+  if(!gpsConfigured() || gpsAlarmBusy) return;
+  gpsAlarmBusy = true;
+  try{
+    const r = await fetch(GPS_WORKER_URL.replace(/\/+$/, '') + '/alarms', { headers:{ 'x-api-key': GPS_WORKER_KEY }, cache:'no-store' });
+    const j = await r.json().catch(()=>null);
+    if(!r.ok || !j || !j.ok) throw new Error(j && (j.error || j.step) ? `${j.step ? j.step + ': ' : ''}${j.error || 'gagal'}` : 'HTTP ' + r.status);
+    gpsAlarms = j; gpsAlarmErr = '';
+  }catch(e){ gpsAlarmErr = (e && e.message) || String(e); }
+  gpsAlarmBusy = false;
+  if(activeTab === 'kendaraan') renderKendaraan();
+}
+setInterval(()=>{ if(document.visibilityState === 'visible' && activeTab === 'kendaraan') gpsLoadAlarms(); }, 30000);
+function kdAlarmsHtml(){
+  let h = '<div class="loc-card"><div style="font-weight:700;margin-bottom:4px;">🔔 Daftar alarm</div>';
+  if(gpsAlarmErr) h += '<div style="font-size:12px;color:var(--rose);margin-bottom:6px;">Gagal memuat: ' + escapeHtml(gpsAlarmErr) + '</div>';
+  if(!gpsAlarms) h += '<div style="font-size:13px;color:var(--ink-soft);">' + (gpsAlarmBusy ? '⏳ Memuat…' : 'Belum dimuat.') + '</div>';
+  else if(!gpsAlarms.rows.length) h += '<div style="font-size:13px;color:var(--ink-soft);">Tidak ada alarm 👍</div>';
+  else {
+    gpsAlarms.rows.slice(0, 15).forEach(a=>{
+      const t = a.sendMs ? new Date(a.sendMs).toLocaleString('id-ID', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '-';
+      const label = escapeHtml(GPS_ALARM_NAMES[a.typeId] || a.desc || ('Alarm tipe ' + a.typeId));
+      h += '<div class="kd-row"><span>' + t + '</span><span>' + label + (a.speed ? ' • ' + Math.round(a.speed) + ' km/j' : '') + '</span></div>';
+    });
+    h += '<div style="font-size:11px;color:var(--ink-soft);margin-top:6px;">' + gpsAlarms.count + ' alarm tercatat, 15 terbaru ditampilkan.</div>';
+  }
+  return h + '<button class="btn btn-ghost" data-kd="alarms" style="width:100%;margin-top:8px;">🔄 Muat ulang alarm</button></div>';
+}
+// ----- Perintah SMS ke tracker (aman: hanya perintah tanya) -----
+const KD_SMS_CMDS = [
+  { label:'Cek server (IP#)', body:'IP#' },
+  { label:'Cek parameter (PARAM#)', body:'PARAM#' },
+  { label:'Cek status (STATUS#)', body:'STATUS#' }
+];
+function kdSimGet(){ try{ return localStorage.getItem('kd_sim') || ''; }catch(e){ return ''; } }
+function kdSmsHtml(){
+  const sim = kdSimGet();
+  let h = '<div class="loc-card"><div style="font-weight:700;margin-bottom:4px;">📟 Perintah SMS ke tracker</div>'
+    + '<div class="field" style="margin:6px 0;"><input id="kdSim" inputmode="tel" placeholder="Nomor SIM di tracker" value="' + escapeHtml(sim) + '"></div>'
+    + '<div class="kd-btns">';
+  KD_SMS_CMDS.forEach(c=>{
+    const href = sim ? 'sms:' + encodeURIComponent(sim) + '?body=' + encodeURIComponent(c.body) : '#';
+    h += '<a class="btn btn-ghost" style="text-align:center;text-decoration:none;' + (sim ? '' : 'opacity:.5;') + '" href="' + href + '">' + escapeHtml(c.label) + '</a>';
+  });
+  return h + '</div><div style="font-size:11px;color:var(--ink-soft);margin-top:6px;">Membuka aplikasi SMS dengan perintah siap kirim. Nomor disimpan di HP ini saja. STATUS# umum dipakai tracker sejenis, belum diuji di modelmu.</div></div>';
+}
+// ----- Perintah ke tracker via SMS (Restart / Putus BBM / Pulihkan BBM) -----
+const KD_CMDS = [
+  { id:'restart', label:'🔄 Restart tracker', def:'RESET#',        danger:false, hint:'Memulai ulang tracker.' },
+  { id:'restore', label:'✅ Pulihkan BBM & listrik', def:'HFYD,123456#', danger:false, hint:'Menyambungkan kembali BBM dan listrik.' },
+  { id:'cut',     label:'⛔ Putus BBM & listrik', def:'DYD,123456#',  danger:true,  hint:'Memutus BBM dan listrik. Hanya saat kendaraan diam.' }
+];
+function kdCmdGet(c){ try{ return localStorage.getItem('kd_cmd_' + c.id) || c.def; }catch(e){ return c.def; } }
+function kdCmdHtml(){
+  let h = '<div class="loc-card"><div style="font-weight:700;margin-bottom:4px;">🎛️ Perintah ke tracker</div>'
+    + '<div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:8px;">Perintah dikirim lewat SMS dari HP-mu ke nomor SIM tracker (isi nomornya di atas). Teks di bawah adalah <b>tebakan umum</b>. Samakan dengan <i>Command content</i> di riwayat Catatan aplikasi Secumore sebelum dipakai.</div>';
+  KD_CMDS.forEach(c=>{
+    h += '<div class="field" style="margin-bottom:10px;"><label>' + c.label + '</label>'
+      + '<input data-kdcmd="' + c.id + '" value="' + escapeHtml(kdCmdGet(c)) + '">'
+      + '<div class="field-hint' + (c.danger ? ' warn' : '') + '">' + c.hint + '</div>'
+      + '<button class="btn btn-ghost" data-kd="cmd" data-cmd="' + c.id + '" style="width:100%;margin-top:6px;">Kirim</button></div>';
+  });
+  return h + '</div>';
+}
+function kdCutGuard(){
+  const m = gpsMember(); if(!m) return 'Posisi tracker belum terbaca.';
+  const hb = Number(gpsTrk && gpsTrk.heartbeatMs) || 0, TEN = 10 * 60 * 1000;
+  const fresh = (hb && Date.now() - hb < TEN) || (m.updatedMs && Date.now() - m.updatedMs < TEN);
+  if(!fresh) return 'Tracker tidak terlihat online dalam 10 menit terakhir, kecepatan tidak bisa dipastikan.';
+  if(m.speedKmh > 5) return 'Kendaraan sedang bergerak (' + m.speedKmh + ' km/j).';
+  return '';
+}
+function kdCmdSend(id){
+  const c = KD_CMDS.find(x => x.id === id); if(!c) return;
+  const sim = kdSimGet().replace(/[^\d+]/g, '');
+  const text = (document.querySelector('[data-kdcmd="' + id + '"]') || {}).value || kdCmdGet(c);
+  if(!sim){ showToast('Isi nomor SIM tracker dulu', true); return; }
+  if(!text.trim()){ showToast('Teks perintah kosong', true); return; }
+  if(c.danger){
+    const why = kdCutGuard();
+    if(why){ showToast('Ditolak: ' + why, true); return; }
+    if(!confirm('Putus BBM & listrik kendaraan?\n\nPastikan kendaraan sedang diam dan aman.')) return;
+    if((prompt('Ketik PUTUS untuk melanjutkan') || '').trim().toUpperCase() !== 'PUTUS'){ showToast('Dibatalkan'); return; }
+  } else if(!confirm(c.label + '?\n\nAplikasi SMS akan terbuka dengan perintah: ' + text)) return;
+  window.location.href = 'sms:' + encodeURIComponent(sim) + '?body=' + encodeURIComponent(text);
+}
+function renderKendaraan(){
+  const el = document.getElementById('kdBody'); if(!el) return;
+  const ae = document.activeElement;
+  if(ae && ae.closest && ae.closest('#kdBody') && /^(INPUT|TEXTAREA)$/.test(ae.tagName)) return;
+  if(!gpsConfigured()){ el.innerHTML = '<div class="loc-card">GPS belum disambungkan. Isi GPS_WORKER_URL dan GPS_WORKER_KEY di index.html.</div>'; return; }
+  const m = gpsMember();
+  if(!m){ el.innerHTML = '<div class="loc-card">' + (gpsErr ? '🔴 Tracker belum terbaca: ' + escapeHtml(gpsErr) : '⏳ Memuat posisi tracker…') + '</div>'; return; }
+  const hbMs = Number(gpsTrk.heartbeatMs) || 0;
+  const online = (hbMs && Date.now() - hbMs < GPS_STALE_MS) || (m.updatedMs && Date.now() - m.updatedMs < GPS_STALE_MS);
+  const moving = online && m.speedKmh >= GPS_MOVING_KMH;
+  const state = !online ? '⚠️ Offline' : (moving ? '🟢 Bergerak' : '🟢 Online, diam');
+  const row = (k, v) => '<div class="kd-row"><span>' + k + '</span><span>' + v + '</span></div>';
+  const alarm = gpsTrk.alarm === undefined || gpsTrk.alarm === null || gpsTrk.alarm === '' ? '-' : escapeHtml(typeof gpsTrk.alarm === 'object' ? JSON.stringify(gpsTrk.alarm) : String(gpsTrk.alarm));
+  const coord = m.lat.toFixed(6) + ', ' + m.lng.toFixed(6);
+  const fetched = gpsTrk.fetchedAt ? fmtClockSec(Date.parse(gpsTrk.fetchedAt)) : '-';
+  let h = '<div class="kd-hero fade-up"><div class="kd-name">🚗 ' + escapeHtml(m.name || 'Kendaraan ku') + '</div>'
+    + '<div class="kd-speed">' + m.speedKmh + '<small>km/j</small></div>'
+    + '<div class="kd-state">' + state + ' • titik ' + gpsAgo(m.updatedMs) + '</div></div>';
+  h += '<div class="loc-card">'
+    + row('Status', state)
+    + row('Koordinat', coord)
+    + row('Arah', escapeHtml(gpsCompass(gpsTrk.heading)))
+    + row('Waktu titik (portal)', escapeHtml(String(gpsTrk.positionTime || '-')) + ' • ' + gpsAgo(m.updatedMs))
+    + row('Detak terakhir', escapeHtml(String(gpsTrk.heartbeat || '-')) + (hbMs ? ' • ' + gpsAgo(hbMs) : ''))
+    + row('Alarm', alarm)
+    + row('Sumber data', gpsTrk.source === 'track' ? 'Live (peta portal)' : 'Tersimpan di portal (bisa tertinggal)')
+    + row('Diambil dari server', fetched)
+    + '</div>';
+  h += '<div class="kd-btns"><button class="btn btn-ghost" data-kd="refresh">🔄 Segarkan</button>'
+    + '<button class="btn btn-ghost" data-kd="copy">📋 Salin koordinat</button>'
+    + '<a class="btn btn-ghost" style="text-align:center;text-decoration:none;" target="_blank" rel="noopener" href="https://www.google.com/maps?q=' + m.lat + ',' + m.lng + '">🗺️ Google Maps</a>'
+    + '<button class="btn btn-ghost" data-kd="map">📍 Lihat di peta Lokasi</button></div>';
+  // Riwayat titik (sesi ini): lompatan besar saat diam = GPS tidak stabil
+  if(gpsHist.length){
+    let rows = '', prev = null;
+    gpsHist.slice().forEach((p, i, arr)=>{ p.d = i ? Math.round(gpsDist(arr[i - 1], p)) : null; });
+    for(let i = gpsHist.length - 1; i >= 0 && i >= gpsHist.length - 10; i--){
+      const p = gpsHist[i];
+      rows += row(fmtClockSec(p.ms), p.kmh + ' km/j' + (p.d === null ? '' : ' • geser ' + p.d + ' m'));
+    }
+    h += '<div class="loc-card"><div style="font-weight:700;margin-bottom:4px;">Riwayat titik (sesi ini)</div>' + rows
+      + '<div style="font-size:11px;color:var(--ink-soft);margin-top:6px;">Kalau kendaraan diam tapi titiknya terus bergeser puluhan meter, sinyal GPS tracker kurang bagus.</div></div>';
+  }
+  h += kdAlarmsHtml() + kdSmsHtml() + kdCmdHtml();
+  if(gpsInfo){
+    const rows = Object.entries(gpsInfo).map(([k, v])=>k + ' = ' + (v && typeof v === 'object' ? JSON.stringify(v) : v)).join('\n');
+    h += '<details class="loc-card"><summary style="font-weight:700;cursor:pointer;">Info perangkat (dari portal)</summary><pre class="kd-raw">' + escapeHtml(rows || '(kosong)') + '</pre></details>';
+  } else if(gpsInfoErr){
+    h += '<div class="loc-card" style="font-size:12px;color:var(--ink-soft);">Info perangkat belum terbaca: ' + escapeHtml(gpsInfoErr) + '</div>';
+  }
+  const raw = gpsTrk.fields ? Object.entries(gpsTrk.fields).map(([k, v])=>k + ' = ' + (v && typeof v === 'object' ? JSON.stringify(v) : v)).join('\n') : '';
+  h += '<details class="loc-card"><summary style="font-weight:700;cursor:pointer;">Data mentah dari tracker</summary><pre class="kd-raw">' + escapeHtml(raw || '(kosong)') + '</pre></details>';
+  el.innerHTML = h;
+}
+document.getElementById('kdBody').addEventListener('change', (e)=>{
+  if(e.target && e.target.dataset && e.target.dataset.kdcmd){ try{ localStorage.setItem('kd_cmd_' + e.target.dataset.kdcmd, e.target.value.trim()); }catch(err){} return; }
+  if(e.target && e.target.id === 'kdSim'){ try{ localStorage.setItem('kd_sim', e.target.value.trim()); }catch(err){} renderKendaraan(); }
+});
+document.getElementById('kdBody').addEventListener('click', async (e)=>{
+  const b = e.target.closest('[data-kd]'); if(!b) return;
+  const act = b.dataset.kd, m = gpsMember();
+  if(act === 'cmd'){ kdCmdSend(b.dataset.cmd); return; }
+  if(act === 'alarms'){ gpsLoadAlarms(); renderKendaraan(); return; }
+  if(act === 'map'){ setActiveTab('lokasi'); return; }
+  if(act === 'copy'){
+    if(!m) return;
+    try{ await navigator.clipboard.writeText(m.lat.toFixed(6) + ',' + m.lng.toFixed(6)); showToast('Koordinat tersalin 📋'); }
+    catch(err){ showToast('Gagal menyalin', true); }
+    return;
+  }
+  if(act === 'refresh'){
+    b.disabled = true; b.textContent = '⏳ Menyegarkan…';
+    await gpsPoll(true, true);
+    if(gpsErr) showToast('Gagal: ' + gpsErr, true); else showToast('Data tracker diperbarui ✅');
+    renderKendaraan();
+  }
+});
 // Menyambungkan tracker ke tab Motor: mulai/selesai berkendara otomatis, tanpa menekan tombol
 let gpsSlowSince = 0;
 function gpsFeedRide(){
@@ -2649,7 +2885,7 @@ function attachLokasiListener(){
   if(locIsSharing() && locMyName()) locStartWatch();
   locTick = setInterval(locTickFn, 20000);
   setTimeout(()=>gpsPoll(true), 3000);
-  setInterval(()=>{ if(document.visibilityState === 'visible' && activeTab === 'lokasi') gpsPoll(false); }, 5000);
+  setInterval(()=>{ if(document.visibilityState === 'visible' && (activeTab === 'lokasi' || activeTab === 'kendaraan')) gpsPoll(false); }, 5000);
   document.addEventListener('visibilitychange', ()=>{
     if(document.visibilityState === 'visible'){
       if(locIsSharing()) locPushNow(false);
@@ -5362,6 +5598,7 @@ const TAB_DEFS = {
   hutang:   { view:'viewHutang',    btn:'btnTabHutang',    tag:'Catatan hutang & piutang',    fab:'mode-hutang', cls:'tab-hutang' },
   kucing:   { view:'viewKucing',     btn:'btnTabKucing',    tag:'Rawat kucing bareng 🐾',       cls:'tab-cat' },
   lokasi:   { view:'viewLokasi',    btn:'btnTabLokasi',   tag:'Cek lokasi bersama',          cls:'tab-loc' },
+  kendaraan:{ view:'viewKendaraan', btn:'btnTabKendaraan', tag:'Data GPS kendaraanku',      cls:'tab-kdr' },
   ride:     { view:'viewRide',      btn:'btnTabRide',      tag:'Mengendara aman & servis motor', cls:'tab-ride' },
   ai:       { view:'viewAI',        btn:'btnTabAI',        tag:'Saran finansial dari AI',     cls:'tab-ai' }
 };
@@ -5381,6 +5618,7 @@ function setActiveTab(tab){
   document.getElementById('topbarTag').textContent = TAB_DEFS[tab].tag;
   if(tab === 'ai') renderAIHeader();
   if(tab === 'lokasi') onLokasiTabShown();
+  if(tab === 'kendaraan'){ try{ renderKendaraan(); gpsPoll(true); gpsLoadAlarms(); gpsLoadInfo(); }catch(e){ console.error('kendaraan', e); } }
   if(tab === 'ride'){ try{ rideRenderAll(); if(nv.map) setTimeout(()=>nv.map.invalidateSize(), 80); }catch(e){ console.error('ride', e); } }
   try{ syncSidebar(tab); }catch(e){}
   window.scrollTo({ top:0 });
