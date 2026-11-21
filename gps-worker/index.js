@@ -12,7 +12,11 @@
 //   TIMEZONE   (opsional) default 7
 //   ALLOW_ORIGIN (opsional) alamat aplikasimu untuk CORS (diisi otomatis dari wrangler.toml)
 //
-// Endpoint:  /pos  (posisi, dipakai aplikasi Buku Kas)   /pos?raw=1  (plus semua field mentah)   /debug  (tes login)
+//   CANTRACK_BASE_URL (opsional) default https://www.cantrackportal.com ; IMEI (opsional) default 868720062744036
+//   CMD_PASSWORD (opsional) sandi perintah tracker, default 123456
+//
+// Endpoint:  POST /api/command  (kirim perintah: cut_fuel | restore_fuel | set_interval)
+//            /pos  (posisi, dipakai aplikasi Buku Kas)   /pos?raw=1  (plus semua field mentah)   /debug  (tes login)
 // Deploy otomatis lewat GitHub Actions: lihat .github/workflows/deploy-gps-worker.yml
 
 const PORTAL = "https://www.cantrackportal.com";
@@ -39,8 +43,8 @@ function json(body, status, env) {
       "content-type": "application/json; charset=utf-8",
       "cache-control": "no-store",
       "access-control-allow-origin": corsOrigin(env),
-      "access-control-allow-headers": "x-api-key",
-      "access-control-allow-methods": "GET, OPTIONS",
+      "access-control-allow-headers": "x-api-key, content-type",
+      "access-control-allow-methods": "GET, POST, OPTIONS",
       vary: "Origin",
     },
   });
@@ -52,8 +56,8 @@ function preflight(env) {
     status: 204,
     headers: {
       "access-control-allow-origin": corsOrigin(env),
-      "access-control-allow-headers": "x-api-key",
-      "access-control-allow-methods": "GET, OPTIONS",
+      "access-control-allow-headers": "x-api-key, content-type",
+      "access-control-allow-methods": "GET, POST, OPTIONS",
       "access-control-max-age": "86400",
       vary: "Origin",
     },
@@ -440,6 +444,140 @@ async function fetchOfficial(env) {
   };
 }
 
+// ===== Perintah ke tracker (GT06/CY06) lewat CantrackPortal =====
+const DEFAULT_IMEI = "868720062744036";
+const INTERVAL_MIN = 5, INTERVAL_MAX = 18000; // detik
+let lastCmd = null;      // { action, at } perintah BBM terakhir yang sukses dikirim (cadangan penanda relay)
+let lastCmdSentAt = 0;   // mencegah kirim ganda akibat tap beruntun
+
+// action -> string perintah standar. Mengembalikan { cmd } atau { error }.
+function buildCommand(action, intervalSeconds, env) {
+  const pw = String((env && env.CMD_PASSWORD) || "123456").replace(/[^0-9A-Za-z]/g, "");
+  if (action === "cut_fuel") return { cmd: `DYD,${pw}#` };
+  if (action === "restore_fuel") return { cmd: `HFYD,${pw}#` };
+  if (action === "set_interval") {
+    const n = Number(intervalSeconds);
+    if (!Number.isInteger(n)) return { error: "intervalSeconds harus bilangan bulat" };
+    if (n < INTERVAL_MIN) return { error: `intervalSeconds minimal ${INTERVAL_MIN} detik` };
+    if (n > INTERVAL_MAX) return { error: `intervalSeconds maksimal ${INTERVAL_MAX} detik` };
+    return { cmd: `TIMER,${pw},${n}#` };
+  }
+  return { error: "action tidak dikenal (pakai cut_fuel | restore_fuel | set_interval)" };
+}
+
+// Kirim ke GetDateServices.asmx/SendCommands. Token mds hanya dipakai di sini dan TIDAK pernah dikembalikan.
+async function postCommand(env, s, cmd) {
+  const base = String(env.CANTRACK_BASE_URL || PORTAL).replace(/\/+$/, "");
+  const body = new URLSearchParams({
+    macid: String(env.IMEI || DEFAULT_IMEI).trim(),
+    cmd,
+    pwd: "",
+    mds: s.mds,
+  });
+  const headers = {
+    "content-type": "application/x-www-form-urlencoded",
+    "user-agent": UA,
+    accept: "*/*",
+    origin: base,
+    referer: `${base}/user/main.html`,
+  };
+  if (s.cookie) headers.cookie = s.cookie;
+  const ctl = new AbortController();
+  const to = setTimeout(() => ctl.abort(), 20000);
+  try {
+    const res = await fetch(`${base}/GetDateServices.asmx/SendCommands`, { method: "POST", headers, body, signal: ctl.signal });
+    const text = await res.text().catch(() => "");
+    return { httpStatus: res.status, httpOk: res.ok, text };
+  } finally {
+    clearTimeout(to);
+  }
+}
+
+// Hilangkan pembungkus XML (<string ...>isi</string>) agar balasan mudah dibaca, lalu buang token sesi jika ikut terpantul.
+function cleanReply(text, s) {
+  let t = String(text || "");
+  const x = t.match(/<string[^>]*>([\s\S]*?)<\/string>/i);
+  if (x) t = x[1];
+  if (s && s.mds) t = t.split(s.mds).join("<mds>");
+  return t.trim().slice(0, 2000);
+}
+
+// Balasan dianggap gagal bila HTTP bukan 2xx atau teksnya memuat kata gagal/sesi habis.
+function replyLooksFailed(r) {
+  if (!r.httpOk) return true;
+  return /"?success"?\s*[:=]\s*"?false|"?errorCode"?\s*[:=]\s*"?[1-9]|fail|error|gagal|invalid|expired|not\s*login|offline|timeout|失败|离线|超时/i.test(r.text);
+}
+function replyLooksSessionExpired(r) {
+  return r.httpStatus === 401 || r.httpStatus === 403 || /mds|login|session|expired|未登录|登录/i.test(r.text);
+}
+
+async function handleCommand(req, env) {
+  let payload;
+  try { payload = await req.json(); } catch (e) { return json({ ok: false, error: "body harus JSON: {action, intervalSeconds?}" }, 400, env); }
+  const action = payload && payload.action;
+  const built = buildCommand(action, payload && payload.intervalSeconds, env);
+  if (built.error) return json({ ok: false, error: built.error }, 400, env);
+
+  const now = Date.now();
+  if (now - lastCmdSentAt < 3000) return json({ ok: false, error: "terlalu cepat, tunggu beberapa detik sebelum mengirim perintah lagi" }, 429, env);
+  lastCmdSentAt = now;
+
+  let sess = await getSession(env, false);
+  let r = await postCommand(env, sess, built.cmd);
+  if (replyLooksFailed(r) && replyLooksSessionExpired(r)) {
+    // sesi mds mungkin kedaluwarsa: login ulang lalu kirim sekali lagi
+    sess = await getSession(env, true);
+    r = await postCommand(env, sess, built.cmd);
+  }
+  const ok = !replyLooksFailed(r);
+  if (ok && (action === "cut_fuel" || action === "restore_fuel")) lastCmd = { action, at: Date.now() };
+  return json({
+    ok,
+    action,
+    command: built.cmd,
+    httpStatus: r.httpStatus,
+    reply: cleanReply(r.text, sess), // teks balasan asli CantrackPortal (untuk debugging)
+    sentAt: new Date().toISOString(),
+    note: ok ? "Perintah diteruskan ke server. Tracker baru menjalankannya saat online; cek balasan/status beberapa detik lagi." : "Server menolak atau balasannya terlihat gagal; lihat field reply.",
+  }, ok ? 200 : 502, env);
+}
+
+// ===== Deteksi alarm SOS & status relay BBM dari data posisi =====
+// Nama field status di portal tidak terdokumentasi: kumpulkan semua field berbau alarm/status/relay lalu cocokkan pola.
+// Cek hasilnya lewat /pos?raw=1 (lihat "fields") dan sesuaikan pola di bawah bila perlu.
+const SOS_RE = /\bsos\b|darurat|emergency|panic|紧急|求助/i;
+const CUT_RE = /(oil|fuel|petrol|relay|power|circuit|bbm|minyak)[^|,;]{0,24}(cut|off|disconnect|break|open|putus)|(cut|disconnect|putus)[^|,;]{0,24}(oil|fuel|relay|bbm)|断油|断电|油电断开|油路断开/i;
+const RESTORE_RE = /(oil|fuel|petrol|relay|power|circuit|bbm|minyak)[^|,;]{0,24}(restore|on|connect|normal|pulih)|油电恢复|恢复供油|油路恢复|油电接通/i;
+
+function statusText(out) {
+  const f = (out && out.fields) || {};
+  const parts = [];
+  if (out && out.alarm !== undefined && out.alarm !== null) parts.push(typeof out.alarm === "object" ? JSON.stringify(out.alarm) : String(out.alarm));
+  for (const [k, v] of Object.entries(f)) {
+    if (!/alarm|status|state|relay|oil|fuel|dy|cut|sos/i.test(k)) continue;
+    if (v === undefined || v === null || v === "") continue;
+    parts.push(typeof v === "object" ? JSON.stringify(v) : String(v));
+  }
+  return parts.join(" | ");
+}
+
+function detectFlags(out) {
+  const text = statusText(out);
+  const f = (out && out.fields) || {};
+  // SOS: teks alarm memuat SOS, atau field type_id/alarm_type bernilai 1 (type_id 1 = SOS di portal)
+  const typeId = f.alarm_type_id ?? f.alarm_type ?? f.type_id;
+  const isSos = SOS_RE.test(text) || (typeId !== undefined && String(typeId).trim() === "1");
+
+  let fuelCut = false, fuelCutSource = "unknown";
+  if (CUT_RE.test(text) && !RESTORE_RE.test(text)) { fuelCut = true; fuelCutSource = "device"; }
+  else if (RESTORE_RE.test(text)) { fuelCut = false; fuelCutSource = "device"; }
+  else if (lastCmd && Date.now() - lastCmd.at < 24 * 3600 * 1000) {
+    // Portal tidak melaporkan relay: pakai perintah BBM terakhir yang berhasil dikirim (hanya perkiraan, hilang bila Worker restart)
+    fuelCut = lastCmd.action === "cut_fuel"; fuelCutSource = "lastCommand";
+  }
+  return { isSos, fuelCut, fuelCutSource, alarmText: text.slice(0, 200) };
+}
+
 let posCache = null; // { at, out }  cache 4 dtk supaya beberapa HP keluarga tidak membebani portal
 const POS_CACHE_MS = 4 * 1000;
 
@@ -472,6 +610,11 @@ export default {
     const raw = u.searchParams.get("raw") === "1";
 
     try {
+      if (path === "/api/command") {
+        if (req.method !== "POST") return json({ ok: false, error: "gunakan POST" }, 405, env);
+        return await handleCommand(req, env);
+      }
+
       if (path === "/debug") {
         // Selalu balas 200 berisi diagnosis lengkap (token disamarkan), supaya mudah dibaca/dibagikan.
         const out = { ok: false, userIdSet: !!env.USER_ID, accountSet: !!env.ACCOUNT, passwordSet: !!env.PASSWORD };
@@ -520,7 +663,7 @@ export default {
         if (!env.USER_ID) return json({ ok: false, error: "USER_ID belum diisi" }, 400, env);
         const fresh = u.searchParams.get("fresh") === "1"; // tombol "Segarkan": lewati cache + login ulang
         if (!fresh && posCache && Date.now() - posCache.at < POS_CACHE_MS) {
-          return json(shape({ ...posCache.out, cached: true }, raw), 200, env);
+          return json(shape({ ...posCache.out, ...detectFlags(posCache.out), cached: true }, raw), 200, env);
         }
         let out;
         try {
@@ -536,7 +679,7 @@ export default {
           const alt = await fetchOfficial(env).catch(() => null);
           if (alt && alt.ok) out = alt; else throw e;
         }
-        if (out.ok) posCache = { at: Date.now(), out };
+        if (out.ok) { Object.assign(out, detectFlags(out)); posCache = { at: Date.now(), out }; }
         return json(out.ok ? shape(out, raw) : out, out.ok ? 200 : 502, env);
       }
 

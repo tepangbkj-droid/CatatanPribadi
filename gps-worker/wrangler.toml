@@ -8,3 +8,6 @@ workers_dev = true
 [vars]
 ALLOW_ORIGIN = "https://tepangbkj-droid.github.io"
 TIMEZONE = "7"
+
+# Opsional (tambahkan di [vars] bila perlu): CANTRACK_BASE_URL, IMEI, CMD_PASSWORD
+# Contoh: IMEI = "868720062744036"   CMD_PASSWORD = "123456"
