@@ -342,6 +342,53 @@ async function fetchLoadUser(env, s) {
 }
 
 // Coba loadUser dulu; jika gagal, pakai metode lama (TrackService).
+// Daftar alarm (endpoint yang sama dengan halaman "Daftar Alarm" di portal)
+let alarmCache = null;
+function toMs(v, tz) {
+  const n = Number(v);
+  if (isFinite(n) && n > 0) return n > 1e12 ? n : n * 1000;
+  return parseTime(v, tz) || 0;
+}
+async function fetchAlarms(env, s) {
+  const tries = [];
+  for (const type of ["product", "custom"]) {
+    const q = new URLSearchParams({
+      method: "queryLocalAlarmInfoUtc",
+      callback: "cbAlarm",
+      school_id: env.SCHOOL_ID || s.loginId,
+      mds: s.mds,
+      max_time: "0",
+      type,
+      mapType: "GOOGLE",
+      timestamp: String(Date.now()),
+    });
+    const headers = { "user-agent": UA, accept: "*/*", referer: `${PORTAL}/user/main.html` };
+    if (s.cookie) headers.cookie = s.cookie;
+    const res = await fetch(`${PORTAL}/GetDataService.aspx?${q}`, { headers });
+    const text = await res.text();
+    const m = text.match(/^\s*cbAlarm\(([\s\S]*)\)\s*;?\s*$/);
+    if (!m) { tries.push({ type, status: res.status, sample: mask(text).slice(0, 160) }); continue; }
+    let data;
+    try { data = JSON.parse(m[1]); } catch (e) { tries.push({ type, error: "JSON tidak valid" }); continue; }
+    if (data.success === false || data.success === "false") { tries.push({ type, error: data.errorDescribe || "gagal" }); continue; }
+    const tz = env.TIMEZONE || "7";
+    const rows = (data.rows || []).map((r) => ({
+      id: r.id,
+      typeId: Number(r.type_id),
+      name: r.user_name || r.macname,
+      sendMs: toMs(r.send_time, tz),
+      gpsMs: toMs(r.gps_time, tz),
+      speed: Number(r.speed) || 0,
+      lat: Number(r.weidu),
+      lon: Number(r.jingdu),
+      desc: String(r.gps_status || "").split("|")[0],
+      classify: r.classifyDescribe,
+    })).sort((a, b) => b.sendMs - a.sendMs).slice(0, 50);
+    return { ok: true, fetchedAt: new Date().toISOString(), count: rows.length, rows };
+  }
+  return { ok: false, step: "alarms", tries };
+}
+
 // TrackService = sumber yang sama dengan peta live di portal (lebih real-time).
 // loadUser = data perangkat tersimpan (bisa tertinggal), dipakai hanya sebagai cadangan.
 async function fetchAny(env, s) {
@@ -438,6 +485,35 @@ export default {
         }
         out.official = await fetchOfficial(env).then((r) => (r.ok ? { ok: true, lat: r.lat, lon: r.lon } : r)).catch((e) => ({ error: String(e) }));
         return json(out, 200, env);
+      }
+
+      if (path === "/info") {
+        // Info perangkat dari portal (loadUser). Kunci yang mirip rahasia dibuang.
+        let sess = await getSession(env, false);
+        let r = await fetchLoadUser(env, sess).catch((e) => ({ ok: false, step: "info", error: String(e) }));
+        if (!r.ok) {
+          sess = await getSession(env, true);
+          r = await fetchLoadUser(env, sess).catch((e) => ({ ok: false, step: "info", error: String(e) }));
+        }
+        if (!r.ok) return json({ ok: false, step: r.step, error: r.error }, 502, env);
+        const safe = {};
+        for (const [k, v] of Object.entries(r.fields || {})) {
+          if (/pass|pwd|token|mds|cookie|secret|key/i.test(k)) continue;
+          safe[k] = v;
+        }
+        return json({ ok: true, fetchedAt: r.fetchedAt, fields: safe }, 200, env);
+      }
+
+      if (path === "/alarms") {
+        if (alarmCache && Date.now() - alarmCache.at < 8000) return json({ ...alarmCache.out, cached: true }, 200, env);
+        let sess = await getSession(env, false);
+        let out = await fetchAlarms(env, sess).catch((e) => ({ ok: false, step: "alarms", error: String(e) }));
+        if (!out.ok) {
+          sess = await getSession(env, true);
+          out = await fetchAlarms(env, sess).catch((e) => ({ ok: false, step: "alarms", error: String(e) }));
+        }
+        if (out.ok) alarmCache = { at: Date.now(), out };
+        return json(out, out.ok ? 200 : 502, env);
       }
 
       if (path === "/pos") {
