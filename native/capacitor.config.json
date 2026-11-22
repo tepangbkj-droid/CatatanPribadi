@@ -5,6 +5,11 @@
   "server": {
     "url": "https://tepangbkj-droid.github.io/CatatanPribadi/",
     "cleartext": false,
-    "allowNavigation": ["tepangbkj-droid.github.io"]
+    "allowNavigation": [
+      "tepangbkj-droid.github.io"
+    ]
+  },
+  "android": {
+    "useLegacyBridge": true
   }
 }
