@@ -1,13 +1,60 @@
-# Worker pelacak GPS (Cantrack) untuk aplikasi Buku Kas.
-# Dideploy otomatis oleh .github/workflows/deploy-gps-worker.yml
+# Worker GPS (CantrackPortal) untuk Buku Kas + Pelacak Motor: posisi, riwayat rute, perintah (Google OAuth),
+# push SOS (Web Push + FCM ke APK), rekaman suara, dan pemantau cron tiap menit.
+# Dideploy otomatis oleh .github/workflows/deploy-gps-worker.yml (lihat PANDUAN-GPS.md).
 name = "gps-worker"
 main = "index.js"
 compatibility_date = "2025-01-01"
 workers_dev = true
 
+# Cron: server memeriksa alarm/SOS tiap menit walau HP & aplikasi mati, sekaligus merekam posisi ke D1.
+[triggers]
+crons = ["* * * * *"]
+
+# D1: sesi portal, langganan push, alarm yang sudah dikirim, posisi (riwayat), log perintah, metadata audio.
+# database_id DIISI OTOMATIS oleh workflow dari secret GitHub GPS_D1_ID (jangan diubah manual di sini).
+[[d1_databases]]
+binding = "DB"
+database_name = "gps-db"
+database_id = "GANTI_DENGAN_DATABASE_ID"
+
+# R2: file rekaman suara (dibuat otomatis oleh workflow bila belum ada).
+[[r2_buckets]]
+binding = "AUDIO"
+bucket_name = "gps-audio"
+
 [vars]
+# Asal (origin) yang boleh memanggil Worker. Harus persis origin GitHub Pages (tanpa path, tanpa garis miring akhir).
 ALLOW_ORIGIN = "https://tepangbkj-droid.github.io"
 TIMEZONE = "7"
+IMEI = "868720062744036"
+# Alarm pemicu notifikasi: SOS_TYPE_IDS = SOS prioritas tertinggi; ALERT_TYPE_IDS = peringatan biasa
+# (5 listrik terputus, 23 diderek, 38 perangkat dilepas, 48 cabut-colok). Kosongkan ALERT_TYPE_IDS untuk mematikan.
+SOS_TYPE_IDS = "1"
+ALERT_TYPE_IDS = "5,23,38,48"
+ALERT_MAX_AGE_MIN = "15"
+# Riwayat: jeda > HISTORY_GAP_SEC antar titik = blind spot; titik diunggah > HISTORY_LATE_SEC setelah waktu GPS = dikirim terlambat.
+HISTORY_GAP_SEC = "300"
+HISTORY_LATE_SEC = "120"
+# Rentang panjang dipecah per jendela ini (jam) saat memanggil portal.
+HISTORY_CHUNK_HOURS = "6"
+# Putus BBM boleh dikirim anggota keluarga? ("0" = hanya pemilik)
+FAMILY_CAN_COMMAND = "1"
+VAPID_SUBJECT = "mailto:GANTI@email.kamu"
+# Aplikasi Buku Kas lama membaca posisi memakai kunci x-api-key (hanya /pos /alarms /info, TIDAK untuk perintah).
+# Setelah Anda masuk Google di halaman Pelacak Motor (sesi tersimpan), ubah ke "0" lalu deploy ulang. Lihat PANDUAN-GPS.md.
+LEGACY_READ = "1"
+# Templat perintah suara (sintaks beda antar firmware; cek buku manual CY06/GT06):
+# CMD_RECORD_TEMPLATE  = "RECORD,{pw},{sec}#"
+# CMD_MONITOR_TEMPLATE = "MONITOR,{pw}#"
+# Bila endpoint portal berubah: CMD_CANDIDATES / HISTORY_CANDIDATES (JSON) menggantikan daftar bawaan.
 
-# Opsional (tambahkan di [vars] bila perlu): CANTRACK_BASE_URL, IMEI, CMD_PASSWORD
-# Contoh: IMEI = "868720062744036"   CMD_PASSWORD = "123456"
+# ---- SECRETS (jangan ditulis di sini; diisi dari GitHub Secrets oleh workflow) ----
+#   ACCOUNT, PASSWORD, USER_ID                akun & objectid perangkat di CantrackPortal
+#   GOOGLE_CLIENT_ID                          Client ID OAuth Web (xxxx.apps.googleusercontent.com); boleh beberapa, pisah koma
+#   OWNER_EMAILS / FAMILY_EMAILS              email Google pemilik / keluarga, pisah koma
+#   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY       pasangan kunci Web Push (cara membuat: PANDUAN-GPS.md)
+#   SIGNING_SECRET                            string acak panjang (tanda tangan token sesi & URL audio)
+#   SIM_NUMBER                                nomor SIM di tracker (tombol telepon)
+#   CMD_PASSWORD                              (opsional) sandi perintah tracker; bawaan 123456. GANTI di tracker lalu isi di sini
+#   APP_KEY                                   hanya untuk LEGACY_READ = "1"
+#   SOS_PUSH_URL, SOS_PUSH_KEY                (opsional) layanan FCM yang sudah ada (sos-push-gas.gs / sos-push-worker.js) agar SOS juga masuk ke APK
