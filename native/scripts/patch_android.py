@@ -20,6 +20,7 @@ perms = [
     'android.permission.MODIFY_AUDIO_SETTINGS',
     'android.permission.VIBRATE',
     'android.permission.WAKE_LOCK',
+    'android.permission.ACCESS_NETWORK_STATE',
 ]
 add = ''.join(f'    <uses-permission android:name="{p}" />\n' for p in perms if p not in x)
 add += '    <uses-feature android:name="android.hardware.camera" android:required="false" />\n'
