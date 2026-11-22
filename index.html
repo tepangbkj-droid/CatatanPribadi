@@ -1349,7 +1349,7 @@
         <div style="margin-top:12px;" id="locFeed"></div>
       </div>
 
-      <div class="field-hint hidden" id="locNativeHint" style="margin-top:16px;">🟢 Mode native aktif: pelacakan berjalan di belakang layar (ada notifikasi tetap “berbagi lokasi”). Pilih izin lokasi <b>Sepanjang waktu</b> dan set baterai app ke <b>Tidak dibatasi</b> agar tidak dimatikan sistem. <button class="link-btn teal" id="btnLocPerm" style="margin-left:6px;">⚙️ Buka izin</button></div>
+      <div class="field-hint hidden" id="locNativeHint" style="margin-top:16px;">🟢 Mode native aktif: pelacakan berjalan di belakang layar (ada notifikasi tetap “berbagi lokasi”). Pilih izin lokasi <b>Sepanjang waktu</b> dan set baterai app ke <b>Tidak dibatasi</b> agar tidak dimatikan sistem. Boleh tekan Home atau kunci layar, tetapi <b>jangan geser/tutup paksa</b> app dari daftar aplikasi terbaru (itu menghentikan pelacakan; di daftar itu pilih “Kunci” bila ada). <button class="link-btn teal" id="btnLocPerm" style="margin-left:6px;">⚙️ Buka izin</button></div>
       <div class="field-hint" id="locWebHint" style="margin-top:16px;">ℹ️ Aplikasi web hanya bisa melacak selama app terbuka (layar menyala atau app di depan). Saat app ditutup/dikunci, yang terlihat adalah lokasi terakhir beserta waktunya. Gerak (diam, jalan, berkendara) dan riwayat perjalanan dihitung otomatis dari kecepatan GPS.</div>
     </div>
 
@@ -1974,6 +1974,7 @@ const SOS_PUSH_KEY = "Tepangbkjaja305";
 // GPS_WORKER_KEY = sama persis dengan secret GPS_APP_KEY di GitHub. Kosong = fitur mati.
 const GPS_WORKER_URL = "https://gps-worker.tepangbkj8.workers.dev";
 const GPS_WORKER_KEY = "KANJUT123";
+const GPS_MOTOR_URL = "./motor/index.html";  // halaman Pelacak Motor (login Google, perintah, riwayat rute, rekaman, push)
 const GPS_TRACKER_NAME = "Kendaraan";   // nama yang tampil di peta & daftar
 const GPS_MOVING_KMH = 5;               // di atas ini dianggap "bergerak"
 const GPS_AUTO_RIDE = true;             // tab Motor: mode berkendara mulai/berhenti otomatis dari GPS tracker
@@ -1997,7 +1998,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.13.0';
+const APP_VERSION = '2.14.0';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -2575,7 +2576,18 @@ const locAll = () => locMembersEff();
 // Ditampilkan sebagai "anggota" tambahan di peta & daftar. Dibaca tiap ~20 dtk selama tab Lokasi terbuka.
 const GPS_TRACKER_ID = 'gps-tracker', GPS_POLL_MIN_MS = 4000;
 let gpsTrk = null, gpsErr = '', gpsBusy = false, gpsLastTry = 0, gpsOkAt = 0;
-function gpsConfigured(){ return !!GPS_WORKER_URL && !!GPS_WORKER_KEY; }
+// Sesi Google dari halaman Pelacak Motor (localStorage 'gps_session', origin sama). Dipakai untuk BACA data; kunci lama hanya cadangan.
+function gpsSession(){
+  try{ const x = JSON.parse(localStorage.getItem('gps_session') || 'null'); return x && x.token && x.exp > Date.now() ? x : null; }catch(e){ return null; }
+}
+function gpsHeaders(extra){
+  const h = Object.assign({}, extra || {}), ses = gpsSession();
+  if(ses) h.authorization = 'Session ' + ses.token;
+  else if(GPS_WORKER_KEY) h['x-api-key'] = GPS_WORKER_KEY;
+  return h;
+}
+function gpsConfigured(){ return !!GPS_WORKER_URL && (!!GPS_WORKER_KEY || !!gpsSession()); }
+function gpsDropBadSession(j){ if(j && /^session_/.test(j.code || '')){ try{ localStorage.removeItem('gps_session'); }catch(e){} return true; } return false; }
 function gpsMember(){
   if(!gpsConfigured() || !gpsTrk) return null;
   const lat = Number(gpsTrk.lat), lng = Number(gpsTrk.lon);
@@ -2591,8 +2603,9 @@ async function gpsPoll(force, fresh){
   gpsBusy = true; gpsLastTry = Date.now();
   const ctl = new AbortController(), to = setTimeout(()=>ctl.abort(), fresh ? 35000 : 20000);
   try{
-    const r = await fetch(GPS_WORKER_URL.replace(/\/+$/, '') + '/pos' + (fresh ? '?fresh=1' : ''), { headers:{ 'x-api-key': GPS_WORKER_KEY }, cache:'no-store', signal:ctl.signal });
+    const r = await fetch(GPS_WORKER_URL.replace(/\/+$/, '') + '/pos' + (fresh ? '?fresh=1' : ''), { headers:gpsHeaders(), cache:'no-store', signal:ctl.signal });
     const j = await r.json().catch(()=>null);
+    if(gpsDropBadSession(j)) throw new Error('Sesi Google habis. Buka Pelacak Motor dan masuk lagi.');
     if(!r.ok || !j || !j.ok) throw new Error(j && (j.error || j.step) ? `${j.step ? j.step + ': ' : ''}${j.error || 'gagal'}` : 'HTTP ' + r.status);
     gpsTrk = j; gpsErr = ''; gpsOkAt = Date.now();
     try{ gpsSosUpdate(); }catch(e){}
@@ -2663,7 +2676,7 @@ async function gpsLoadInfo(){
   if(!gpsConfigured() || Date.now() - gpsInfoAt < 300000) return;
   gpsInfoAt = Date.now();
   try{
-    const r = await fetch(GPS_WORKER_URL.replace(/\/+$/, '') + '/info', { headers:{ 'x-api-key': GPS_WORKER_KEY }, cache:'no-store' });
+    const r = await fetch(GPS_WORKER_URL.replace(/\/+$/, '') + '/info', { headers:gpsHeaders(), cache:'no-store' });
     const j = await r.json().catch(()=>null);
     if(!r.ok || !j || !j.ok) throw new Error(j && j.error ? j.error : 'HTTP ' + r.status);
     gpsInfo = j.fields || {}; gpsInfoErr = '';
@@ -2683,7 +2696,7 @@ async function gpsLoadAlarms(){
   if(!gpsConfigured() || gpsAlarmBusy) return;
   gpsAlarmBusy = true;
   try{
-    const r = await fetch(GPS_WORKER_URL.replace(/\/+$/, '') + '/alarms', { headers:{ 'x-api-key': GPS_WORKER_KEY }, cache:'no-store' });
+    const r = await fetch(GPS_WORKER_URL.replace(/\/+$/, '') + '/alarms', { headers:gpsHeaders(), cache:'no-store' });
     const j = await r.json().catch(()=>null);
     if(!r.ok || !j || !j.ok) throw new Error(j && (j.error || j.step) ? `${j.step ? j.step + ': ' : ''}${j.error || 'gagal'}` : 'HTTP ' + r.status);
     gpsAlarms = j; gpsAlarmErr = '';
@@ -2783,64 +2796,45 @@ function gpsSosUpdate(){
 document.getElementById('gpsSosOk').addEventListener('click', ()=>{ gpsSosHideUntil = Date.now() + 5*60*1000; gpsSosUpdate(); });
 setInterval(()=>{ if(document.visibilityState === 'visible' && activeTab !== 'lokasi' && activeTab !== 'kendaraan') gpsPoll(false); }, 15000);
 
-let kdCmdBusy = false, kdLastReply = '', kdIntervalVal = '30';
+let kdIntervalVal = '30';
 const KD_FAST_KMH = 10;   // di atas ini, Putus BBM diberi peringatan keras
-async function kdApiCommand(action, intervalSeconds){
-  if(!gpsConfigured()){ showToast('GPS belum disambungkan', true); return; }
-  if(kdCmdBusy) return;
-  kdCmdBusy = true; renderKendaraan();
-  const ctl = new AbortController(), to = setTimeout(()=>ctl.abort(), 40000);
-  try{
-    const body = { action }; if(action === 'set_interval') body.intervalSeconds = intervalSeconds;
-    const r = await fetch(GPS_WORKER_URL.replace(/\/+$/, '') + '/api/command', { method:'POST', headers:{ 'x-api-key':GPS_WORKER_KEY, 'content-type':'application/json' }, body:JSON.stringify(body), cache:'no-store', signal:ctl.signal });
-    const j = await r.json().catch(()=>null);
-    kdLastReply = j ? ('[' + fmtClockSec(Date.now()) + '] ' + (j.command || action) + '\nHTTP ' + (j.httpStatus || r.status) + '\n' + (j.reply || j.error || '(kosong)')) : 'HTTP ' + r.status;
-    if(r.ok && j && j.ok){ showToast('Perintah terkirim ✅'); setTimeout(()=>gpsPoll(true, true), 4000); }
-    else showToast('Gagal: ' + ((j && (j.error || j.reply)) || 'HTTP ' + r.status).toString().slice(0, 120), true);
-  }catch(e){
-    kdLastReply = 'Error: ' + (e && e.name === 'AbortError' ? 'timeout' : ((e && e.message) || e));
-    showToast('Gagal mengirim perintah', true);
-  }
-  clearTimeout(to); kdCmdBusy = false; renderKendaraan();
+// Perintah ke tracker (Putus/Pulihkan BBM, Atur Rentang) WAJIB memakai ID token Google segar yang diverifikasi Worker.
+// Aplikasi Buku Kas tidak memuat Google Sign-In (CSP ketat untuk data keuangan), jadi tombol di bawah membuka halaman Pelacak Motor.
+// SMS ke tracker (kartu di bawah) tetap tersedia sebagai jalur cadangan tanpa internet.
+function kdOpenMotor(tab){
+  try{ window.open(new URL(GPS_MOTOR_URL + (tab ? '?tab=' + encodeURIComponent(tab) : ''), location.href).href, '_blank'); }
+  catch(e){ showToast('Tidak bisa membuka Pelacak Motor', true); }
 }
 function kdCtlAction(act){
   if(act === 'cut'){
     const m = gpsMember(), kmh = m ? m.speedKmh : null;
-    let msg = 'Putus BBM kendaraan?\n\nMesin bisa mati mendadak. Pastikan kendaraan diam dan aman.';
-    if(kmh === null) msg = '⚠️ Posisi/kecepatan tracker belum terbaca.\n\n' + msg;
-    else if(kmh > KD_FAST_KMH) msg = '⚠️ PERINGATAN: kendaraan MASIH BERGERAK ' + kmh + ' km/j (di atas ' + KD_FAST_KMH + ' km/j). Memutus BBM sekarang bisa menyebabkan kecelakaan!\n\n' + msg;
-    if(!confirm(msg)) return;
-    kdApiCommand('cut_fuel');
-  } else if(act === 'restore'){
-    if(!confirm('Pulihkan BBM (sambungkan kembali)?')) return;
-    kdApiCommand('restore_fuel');
-  } else if(act === 'interval'){
-    const n = Number(kdIntervalVal);
-    if(!Number.isInteger(n) || n < 5 || n > 18000){ showToast('Isi rentang 5 – 18000 detik (bilangan bulat)', true); return; }
-    if(!confirm('Atur rentang upload lokasi tiap ' + n + ' detik?\n\nRentang pendek = lebih boros baterai & kuota SIM.')) return;
-    kdApiCommand('set_interval', n);
+    if(kmh !== null && kmh > KD_FAST_KMH && !confirm('⚠️ Kendaraan MASIH BERGERAK ' + kmh + ' km/j. Memutus BBM sekarang bisa menyebabkan kecelakaan!\n\nTetap buka halaman kontrol?')) return;
+    if(kmh === null && !confirm('⚠️ Posisi/kecepatan tracker belum terbaca.\n\nTetap buka halaman kontrol?')) return;
   }
+  showToast('Buka halaman kontrol, masuk Google, lalu ketuk tombolnya');
+  kdOpenMotor('ctl');
 }
 function kdCtlHtml(){
   const t = gpsTrk || {};
+  const ses = gpsSession();
   const fuel = t.fuelCutSource === 'unknown' ? '❔ BBM: belum diketahui' : (t.fuelCut ? '⛔ BBM: TERPUTUS' : '✅ BBM: normal') + (t.fuelCutSource === 'lastCommand' ? ' (perkiraan dari perintah terakhir)' : '');
-  const dis = kdCmdBusy ? ' disabled' : '';
   return '<div class="loc-card"><div style="font-weight:700;margin-bottom:4px;">🕹️ Kontrol tracker (online)</div>'
     + '<div class="kd-ctl-st"><span class="kd-chip' + (t.isSos ? ' bad' : '') + '">' + (t.isSos ? '🚨 SOS AKTIF' : '🟢 Tidak ada SOS') + '</span><span class="kd-chip' + (t.fuelCut ? ' bad' : '') + '">' + fuel + '</span></div>'
-    + '<div class="kd-btns" style="margin-top:0;"><button class="btn btn-danger" data-kd="ctl" data-act="cut"' + dis + '>⛔ Putus BBM</button>'
-    + '<button class="btn btn-ghost" data-kd="ctl" data-act="restore"' + dis + '>✅ Pulihkan BBM</button></div>'
-    + '<div class="field-hint warn">Putus BBM hanya saat kendaraan diam & aman. Perintah dikirim lewat server Cantrack dan baru dijalankan saat tracker online.</div>'
-    + '<div class="kd-ctl-row"><input type="number" id="kdIntervalInput" min="5" max="18000" step="1" inputmode="numeric" placeholder="Detik (min 5)" value="' + escapeHtml(kdIntervalVal) + '">'
-    + '<button class="btn btn-ghost" data-kd="ctl" data-act="interval"' + dis + '>⏱️ Atur Rentang (Detik)</button></div>'
-    + (kdCmdBusy ? '<div style="font-size:12px;margin-top:8px;">⏳ Mengirim perintah…</div>' : '')
-    + (kdLastReply ? '<div class="kd-reply">' + escapeHtml(kdLastReply) + '</div>' : '')
+    + '<div class="kd-btns" style="margin-top:0;"><button class="btn btn-danger" data-kd="ctl" data-act="cut">⛔ Putus BBM</button>'
+    + '<button class="btn btn-ghost" data-kd="ctl" data-act="restore">✅ Pulihkan BBM</button></div>'
+    + '<div class="kd-btns"><button class="btn btn-ghost" data-kd="ctl" data-act="interval">⏱️ Atur rentang</button>'
+    + '<button class="btn btn-ghost" data-kd="motor" data-tab="map">🛣️ Riwayat rute</button>'
+    + '<button class="btn btn-ghost" data-kd="motor" data-tab="audio">🎙️ Rekaman suara</button>'
+    + '<button class="btn btn-ghost" data-kd="motor" data-tab="acct">🔔 Notifikasi SOS</button></div>'
+    + '<div class="field-hint warn">Putus BBM hanya saat kendaraan diam &amp; aman. Perintah dikirim dari halaman Pelacak Motor karena wajib login Google (hanya akun yang terdaftar di server).</div>'
+    + '<div style="font-size:12px;margin-top:8px;color:var(--ink-soft);">' + (ses ? '🔐 Sesi Google aktif (' + escapeHtml(ses.email || '') + ') sampai ' + new Date(ses.exp).toLocaleDateString('id-ID') : '🔓 Belum masuk Google. Pembacaan posisi memakai kunci lama; buka Pelacak Motor &amp; masuk untuk keamanan lebih baik.') + '</div>'
     + '</div>';
 }
 function renderKendaraan(){
   const el = document.getElementById('kdBody'); if(!el) return;
   const ae = document.activeElement;
   if(ae && ae.closest && ae.closest('#kdBody') && /^(INPUT|TEXTAREA)$/.test(ae.tagName)) return;
-  if(!gpsConfigured()){ el.innerHTML = '<div class="loc-card">GPS belum disambungkan. Isi GPS_WORKER_URL dan GPS_WORKER_KEY di index.html.</div>'; return; }
+  if(!gpsConfigured()){ el.innerHTML = '<div class="loc-card">GPS belum disambungkan. Isi GPS_WORKER_URL di index.html lalu masuk Google lewat Pelacak Motor (atau isi GPS_WORKER_KEY sementara).</div>'; return; }
   const m = gpsMember();
   if(!m){ el.innerHTML = '<div class="loc-card">' + (gpsErr ? '🔴 Tracker belum terbaca: ' + escapeHtml(gpsErr) : '⏳ Memuat posisi tracker…') + '</div>'; return; }
   const hbMs = Number(gpsTrk.heartbeatMs) || 0;
@@ -2900,6 +2894,7 @@ document.getElementById('kdBody').addEventListener('click', async (e)=>{
   const b = e.target.closest('[data-kd]'); if(!b) return;
   const act = b.dataset.kd, m = gpsMember();
   if(act === 'ctl'){ kdCtlAction(b.dataset.act); return; }
+  if(act === 'motor'){ kdOpenMotor(b.dataset.tab); return; }
   if(act === 'cmd'){ kdCmdSend(b.dataset.cmd); return; }
   if(act === 'alarms'){ gpsLoadAlarms(); renderKendaraan(); return; }
   if(act === 'map'){ setActiveTab('lokasi'); return; }
@@ -3035,20 +3030,51 @@ function locTrailFlat(){
   pts.forEach(p=>{ out.push(+p[0].toFixed(5), +p[1].toFixed(5)); });
   return out;
 }
+// ----- Cadangan penulisan lokasi lewat HTTP NATIVE saat app di latar belakang (APK) -----
+// Android membatasi permintaan jaringan WebView setelah ±5 menit di latar belakang (lihat README plugin background-geolocation).
+// CapacitorHttp memakai stack native sehingga tidak dibatasi. Menulis dokumen yang SAMA dengan setDoc lewat Firestore REST (commit),
+// memakai token anonim Firebase yang sama, jadi Aturan Keamanan Firestore tetap berlaku. Gagal = otomatis kembali ke setDoc biasa.
+const LOC_NATIVE_HTTP = true;
+function fsVal(v){
+  if(v === null || v === undefined) return { nullValue:null };
+  if(typeof v === 'boolean') return { booleanValue:v };
+  if(typeof v === 'number') return Number.isInteger(v) ? { integerValue:String(v) } : { doubleValue:v };
+  if(Array.isArray(v)) return { arrayValue: v.length ? { values:v.map(fsVal) } : {} };
+  return { stringValue:String(v) };
+}
+async function locWriteNativeHttp(data){
+  try{
+    const http = capPlugin('CapacitorHttp');
+    if(!http || !auth || !auth.currentUser) return false;
+    const token = await Promise.race([ auth.currentUser.getIdToken(), new Promise((_, rej)=>setTimeout(()=>rej(new Error('token timeout')), 8000)) ]);
+    const pid = FIREBASE_CONFIG.projectId;
+    const name = 'projects/' + pid + '/databases/(default)/documents/' + locBase().join('/') + '/locations/' + locDeviceId();
+    const fields = {}; Object.keys(data).forEach(k=>{ fields[k] = fsVal(data[k]); });
+    const res = await http.request({
+      url: 'https://firestore.googleapis.com/v1/projects/' + pid + '/databases/(default)/documents:commit',
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
+      data: { writes:[{ update:{ name, fields }, updateMask:{ fieldPaths:Object.keys(data) }, updateTransforms:[{ fieldPath:'updatedAt', setToServerValue:'REQUEST_TIME' }] }] },
+      connectTimeout: 10000, readTimeout: 15000
+    });
+    return !!res && res.status >= 200 && res.status < 300;
+  }catch(e){ console.warn('locWriteNativeHttp', e); return false; }
+}
 async function locWrite(cur){
   if(!uid || !cur) return;
   const bat = await locBattery();
   try{
-    await setDoc(locDocRef(), {
+    const data = {
       name: locMyName() || 'Tanpa nama',
       color: locColorFor(locDeviceId()),
       sharing: true,
       lat: cur.lat, lng: cur.lng, accuracy: Math.round(cur.acc || 0),
       mode: locMode, modeSince: locModeSince, speedKmh: Math.round(locSpeed*3.6),
       trail: locTrailFlat(), tripSince: locTrip ? locTrip.startAt : null,
-      battery: bat.battery, charging: bat.charging,
-      updatedAt: serverTimestamp()
-    }, { merge:true });
+      battery: bat.battery, charging: bat.charging
+    };
+    const bg = LOC_NATIVE_HTTP && locNative() && document.visibilityState !== 'visible';
+    if(!(bg && await locWriteNativeHttp(data))) await setDoc(locDocRef(), { ...data, updatedAt: serverTimestamp() }, { merge:true });
     locLastWrite = Date.now();
     locLastPos = { lat:cur.lat, lng:cur.lng, acc:cur.acc };
     locCheckBattery(bat);

@@ -7,7 +7,7 @@
 // Data transaksi tetap diambil langsung dari Firebase saat online.
 //
 // Setiap rilis: naikkan VERSION di sini DAN APP_VERSION di index.html.
-const VERSION = '2.13.0';
+const VERSION = '2.14.0';
 const CACHE_NAME = 'buku-kas-shell-' + VERSION;
 const APP_SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
@@ -23,7 +23,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+      Promise.all(keys.filter((k) => k.startsWith('buku-kas-shell-') && k !== CACHE_NAME).map((k) => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
