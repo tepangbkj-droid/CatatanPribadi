@@ -874,7 +874,8 @@
   #locMap{height:380px;}
   .loc-mapbox{position:relative;z-index:0;isolation:isolate;}
   .loc-mapbox{border-radius:20px;box-shadow:0 14px 30px -18px rgba(34,26,61,.55);}
-  .leaflet-container{font-family:var(--font-sans);}
+  .leaflet-container{font-family:var(--font-sans);z-index:0;isolation:isolate;}  /* peta punya lapisan sendiri: pane Leaflet (z-index hingga 1000) tidak boleh menembus sheet/modal di atasnya */
+  #kdHistMap{position:relative;z-index:0;isolation:isolate;}
   .leaflet-control-zoom{border:none !important;box-shadow:0 4px 14px rgba(0,0,0,.25) !important;border-radius:14px !important;overflow:hidden;}
   .leaflet-control-zoom a{width:36px !important;height:36px !important;line-height:36px !important;font-size:18px !important;}
   .leaflet-popup-content-wrapper{border-radius:14px;box-shadow:0 10px 26px -8px rgba(0,0,0,.4);}
@@ -2809,9 +2810,10 @@ async function kdTotpLogin(){
   try{
     const r = await fetch(GPS_WORKER_URL + '/api/auth/totp', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ code }) });
     const j = await r.json().catch(()=>null);
+    if(j && j.code === 'totp_not_enrolled'){ kdTotpEnrolled = false; }
     if(!r.ok || !j || !j.ok) throw new Error((j && j.error) || ('HTTP ' + r.status));
     localStorage.setItem('gps_session', JSON.stringify({ token:j.token, exp:j.exp * 1000, email:j.email, role:j.role }));
-    showToast('Masuk ✅');
+    showToast('Masuk ✅'); kdSetup = null;
     gpsErr = ''; gpsInfoAt = 0;
     if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
     gpsPoll(true, true); gpsLoadInfo(); gpsLoadAlarms();
@@ -2826,11 +2828,66 @@ function kdLogout(){
   if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
   renderKendaraan();
 }
+// Kunci Authenticator dibuat DARI APLIKASI (Worker membuatnya acak 160-bit, hanya ditampilkan sekali). Pendaftaran dijaga kata sandi akun CantrackPortal.
+let kdTotpEnrolled = null, kdSetup = null, kdSetupMode = false, kdSetupBusy = false, kdHealthBusy = false;
+async function kdTotpHealth(){
+  if(kdHealthBusy) return; kdHealthBusy = true;
+  try{
+    const r = await fetch(GPS_WORKER_URL + '/api/health', { cache:'no-store' });
+    const j = await r.json().catch(()=>null);
+    if(j && j.ok) kdTotpEnrolled = !!j.totp;
+  }catch(e){}
+  kdHealthBusy = false; renderKendaraan();
+}
+async function kdTotpSetup(){
+  if(kdSetupBusy) return;
+  const inp = document.getElementById('kdSetupPw'), pw = inp ? inp.value : '';
+  if(!pw){ showToast('Isi kata sandi akun CantrackPortal', true); return; }
+  kdSetupBusy = true;
+  try{
+    const r = await fetch(GPS_WORKER_URL + '/api/auth/totp-setup', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ password:pw }) });
+    const j = await r.json().catch(()=>null);
+    if(!r.ok || !j || !j.ok) throw new Error((j && j.error) || ('HTTP ' + r.status));
+    kdSetup = { secret:j.secret, uri:j.uri }; kdTotpEnrolled = true; kdSetupMode = false;
+    try{ localStorage.removeItem('gps_session'); }catch(e){}
+    showToast('Kunci dibuat ✅ Tambahkan ke Authenticator sekarang');
+  }catch(e){ showToast('Gagal: ' + (e.message || e), true); }
+  if(inp) inp.value = '';
+  kdSetupBusy = false;
+  if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  renderKendaraan();
+}
+function kdResetKey(){
+  if(!confirm('Buat ulang kunci Authenticator?\n\nKunci lama dan semua sesi masuk akan mati. Anda harus menambahkan kunci baru ke aplikasi Authenticator.')) return;
+  try{ localStorage.removeItem('gps_session'); }catch(e){}
+  gpsTrk = null; kdLastReply = ''; kdSetupMode = true; kdSetup = null;
+  if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  renderKendaraan();
+}
 function kdLoginHtml(){
+  if(kdTotpEnrolled === null){ kdTotpHealth(); return '<div class="loc-card">⏳ Memeriksa pengaturan Authenticator…</div>'; }
+  const loginRow = '<div class="kd-ctl-row"><input id="kdTotpLogin" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" style="text-align:center;letter-spacing:6px;font-size:20px;">'
+    + '<button class="btn btn-primary" data-kd="login">Masuk</button></div>';
+  if(kdSetup){
+    return '<div class="loc-card"><div style="font-weight:700;margin-bottom:6px;">🔑 Tambahkan ke Authenticator</div>'
+      + '<div class="field-hint warn" style="margin-bottom:8px;">Kunci ini hanya ditampilkan SEKALI. Catat di tempat aman sebagai cadangan; tanpa kunci ini Anda tidak bisa masuk bila HP hilang.</div>'
+      + '<div style="font-family:monospace;font-size:17px;letter-spacing:2px;word-break:break-all;background:var(--paper-2,#f4f4f4);padding:10px;border-radius:10px;text-align:center;user-select:all;">' + escapeHtml(kdSetup.secret) + '</div>'
+      + '<div class="kd-btns"><a class="btn btn-primary" style="text-align:center;text-decoration:none;" href="' + escapeHtml(kdSetup.uri) + '">📲 Buka di Authenticator</a>'
+      + '<button class="btn btn-ghost" data-kd="copykey">📋 Salin kunci</button></div>'
+      + '<div class="field-hint" style="margin:8px 0;">Cara manual: Authenticator → + → Masukkan kunci penyiapan → nama “Buku Kas GPS”, tempel kunci, jenis Berdasarkan waktu. Lalu ketik kode 6 digitnya di bawah untuk memastikan berhasil.</div>'
+      + loginRow + '</div>';
+  }
+  if(kdTotpEnrolled === false || kdSetupMode){
+    return '<div class="loc-card"><div style="font-weight:700;margin-bottom:6px;">🔐 Buat kunci Authenticator</div>'
+      + '<div class="field-hint" style="margin-bottom:8px;">Kunci dibuat otomatis oleh server. Untuk membuktikan ini Anda, isi kata sandi akun CantrackPortal (tidak disimpan di HP).</div>'
+      + '<div class="kd-ctl-row"><input id="kdSetupPw" type="password" autocomplete="off" placeholder="Kata sandi CantrackPortal">'
+      + '<button class="btn btn-primary" data-kd="setup">Buat kunci</button></div>'
+      + (kdSetupMode && kdTotpEnrolled ? '<button class="link-btn" style="margin-top:8px;" data-kd="cancelsetup">Batal, saya sudah punya kunci</button>' : '') + '</div>';
+  }
   return '<div class="loc-card"><div style="font-weight:700;margin-bottom:6px;">🔐 Masuk dengan Authenticator</div>'
-    + '<div class="field-hint" style="margin-bottom:8px;">Buka aplikasi Authenticator, lihat kode 6 digit untuk “Buku Kas GPS”, lalu ketik di sini.</div>'
-    + '<div class="kd-ctl-row"><input id="kdTotpLogin" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" style="text-align:center;letter-spacing:6px;font-size:20px;">'
-    + '<button class="btn btn-primary" data-kd="login">Masuk</button></div></div>';
+    + '<div class="field-hint" style="margin-bottom:8px;">Buka aplikasi Authenticator, lihat kode 6 digit “Buku Kas GPS”, lalu ketik di sini.</div>'
+    + loginRow
+    + '<button class="link-btn" style="margin-top:8px;" data-kd="resetkey">Belum punya kunci / buat ulang</button></div>';
 }
 async function kdApiCommand(action, extra, label){
   if(!gpsSession()){ showToast('Masuk dulu dengan kode Authenticator', true); renderKendaraan(); return; }
@@ -2877,7 +2934,7 @@ function kdCtlHtml(){
     + '<div class="kd-ctl-row"><input id="kdIntervalInput" type="number" inputmode="numeric" min="10" max="86400" value="' + escapeHtml(kdIntervalVal) + '" placeholder="detik"><button class="btn btn-ghost" data-kd="ctl" data-act="interval"' + (kdCmdBusy ? ' disabled' : '') + '>⏱️ Atur rentang (detik)</button></div>'
     + (kdLastReply ? '<div class="field-hint" style="margin-top:8px;word-break:break-word;">' + escapeHtml(kdLastReply) + '</div>' : '')
     + '<div class="field-hint warn">Putus BBM hanya saat kendaraan diam &amp; aman.</div>'
-    + '<div style="font-size:12px;margin-top:8px;color:var(--ink-soft);display:flex;justify-content:space-between;gap:8px;align-items:center;"><span>🔐 Sesi aktif sampai ' + new Date(ses.exp).toLocaleDateString('id-ID') + '</span><button class="link-btn rose" data-kd="logout">Keluar</button></div>'
+    + '<div style="font-size:12px;margin-top:8px;color:var(--ink-soft);display:flex;justify-content:space-between;gap:8px;align-items:center;"><span>🔐 Sesi aktif sampai ' + new Date(ses.exp).toLocaleDateString('id-ID') + '</span><span><button class="link-btn" data-kd="resetkey">Buat ulang kunci</button> · <button class="link-btn rose" data-kd="logout">Keluar</button></span></div>'
     + '</div>';
 }
 
@@ -3005,6 +3062,10 @@ document.getElementById('kdBody').addEventListener('click', async (e)=>{
   const act = b.dataset.kd, m = gpsMember();
   if(act === 'ctl'){ kdCtlAction(b.dataset.act); return; }
   if(act === 'login'){ kdTotpLogin(); return; }
+  if(act === 'setup'){ kdTotpSetup(); return; }
+  if(act === 'resetkey'){ kdResetKey(); return; }
+  if(act === 'cancelsetup'){ kdSetupMode = false; renderKendaraan(); return; }
+  if(act === 'copykey'){ try{ await navigator.clipboard.writeText(kdSetup ? kdSetup.secret : ''); showToast('Kunci tersalin 📋'); }catch(err){ showToast('Gagal menyalin, salin manual', true); } return; }
   if(act === 'logout'){ kdLogout(); return; }
   if(act === 'cmd'){ kdCmdSend(b.dataset.cmd); return; }
   if(act === 'alarms'){ gpsLoadAlarms(); renderKendaraan(); return; }
