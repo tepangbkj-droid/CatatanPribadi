@@ -1927,6 +1927,7 @@
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="bmkg-layers.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script type="module">
@@ -1998,7 +1999,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.14.1';
+const APP_VERSION = '2.15.0';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -2847,6 +2848,7 @@ async function kdTotpSetup(){
   try{
     const r = await fetch(GPS_WORKER_URL + '/api/auth/totp-setup', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ password:pw }) });
     const j = await r.json().catch(()=>null);
+    if(j && j.code === 'no_auth') throw new Error('Server GPS belum diperbarui (masih versi lama). Jalankan ulang workflow "Deploy GPS Worker" di GitHub Actions.');
     if(!r.ok || !j || !j.ok) throw new Error((j && j.error) || ('HTTP ' + r.status));
     kdSetup = { secret:j.secret, uri:j.uri }; kdTotpEnrolled = true; kdSetupMode = false;
     try{ localStorage.removeItem('gps_session'); }catch(e){}
@@ -2959,7 +2961,9 @@ function kdHistAttach(){
     kdHistMap = L.map(el.querySelector('#kdHistMap'), { zoomControl:true }).setView([-6.2, 106.82], 12);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'© OpenStreetMap' }).addTo(kdHistMap);
     kdHistLayer = L.layerGroup().addTo(kdHistMap);
-  }
+    // Layer data terbuka BMKG (cuaca, gempa, peringatan dini) — posisi acuan = posisi kendaraan terakhir
+    if(window.BmkgLayers) BmkgLayers.attach(kdHistMap, { workerUrl: GPS_WORKER_URL, getPosition: function(){ return gpsTrk ? { lat:Number(gpsTrk.lat), lon:Number(gpsTrk.lon) } : null; } });
+  } else if(window.BmkgLayers){ BmkgLayers.refresh(kdHistMap); }
   setTimeout(()=>{ try{ kdHistMap.invalidateSize(); }catch(e){} }, 60);
 }
 async function kdHistLoad(hours){
