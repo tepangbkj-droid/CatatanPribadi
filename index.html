@@ -1974,7 +1974,6 @@ const SOS_PUSH_KEY = "Tepangbkjaja305";
 // GPS_WORKER_KEY = sama persis dengan secret GPS_APP_KEY di GitHub. Kosong = fitur mati.
 const GPS_WORKER_URL = "https://gps-worker.tepangbkj8.workers.dev";
 const GPS_WORKER_KEY = "KANJUT123";
-const GPS_MOTOR_URL = "./motor/index.html";  // halaman Pelacak Motor (login Google, perintah, riwayat rute, rekaman, push)
 const GPS_TRACKER_NAME = "Kendaraan";   // nama yang tampil di peta & daftar
 const GPS_MOVING_KMH = 5;               // di atas ini dianggap "bergerak"
 const GPS_AUTO_RIDE = true;             // tab Motor: mode berkendara mulai/berhenti otomatis dari GPS tracker
@@ -2796,45 +2795,155 @@ function gpsSosUpdate(){
 document.getElementById('gpsSosOk').addEventListener('click', ()=>{ gpsSosHideUntil = Date.now() + 5*60*1000; gpsSosUpdate(); });
 setInterval(()=>{ if(document.visibilityState === 'visible' && activeTab !== 'lokasi' && activeTab !== 'kendaraan') gpsPoll(false); }, 15000);
 
-let kdIntervalVal = '30';
+let kdIntervalVal = '30', kdCmdBusy = false, kdLastReply = '', kdLoginBusy = false;
 const KD_FAST_KMH = 10;   // di atas ini, Putus BBM diberi peringatan keras
-// Perintah ke tracker (Putus/Pulihkan BBM, Atur Rentang) WAJIB memakai ID token Google segar yang diverifikasi Worker.
-// Aplikasi Buku Kas tidak memuat Google Sign-In (CSP ketat untuk data keuangan), jadi tombol di bawah membuka halaman Pelacak Motor.
-// SMS ke tracker (kartu di bawah) tetap tersedia sebagai jalur cadangan tanpa internet.
-function kdOpenMotor(tab){
-  try{ window.open(new URL(GPS_MOTOR_URL + (tab ? '?tab=' + encodeURIComponent(tab) : ''), location.href).href, '_blank'); }
-  catch(e){ showToast('Tidak bisa membuka Pelacak Motor', true); }
+
+// ---- Verifikasi Authenticator (TOTP, 6 digit) — semua di dalam Buku Kas, tanpa pindah aplikasi ----
+// Masuk: kode 6 digit -> sesi 14 hari (hanya BACA). Perintah (Putus/Pulihkan BBM, Rentang): wajib kode BARU tiap perintah (sekali pakai).
+async function kdTotpLogin(){
+  if(kdLoginBusy) return;
+  const inp = document.getElementById('kdTotpLogin');
+  const code = inp ? inp.value.replace(/\D/g, '') : '';
+  if(code.length !== 6){ showToast('Isi 6 digit dari aplikasi Authenticator', true); return; }
+  kdLoginBusy = true;
+  try{
+    const r = await fetch(GPS_WORKER_URL + '/api/auth/totp', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ code }) });
+    const j = await r.json().catch(()=>null);
+    if(!r.ok || !j || !j.ok) throw new Error((j && j.error) || ('HTTP ' + r.status));
+    localStorage.setItem('gps_session', JSON.stringify({ token:j.token, exp:j.exp * 1000, email:j.email, role:j.role }));
+    showToast('Masuk ✅');
+    gpsErr = ''; gpsInfoAt = 0;
+    if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    gpsPoll(true, true); gpsLoadInfo(); gpsLoadAlarms();
+  }catch(e){ showToast('Gagal masuk: ' + (e.message || e), true); }
+  kdLoginBusy = false;
+  if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  renderKendaraan();
+}
+function kdLogout(){
+  try{ localStorage.removeItem('gps_session'); }catch(e){}
+  gpsTrk = null; kdLastReply = '';
+  if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  renderKendaraan();
+}
+function kdLoginHtml(){
+  return '<div class="loc-card"><div style="font-weight:700;margin-bottom:6px;">🔐 Masuk dengan Authenticator</div>'
+    + '<div class="field-hint" style="margin-bottom:8px;">Buka aplikasi Authenticator, lihat kode 6 digit untuk “Buku Kas GPS”, lalu ketik di sini.</div>'
+    + '<div class="kd-ctl-row"><input id="kdTotpLogin" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" style="text-align:center;letter-spacing:6px;font-size:20px;">'
+    + '<button class="btn btn-primary" data-kd="login">Masuk</button></div></div>';
+}
+async function kdApiCommand(action, extra, label){
+  if(!gpsSession()){ showToast('Masuk dulu dengan kode Authenticator', true); renderKendaraan(); return; }
+  const inp = document.getElementById('kdTotpCmd');
+  const code = inp ? inp.value.replace(/\D/g, '') : '';
+  if(code.length !== 6){ showToast('Isi kode 6 digit BARU dari Authenticator dulu', true); if(inp) inp.focus(); return; }
+  if(kdCmdBusy) return;
+  kdCmdBusy = true; kdLastReply = '⏳ Mengirim ' + label + '…';
+  if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  renderKendaraan();
+  try{
+    const r = await fetch(GPS_WORKER_URL + '/api/command', { method:'POST', headers:gpsHeaders({ 'content-type':'application/json', 'x-totp':code }), body: JSON.stringify(Object.assign({ action }, extra || {})) });
+    const j = await r.json().catch(()=>null);
+    if(gpsDropBadSession(j)) kdLastReply = '🔓 Sesi habis. Masuk lagi dengan kode Authenticator.';
+    else if(j && j.ok){ kdLastReply = '✅ ' + label + ' terkirim. ' + (j.note || ''); showToast(label + ' terkirim ✅'); gpsPoll(true, true); }
+    else{ kdLastReply = '❌ ' + ((j && (j.error || j.reply)) || ('HTTP ' + r.status)); showToast('Gagal: ' + ((j && j.error) || r.status), true); }
+  }catch(e){ kdLastReply = '❌ ' + (e.message || e); showToast('Gagal mengirim perintah', true); }
+  kdCmdBusy = false;
+  renderKendaraan();
 }
 function kdCtlAction(act){
+  const m = gpsMember(), kmh = m ? m.speedKmh : null;
   if(act === 'cut'){
-    const m = gpsMember(), kmh = m ? m.speedKmh : null;
-    if(kmh !== null && kmh > KD_FAST_KMH && !confirm('⚠️ Kendaraan MASIH BERGERAK ' + kmh + ' km/j. Memutus BBM sekarang bisa menyebabkan kecelakaan!\n\nTetap buka halaman kontrol?')) return;
-    if(kmh === null && !confirm('⚠️ Posisi/kecepatan tracker belum terbaca.\n\nTetap buka halaman kontrol?')) return;
+    if(kmh !== null && kmh > KD_FAST_KMH && !confirm('⚠️ Kendaraan MASIH BERGERAK ' + kmh + ' km/j. Memutus BBM sekarang bisa menyebabkan kecelakaan!\n\nTetap putus BBM?')) return;
+    if(kmh === null && !confirm('⚠️ Posisi/kecepatan tracker belum terbaca.\n\nTetap putus BBM?')) return;
+    kdApiCommand('cut_fuel', null, 'Putus BBM');
+  }else if(act === 'restore'){ kdApiCommand('restore_fuel', null, 'Pulihkan BBM'); }
+  else if(act === 'interval'){
+    const iv = document.getElementById('kdIntervalInput'), n = Math.round(Number(iv ? iv.value : kdIntervalVal));
+    if(!(n >= 10 && n <= 86400)){ showToast('Rentang 10 sampai 86400 detik', true); return; }
+    kdApiCommand('set_interval', { intervalSeconds:n }, 'Atur rentang ' + n + ' dtk');
   }
-  showToast('Buka halaman kontrol, masuk Google, lalu ketuk tombolnya');
-  kdOpenMotor('ctl');
 }
 function kdCtlHtml(){
-  const t = gpsTrk || {};
-  const ses = gpsSession();
+  const t = gpsTrk || {}, ses = gpsSession();
   const fuel = t.fuelCutSource === 'unknown' ? '❔ BBM: belum diketahui' : (t.fuelCut ? '⛔ BBM: TERPUTUS' : '✅ BBM: normal') + (t.fuelCutSource === 'lastCommand' ? ' (perkiraan dari perintah terakhir)' : '');
+  if(!ses || !ses.token) return kdLoginHtml();
   return '<div class="loc-card"><div style="font-weight:700;margin-bottom:4px;">🕹️ Kontrol tracker (online)</div>'
     + '<div class="kd-ctl-st"><span class="kd-chip' + (t.isSos ? ' bad' : '') + '">' + (t.isSos ? '🚨 SOS AKTIF' : '🟢 Tidak ada SOS') + '</span><span class="kd-chip' + (t.fuelCut ? ' bad' : '') + '">' + fuel + '</span></div>'
-    + '<div class="kd-btns" style="margin-top:0;"><button class="btn btn-danger" data-kd="ctl" data-act="cut">⛔ Putus BBM</button>'
-    + '<button class="btn btn-ghost" data-kd="ctl" data-act="restore">✅ Pulihkan BBM</button></div>'
-    + '<div class="kd-btns"><button class="btn btn-ghost" data-kd="ctl" data-act="interval">⏱️ Atur rentang</button>'
-    + '<button class="btn btn-ghost" data-kd="motor" data-tab="map">🛣️ Riwayat rute</button>'
-    + '<button class="btn btn-ghost" data-kd="motor" data-tab="audio">🎙️ Rekaman suara</button>'
-    + '<button class="btn btn-ghost" data-kd="motor" data-tab="acct">🔔 Notifikasi SOS</button></div>'
-    + '<div class="field-hint warn">Putus BBM hanya saat kendaraan diam &amp; aman. Perintah dikirim dari halaman Pelacak Motor karena wajib login Google (hanya akun yang terdaftar di server).</div>'
-    + '<div style="font-size:12px;margin-top:8px;color:var(--ink-soft);">' + (ses ? '🔐 Sesi Google aktif (' + escapeHtml(ses.email || '') + ') sampai ' + new Date(ses.exp).toLocaleDateString('id-ID') : '🔓 Belum masuk Google. Pembacaan posisi memakai kunci lama; buka Pelacak Motor &amp; masuk untuk keamanan lebih baik.') + '</div>'
+    + '<div class="field-hint" style="margin:8px 0 4px;">Kode Authenticator BARU (tiap perintah butuh kode baru, tunggu kode berganti bila ditolak):</div>'
+    + '<input id="kdTotpCmd" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" style="width:100%;text-align:center;letter-spacing:6px;font-size:20px;margin-bottom:8px;">'
+    + '<div class="kd-btns" style="margin-top:0;"><button class="btn btn-danger" data-kd="ctl" data-act="cut"' + (kdCmdBusy ? ' disabled' : '') + '>⛔ Putus BBM</button>'
+    + '<button class="btn btn-ghost" data-kd="ctl" data-act="restore"' + (kdCmdBusy ? ' disabled' : '') + '>✅ Pulihkan BBM</button></div>'
+    + '<div class="kd-ctl-row"><input id="kdIntervalInput" type="number" inputmode="numeric" min="10" max="86400" value="' + escapeHtml(kdIntervalVal) + '" placeholder="detik"><button class="btn btn-ghost" data-kd="ctl" data-act="interval"' + (kdCmdBusy ? ' disabled' : '') + '>⏱️ Atur rentang (detik)</button></div>'
+    + (kdLastReply ? '<div class="field-hint" style="margin-top:8px;word-break:break-word;">' + escapeHtml(kdLastReply) + '</div>' : '')
+    + '<div class="field-hint warn">Putus BBM hanya saat kendaraan diam &amp; aman.</div>'
+    + '<div style="font-size:12px;margin-top:8px;color:var(--ink-soft);display:flex;justify-content:space-between;gap:8px;align-items:center;"><span>🔐 Sesi aktif sampai ' + new Date(ses.exp).toLocaleDateString('id-ID') + '</span><button class="link-btn rose" data-kd="logout">Keluar</button></div>'
     + '</div>';
 }
+
+// ---- Riwayat rute di dalam tab Kendaraan (peta Leaflet permanen; tidak ikut terhapus saat tab dirender ulang) ----
+const KD_HIST_PRESETS = [['1 jam', 1], ['6 jam', 6], ['24 jam', 24], ['3 hari', 72]];
+let kdHistEl = null, kdHistMap = null, kdHistLayer = null, kdHistBusy = false;
+function kdHistBuild(){
+  if(kdHistEl) return kdHistEl;
+  kdHistEl = document.createElement('div'); kdHistEl.className = 'loc-card';
+  kdHistEl.innerHTML = '<div style="font-weight:700;margin-bottom:6px;">🛣️ Riwayat rute</div>'
+    + '<div class="kd-btns" style="margin-top:0;">' + KD_HIST_PRESETS.map(p=>'<button class="btn btn-ghost" data-hist="' + p[1] + '">' + p[0] + '</button>').join('') + '</div>'
+    + '<div class="field-hint" id="kdHistInfo" style="margin-top:6px;">Pilih rentang untuk menampilkan jalur. Garis putus-putus = blind spot, titik oranye = diunggah tracker terlambat.</div>'
+    + '<div id="kdHistMap" style="height:300px;border-radius:14px;margin-top:8px;overflow:hidden;"></div>';
+  kdHistEl.addEventListener('click', (e)=>{ const b = e.target.closest('[data-hist]'); if(b) kdHistLoad(Number(b.dataset.hist)); });
+  return kdHistEl;
+}
+function kdHistAttach(){
+  const slot = document.getElementById('kdHistSlot'); if(!slot || typeof L === 'undefined') return;
+  const el = kdHistBuild();
+  if(el.parentNode !== slot) slot.appendChild(el);
+  if(!kdHistMap){
+    kdHistMap = L.map(el.querySelector('#kdHistMap'), { zoomControl:true }).setView([-6.2, 106.82], 12);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'© OpenStreetMap' }).addTo(kdHistMap);
+    kdHistLayer = L.layerGroup().addTo(kdHistMap);
+  }
+  setTimeout(()=>{ try{ kdHistMap.invalidateSize(); }catch(e){} }, 60);
+}
+async function kdHistLoad(hours){
+  const info = document.getElementById('kdHistInfo');
+  if(!gpsSession()){ showToast('Masuk dulu dengan kode Authenticator', true); return; }
+  if(kdHistBusy) return;
+  kdHistBusy = true; if(info) info.textContent = '⏳ Memuat riwayat…';
+  try{
+    const to = Date.now(), from = to - hours * 3600000;
+    const r = await fetch(GPS_WORKER_URL + '/api/history?from=' + from + '&to=' + to, { headers:gpsHeaders(), cache:'no-store' });
+    const j = await r.json().catch(()=>null);
+    if(gpsDropBadSession(j)) throw new Error('Sesi habis, masuk lagi');
+    if(!r.ok || !j || !j.ok) throw new Error((j && j.error) || ('HTTP ' + r.status));
+    kdHistLayer.clearLayers();
+    const pts = j.points || [];
+    if(!pts.length){ if(info) info.textContent = 'Tidak ada titik pada rentang ini.' + (j.note ? ' ' + j.note : ''); }
+    else{
+      let seg = [pts[0]];
+      const flush = ()=>{ if(seg.length > 1) L.polyline(seg.map(p=>[p.lat, p.lon]), { color:'#0E9F8E', weight:4, opacity:.9 }).addTo(kdHistLayer); };
+      for(let i = 1; i < pts.length; i++){
+        if(pts[i].gap){ flush(); L.polyline([[pts[i - 1].lat, pts[i - 1].lon], [pts[i].lat, pts[i].lon]], { color:'#F0355A', weight:3, dashArray:'6 8' }).addTo(kdHistLayer); seg = [pts[i]]; }
+        else seg.push(pts[i]);
+      }
+      flush();
+      pts.forEach(p=>{ if(p.late) L.circleMarker([p.lat, p.lon], { radius:4, color:'#F59E0B', weight:1, fillColor:'#F59E0B', fillOpacity:.9 }).addTo(kdHistLayer); });
+      L.circleMarker([pts[0].lat, pts[0].lon], { radius:8, color:'#fff', weight:3, fillColor:'#0FAE73', fillOpacity:1 }).addTo(kdHistLayer).bindTooltip('Mulai');
+      const last = pts[pts.length - 1];
+      L.circleMarker([last.lat, last.lon], { radius:8, color:'#fff', weight:3, fillColor:'#F0355A', fillOpacity:1 }).addTo(kdHistLayer).bindTooltip('Terakhir');
+      kdHistMap.fitBounds(L.latLngBounds(pts.map(p=>[p.lat, p.lon])), { padding:[24, 24] });
+      if(info) info.textContent = pts.length + ' titik • ' + j.distanceKm + ' km • ' + j.blindSpots + ' blind spot • ' + j.lateCount + ' terlambat • sumber: ' + j.source + (j.note ? ' — ' + j.note : '');
+    }
+  }catch(e){ if(info) info.textContent = '❌ ' + (e.message || e); }
+  kdHistBusy = false;
+}
+
 function renderKendaraan(){
   const el = document.getElementById('kdBody'); if(!el) return;
   const ae = document.activeElement;
   if(ae && ae.closest && ae.closest('#kdBody') && /^(INPUT|TEXTAREA)$/.test(ae.tagName)) return;
-  if(!gpsConfigured()){ el.innerHTML = '<div class="loc-card">GPS belum disambungkan. Isi GPS_WORKER_URL di index.html lalu masuk Google lewat Pelacak Motor (atau isi GPS_WORKER_KEY sementara).</div>'; return; }
+  if(!GPS_WORKER_URL){ el.innerHTML = '<div class="loc-card">GPS belum disambungkan. Isi GPS_WORKER_URL di index.html.</div>'; return; }
+  if(!gpsConfigured()){ el.innerHTML = kdLoginHtml(); return; }
   const m = gpsMember();
   if(!m){ el.innerHTML = '<div class="loc-card">' + (gpsErr ? '🔴 Tracker belum terbaca: ' + escapeHtml(gpsErr) : '⏳ Memuat posisi tracker…') + '</div>'; return; }
   const hbMs = Number(gpsTrk.heartbeatMs) || 0;
@@ -2873,7 +2982,7 @@ function renderKendaraan(){
     h += '<div class="loc-card"><div style="font-weight:700;margin-bottom:4px;">Riwayat titik (sesi ini)</div>' + rows
       + '<div style="font-size:11px;color:var(--ink-soft);margin-top:6px;">Kalau kendaraan diam tapi titiknya terus bergeser puluhan meter, sinyal GPS tracker kurang bagus.</div></div>';
   }
-  h += kdCtlHtml() + kdAlarmsHtml() + kdSmsHtml() + kdCmdHtml();
+  h += kdCtlHtml() + '<div id="kdHistSlot"></div>' + kdAlarmsHtml() + kdSmsHtml() + kdCmdHtml();
   if(gpsInfo){
     const rows = Object.entries(gpsInfo).map(([k, v])=>k + ' = ' + (v && typeof v === 'object' ? JSON.stringify(v) : v)).join('\n');
     h += '<details class="loc-card"><summary style="font-weight:700;cursor:pointer;">Info perangkat (dari portal)</summary><pre class="kd-raw">' + escapeHtml(rows || '(kosong)') + '</pre></details>';
@@ -2883,6 +2992,7 @@ function renderKendaraan(){
   const raw = gpsTrk.fields ? Object.entries(gpsTrk.fields).map(([k, v])=>k + ' = ' + (v && typeof v === 'object' ? JSON.stringify(v) : v)).join('\n') : '';
   h += '<details class="loc-card"><summary style="font-weight:700;cursor:pointer;">Data mentah dari tracker</summary><pre class="kd-raw">' + escapeHtml(raw || '(kosong)') + '</pre></details>';
   el.innerHTML = h;
+  kdHistAttach();
 }
 document.getElementById('kdBody').addEventListener('input', (e)=>{ if(e.target && e.target.id === 'kdIntervalInput') kdIntervalVal = e.target.value; });
 document.getElementById('kdBody').addEventListener('change', (e)=>{
@@ -2894,7 +3004,8 @@ document.getElementById('kdBody').addEventListener('click', async (e)=>{
   const b = e.target.closest('[data-kd]'); if(!b) return;
   const act = b.dataset.kd, m = gpsMember();
   if(act === 'ctl'){ kdCtlAction(b.dataset.act); return; }
-  if(act === 'motor'){ kdOpenMotor(b.dataset.tab); return; }
+  if(act === 'login'){ kdTotpLogin(); return; }
+  if(act === 'logout'){ kdLogout(); return; }
   if(act === 'cmd'){ kdCmdSend(b.dataset.cmd); return; }
   if(act === 'alarms'){ gpsLoadAlarms(); renderKendaraan(); return; }
   if(act === 'map'){ setActiveTab('lokasi'); return; }
@@ -6243,7 +6354,7 @@ function locUpdateMap(){
   live.forEach(m=>{
     const ll = [m.lat, m.lng];
     const mi = MODE_INFO[m.mode] || MODE_INFO.diam;
-    const tip = `${m.name || 'Tanpa nama'} • ${mi.label}${m.speedKmh ? ' ' + m.speedKmh + ' km/j' : ''} • ${locRel(m.updatedMs)}`;
+    const tip = escapeHtml(`${m.name || 'Tanpa nama'} • ${mi.label}${m.speedKmh ? ' ' + m.speedKmh + ' km/j' : ''} • ${locRel(m.updatedMs)}`);  // bindTooltip merender HTML: wajib di-escape
     if(locMarkers[m.id]) locMarkers[m.id].setLatLng(ll).setIcon(locPinIcon(m)).setTooltipContent(tip);
     else{
       locMarkers[m.id] = L.marker(ll, { icon:locPinIcon(m) }).addTo(locMap).bindTooltip(tip, { direction:'top', offset:[0,-34] });
