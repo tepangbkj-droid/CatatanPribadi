@@ -5,7 +5,7 @@
 // rekaman audio di R2, sesi portal tersimpan di D1. Konfigurasi lengkap: lihat wrangler.toml dan README.md.
 //
 // Endpoint (semua butuh "Authorization: Bearer <Google ID token>" atau "Authorization: Session <token>", kecuali yang publik):
-//   publik : GET /api/health   GET /api/push/vapid-key   POST /api/auth/session   GET /api/audio/file/:id?exp&sig (URL bertanda tangan)
+//   publik : GET /api/health   GET /api/push/vapid-key   POST /api/auth/session   POST /api/auth/totp   GET /api/audio/file/:id?exp&sig (URL bertanda tangan)
 //   baca   : GET /api/me /api/config /api/sync /api/history /api/commands /api/audio/list /api/push/list   (+ /pos /alarms /info)
 //   tulis  : POST /api/command (WAJIB Google ID token segar)   POST /api/push/subscribe|unsubscribe|test
 //            POST /api/audio/upload   DELETE /api/audio/:id (pemilik)   GET /debug (pemilik)
@@ -34,7 +34,7 @@ function json(body, status, env) {
       "content-type": "application/json; charset=utf-8",
       "cache-control": "no-store",
       "access-control-allow-origin": corsOrigin(env),
-      "access-control-allow-headers": "authorization, x-api-key, content-type, x-filename",
+      "access-control-allow-headers": "authorization, x-api-key, content-type, x-filename, x-totp",
       "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
       vary: "Origin",
     },
@@ -47,7 +47,7 @@ function preflight(env) {
     status: 204,
     headers: {
       "access-control-allow-origin": corsOrigin(env),
-      "access-control-allow-headers": "authorization, x-api-key, content-type, x-filename",
+      "access-control-allow-headers": "authorization, x-api-key, content-type, x-filename, x-totp",
       "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
       "access-control-max-age": "86400",
       vary: "Origin",
@@ -804,11 +804,66 @@ function safeEq(a, b) {
   for (let i = 0; i < Math.max(a.length, b.length); i++) d |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
   return d === 0;
 }
+// ---------- TOTP (Google Authenticator / Authy / Microsoft Authenticator) ----------
+// RFC 6238: SHA-1, 6 digit, langkah 30 dtk, toleransi ±1 langkah. Rahasia = secret TOTP_SECRET (base32).
+// Kode TIDAK bisa dipakai dua kali (per tujuan: login / perintah). Gagal 5x dari satu IP = kunci 10 menit; gagal 30x total/jam = kunci 1 jam.
+const TOTP_ID = "authenticator";
+function b32dec(sec) {
+  const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const t = String(sec || "").toUpperCase().replace(/[\s=-]/g, "");
+  let bits = ""; const out = [];
+  for (const ch of t) { const v = A.indexOf(ch); if (v < 0) throw fail(500, "TOTP_SECRET bukan base32 yang valid", "config"); bits += v.toString(2).padStart(5, "0"); }
+  for (let i = 0; i + 8 <= bits.length; i += 8) out.push(parseInt(bits.slice(i, i + 8), 2));
+  if (out.length < 10) throw fail(500, "TOTP_SECRET terlalu pendek (minimal 16 karakter base32)", "config");
+  return new Uint8Array(out);
+}
+async function hotp(keyBytes, counter) {
+  const key = await crypto.subtle.importKey("raw", keyBytes, { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
+  const buf = new ArrayBuffer(8), dv = new DataView(buf);
+  dv.setUint32(0, Math.floor(counter / 4294967296)); dv.setUint32(4, counter >>> 0);
+  const h = new Uint8Array(await crypto.subtle.sign("HMAC", key, buf));
+  const o = h[19] & 15;
+  const bin = ((h[o] & 0x7f) << 24) | (h[o + 1] << 16) | (h[o + 2] << 8) | h[o + 3];
+  return String(bin % 1000000).padStart(6, "0");
+}
+async function totpCheck(env, code, purpose) {
+  const c = String(code || "").replace(/\s/g, "");
+  if (!/^\d{6}$/.test(c)) throw fail(400, "kode harus 6 angka", "totp_format");
+  const key = b32dec(env.TOTP_SECRET), step = Math.floor(Date.now() / 30000);
+  let hit = null;
+  for (const d of [-1, 0, 1]) if (safeEq(await hotp(key, step + d), c)) hit = step + d; // semua dihitung agar waktu respons sama
+  if (hit === null) return false;
+  const last = await kvGet(env, "totpLast:" + purpose);
+  if (typeof last === "number" && hit <= last) return false; // kode yang sama tidak boleh dipakai ulang
+  await kvSet(env, "totpLast:" + purpose, hit);
+  return true;
+}
+async function totpAttempt(req, env, code, purpose) {
+  if (!env.TOTP_SECRET) throw fail(500, "TOTP_SECRET belum diisi di server", "config");
+  if (!env.DB) throw fail(500, "D1 wajib untuk TOTP (penahan percobaan & anti pakai-ulang)", "config");
+  const ip = req.headers.get("cf-connecting-ip") || "x", now = Date.now();
+  const kIp = "totpFail:" + ip, kAll = "totpFail:all";
+  const fIp = (await kvGet(env, kIp)) || { n: 0, until: 0 };
+  const fAll = (await kvGet(env, kAll)) || { n: 0, until: 0, since: now };
+  const lockUntil = Math.max(fIp.until || 0, fAll.until || 0);
+  if (lockUntil > now) throw fail(429, "terlalu banyak percobaan salah, coba lagi nanti", "totp_locked", { retryAfterSec: Math.ceil((lockUntil - now) / 1000) });
+  if (await totpCheck(env, code, purpose)) { if (fIp.n) await kvSet(env, kIp, { n: 0, until: 0 }); return true; }
+  fIp.n = (fIp.n || 0) + 1; if (fIp.n >= 5) { fIp.until = now + 10 * 60000; fIp.n = 0; }
+  if (now - (fAll.since || now) > 3600000) { fAll.n = 0; fAll.since = now; }
+  fAll.n = (fAll.n || 0) + 1; if (fAll.n >= 30) { fAll.until = now + 3600000; fAll.n = 0; fAll.since = now; }
+  await kvSet(env, kIp, fIp); await kvSet(env, kAll, fAll);
+  throw fail(401, "kode Authenticator salah atau sudah dipakai", "totp_invalid");
+}
+
 async function authenticate(req, env, u, path) {
   const m = (req.headers.get("authorization") || "").match(/^(Bearer|Session)\s+(.+)$/i);
   if (m) {
     if (m[1].toLowerCase() === "bearer") { const c = await verifyGoogle(env, m[2]); return grant(env, c.email, "google"); }
     const p = await verifySession(env, m[2]);
+    if (p.e === TOTP_ID) { // sesi hasil verifikasi Authenticator (pemilik tunggal)
+      if (!env.TOTP_SECRET) throw fail(401, "verifikasi Authenticator tidak aktif di server", "session_invalid");
+      return { email: TOTP_ID, role: "owner", via: "session", totp: true };
+    }
     return grant(env, p.e, "session");
   }
   // Kompatibilitas aplikasi lama (hanya baca): aktif bila LEGACY_READ=1. Perintah TIDAK pernah memakai jalur ini.
@@ -1370,7 +1425,7 @@ export default {
 
     try {
       // --- rute publik ---
-      if (path === "/api/health") return json({ ok: true, time: Date.now(), d1: !!env.DB, r2: !!env.AUDIO, google: !!env.GOOGLE_CLIENT_ID, vapid: !!(env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY) }, 200, env);
+      if (path === "/api/health") return json({ ok: true, time: Date.now(), d1: !!env.DB, r2: !!env.AUDIO, google: !!env.GOOGLE_CLIENT_ID, totp: !!env.TOTP_SECRET, vapid: !!(env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY) }, 200, env);
       if (path === "/api/push/vapid-key") return json({ ok: true, key: env.VAPID_PUBLIC_KEY || null }, 200, env);
       if (path === "/api/auth/session" && req.method === "POST") {
         const b = await req.json().catch(() => ({}));
@@ -1378,6 +1433,12 @@ export default {
         const who = grant(env, g.email, "google");
         const exp = Math.floor(Date.now() / 1000) + SESSION_TOKEN_TTL;
         return json({ ok: true, token: await signSession(env, who.email, who.role), exp, email: who.email, name: g.name, role: who.role }, 200, env);
+      }
+      if (path === "/api/auth/totp" && req.method === "POST") {
+        const b = await req.json().catch(() => ({}));
+        await totpAttempt(req, env, b.code, "login");
+        const exp = Math.floor(Date.now() / 1000) + SESSION_TOKEN_TTL;
+        return json({ ok: true, token: await signSession(env, TOTP_ID, "owner"), exp, email: TOTP_ID, name: "Authenticator", role: "owner" }, 200, env);
       }
       const af = path.match(/^\/api\/audio\/file\/([0-9a-f]{32})$/);
       if (af && (req.method === "GET" || req.method === "HEAD")) return await audioFile(req, env, u, af[1]);
@@ -1426,7 +1487,11 @@ export default {
       if (path === "/api/command") {
         if (req.method !== "POST") throw fail(405, "gunakan POST", "method");
         // Perintah wajib memakai ID token Google yang diverifikasi pada permintaan ini (bukan token sesi / kunci API).
-        if (who.via !== "google") throw fail(401, "perintah wajib memakai Google ID token yang masih berlaku", "need_google_token");
+        // Perintah: (a) Google ID token segar, ATAU (b) sesi Authenticator + kode 6 digit BARU di header x-totp (sekali pakai).
+        if (who.via !== "google") {
+          if (who.totp) await totpAttempt(req, env, req.headers.get("x-totp"), "command");
+          else throw fail(401, "perintah wajib memakai Google ID token atau kode Authenticator", "need_google_token");
+        }
         if (!mayCommand) throw fail(403, "akun ini tidak diizinkan mengirim perintah", "forbidden_role");
         const out = await handleCommand(req, env, ctx, who);
         const st = out._status || 200; delete out._status;
