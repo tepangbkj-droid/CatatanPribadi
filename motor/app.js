@@ -119,6 +119,7 @@ function initMap() {
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(S.map);
   S.hLayer = L.layerGroup().addTo(S.map);
   if (window.BmkgLayers) BmkgLayers.attach(S.map, { workerUrl: CONFIG.WORKER_URL, getPosition: () => (S.pos ? { lat: +S.pos.lat, lon: +S.pos.lon } : null) });
+  if (window.MapPro) MapPro.enhance(S.map, { extras: [{ icon: '🏍️', title: 'Posisi motor', fn: () => { if (S.pos) { S.follow = true; $('follow').setAttribute('aria-pressed', 'true'); S.map.flyTo([S.pos.lat, S.pos.lon], Math.max(S.map.getZoom(), 16), { duration: 0.8 }); } } }] });
   S.follow = true;
   S.map.on('dragstart', () => { S.follow = false; $('follow').setAttribute('aria-pressed', 'false'); });
 }
