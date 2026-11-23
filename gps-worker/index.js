@@ -10,6 +10,8 @@
 //   tulis  : POST /api/command (WAJIB Google ID token segar)   POST /api/push/subscribe|unsubscribe|test
 //            POST /api/audio/upload   DELETE /api/audio/:id (pemilik)   GET /debug (pemilik)
 
+import { handleBmkg } from "./bmkg.js";
+
 const PORTAL = "https://www.cantrackportal.com";
 const UA =
   "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36";
@@ -726,9 +728,21 @@ async function markSeen(env, id) {
 }
 
 // ---------- HMAC (token sesi aplikasi & URL audio bertanda tangan) ----------
+let autoSignCache = null;
+async function signingSecret(env) {
+  if (env.SIGNING_SECRET) return env.SIGNING_SECRET;       // diisi manual = dipakai
+  if (autoSignCache) return autoSignCache;
+  if (!env.DB) throw fail(500, "SIGNING_SECRET belum diisi dan D1 tidak tersedia", "config");
+  let v = await kvGet(env, "autoSigningSecret");
+  if (typeof v !== "string" || v.length < 32) {            // dibuat otomatis sekali, disimpan di D1
+    v = b64uEnc(crypto.getRandomValues(new Uint8Array(48)));
+    await env.DB.prepare("INSERT OR IGNORE INTO kv(k,v,updated_at) VALUES(?,?,?)").bind("autoSigningSecret", JSON.stringify(v), Date.now()).run();
+    const again = await kvGet(env, "autoSigningSecret"); if (typeof again === "string") v = again; // bila dua permintaan balapan, pakai yang tersimpan
+  }
+  autoSignCache = v; return v;
+}
 async function hmacKey(env) {
-  const secret = env.SIGNING_SECRET;
-  if (!secret) throw fail(500, "SIGNING_SECRET belum diisi", "config");
+  const secret = await signingSecret(env);
   return crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
 }
 async function hmacSign(env, text) { return b64uEnc(await crypto.subtle.sign("HMAC", await hmacKey(env), enc.encode(text))); }
@@ -805,17 +819,30 @@ function safeEq(a, b) {
   return d === 0;
 }
 // ---------- TOTP (Google Authenticator / Authy / Microsoft Authenticator) ----------
-// RFC 6238: SHA-1, 6 digit, langkah 30 dtk, toleransi ±1 langkah. Rahasia = secret TOTP_SECRET (base32).
+// RFC 6238: SHA-1, 6 digit, langkah 30 dtk, toleransi ±1 langkah.
+// Kunci rahasia: dibuat DARI APLIKASI lewat /api/auth/totp-setup (disimpan di D1), atau diisi manual lewat secret TOTP_SECRET (menang bila ada).
+// Pendaftaran/ulang-buat kunci wajib kata sandi akun CantrackPortal (secret PASSWORD yang sudah ada di server).
 // Kode TIDAK bisa dipakai dua kali (per tujuan: login / perintah). Gagal 5x dari satu IP = kunci 10 menit; gagal 30x total/jam = kunci 1 jam.
 const TOTP_ID = "authenticator";
+async function getTotpSecret(env) {
+  if (env.TOTP_SECRET) return String(env.TOTP_SECRET);
+  const v = await kvGet(env, "totpSecret").catch(() => null);
+  return typeof v === "string" && v ? v : null;
+}
 function b32dec(sec) {
   const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
   const t = String(sec || "").toUpperCase().replace(/[\s=-]/g, "");
   let bits = ""; const out = [];
-  for (const ch of t) { const v = A.indexOf(ch); if (v < 0) throw fail(500, "TOTP_SECRET bukan base32 yang valid", "config"); bits += v.toString(2).padStart(5, "0"); }
+  for (const ch of t) { const v = A.indexOf(ch); if (v < 0) throw fail(500, "kunci TOTP bukan base32 yang valid", "config"); bits += v.toString(2).padStart(5, "0"); }
   for (let i = 0; i + 8 <= bits.length; i += 8) out.push(parseInt(bits.slice(i, i + 8), 2));
-  if (out.length < 10) throw fail(500, "TOTP_SECRET terlalu pendek (minimal 16 karakter base32)", "config");
+  if (out.length < 10) throw fail(500, "kunci TOTP terlalu pendek", "config");
   return new Uint8Array(out);
+}
+function b32enc(bytes) {
+  const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"; let bits = "", out = "";
+  for (const b of bytes) bits += b.toString(2).padStart(8, "0");
+  for (let i = 0; i + 5 <= bits.length; i += 5) out += A[parseInt(bits.slice(i, i + 5), 2)];
+  return out;
 }
 async function hotp(keyBytes, counter) {
   const key = await crypto.subtle.importKey("raw", keyBytes, { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
@@ -826,10 +853,10 @@ async function hotp(keyBytes, counter) {
   const bin = ((h[o] & 0x7f) << 24) | (h[o + 1] << 16) | (h[o + 2] << 8) | h[o + 3];
   return String(bin % 1000000).padStart(6, "0");
 }
-async function totpCheck(env, code, purpose) {
+async function totpCheck(env, secret, code, purpose) {
   const c = String(code || "").replace(/\s/g, "");
   if (!/^\d{6}$/.test(c)) throw fail(400, "kode harus 6 angka", "totp_format");
-  const key = b32dec(env.TOTP_SECRET), step = Math.floor(Date.now() / 30000);
+  const key = b32dec(secret), step = Math.floor(Date.now() / 30000);
   let hit = null;
   for (const d of [-1, 0, 1]) if (safeEq(await hotp(key, step + d), c)) hit = step + d; // semua dihitung agar waktu respons sama
   if (hit === null) return false;
@@ -838,21 +865,42 @@ async function totpCheck(env, code, purpose) {
   await kvSet(env, "totpLast:" + purpose, hit);
   return true;
 }
-async function totpAttempt(req, env, code, purpose) {
-  if (!env.TOTP_SECRET) throw fail(500, "TOTP_SECRET belum diisi di server", "config");
-  if (!env.DB) throw fail(500, "D1 wajib untuk TOTP (penahan percobaan & anti pakai-ulang)", "config");
+// Penahan percobaan (dipakai kode Authenticator DAN kata sandi pendaftaran). check(): lempar 429 bila terkunci. fail(): catat gagal.
+async function lockCheck(req, env) {
+  if (!env.DB) throw fail(500, "D1 wajib (penahan percobaan & anti pakai-ulang)", "config");
   const ip = req.headers.get("cf-connecting-ip") || "x", now = Date.now();
   const kIp = "totpFail:" + ip, kAll = "totpFail:all";
-  const fIp = (await kvGet(env, kIp)) || { n: 0, until: 0 };
-  const fAll = (await kvGet(env, kAll)) || { n: 0, until: 0, since: now };
-  const lockUntil = Math.max(fIp.until || 0, fAll.until || 0);
-  if (lockUntil > now) throw fail(429, "terlalu banyak percobaan salah, coba lagi nanti", "totp_locked", { retryAfterSec: Math.ceil((lockUntil - now) / 1000) });
-  if (await totpCheck(env, code, purpose)) { if (fIp.n) await kvSet(env, kIp, { n: 0, until: 0 }); return true; }
+  const fIp = (await kvGet(env, kIp)) || { n: 0, until: 0 }, fAll = (await kvGet(env, kAll)) || { n: 0, until: 0, since: now };
+  const until = Math.max(fIp.until || 0, fAll.until || 0);
+  if (until > now) throw fail(429, "terlalu banyak percobaan salah, coba lagi nanti", "totp_locked", { retryAfterSec: Math.ceil((until - now) / 1000) });
+  return { kIp, kAll, fIp, fAll, now };
+}
+async function lockFail(env, L) {
+  const { kIp, kAll, fIp, fAll, now } = L;
   fIp.n = (fIp.n || 0) + 1; if (fIp.n >= 5) { fIp.until = now + 10 * 60000; fIp.n = 0; }
   if (now - (fAll.since || now) > 3600000) { fAll.n = 0; fAll.since = now; }
   fAll.n = (fAll.n || 0) + 1; if (fAll.n >= 30) { fAll.until = now + 3600000; fAll.n = 0; fAll.since = now; }
   await kvSet(env, kIp, fIp); await kvSet(env, kAll, fAll);
+}
+async function totpAttempt(req, env, code, purpose) {
+  const secret = await getTotpSecret(env);
+  if (!secret) throw fail(409, "Authenticator belum disiapkan. Buat kunci dulu dari aplikasi.", "totp_not_enrolled");
+  const L = await lockCheck(req, env);
+  if (await totpCheck(env, secret, code, purpose)) { if (L.fIp.n) await kvSet(env, L.kIp, { n: 0, until: 0 }); return true; }
+  await lockFail(env, L);
   throw fail(401, "kode Authenticator salah atau sudah dipakai", "totp_invalid");
+}
+// Buat kunci baru dari aplikasi. Kunci hanya dikembalikan SEKALI di respons ini. Membuat ulang = kunci lama & semua sesi Authenticator lama mati.
+async function totpSetup(req, env, password) {
+  if (env.TOTP_SECRET) throw fail(409, "kunci diatur manual lewat secret TOTP_SECRET; hapus secret itu dulu bila ingin membuatnya dari aplikasi", "totp_managed");
+  const L = await lockCheck(req, env);
+  if (!env.PASSWORD || !safeEq(String(password || ""), env.PASSWORD)) { await lockFail(env, L); throw fail(401, "kata sandi akun CantrackPortal salah", "setup_denied"); }
+  const secret = b32enc(crypto.getRandomValues(new Uint8Array(20))); // 160 bit
+  await kvSet(env, "totpSecret", secret);
+  await kvSet(env, "totpSetAt", Date.now());
+  await kvSet(env, "totpLast:login", 0); await kvSet(env, "totpLast:command", 0);
+  const label = encodeURIComponent("Buku Kas GPS") + ":" + encodeURIComponent("Kendaraan");
+  return { ok: true, secret, uri: `otpauth://totp/${label}?secret=${secret}&issuer=${encodeURIComponent("Buku Kas GPS")}&algorithm=SHA1&digits=6&period=30` };
 }
 
 async function authenticate(req, env, u, path) {
@@ -861,7 +909,9 @@ async function authenticate(req, env, u, path) {
     if (m[1].toLowerCase() === "bearer") { const c = await verifyGoogle(env, m[2]); return grant(env, c.email, "google"); }
     const p = await verifySession(env, m[2]);
     if (p.e === TOTP_ID) { // sesi hasil verifikasi Authenticator (pemilik tunggal)
-      if (!env.TOTP_SECRET) throw fail(401, "verifikasi Authenticator tidak aktif di server", "session_invalid");
+      if (!(await getTotpSecret(env))) throw fail(401, "verifikasi Authenticator tidak aktif di server", "session_invalid");
+      const setAt = await kvGet(env, "totpSetAt").catch(() => null);
+      if (typeof setAt === "number" && (p.exp - SESSION_TOKEN_TTL) * 1000 < setAt - 1000) throw fail(401, "kunci Authenticator sudah dibuat ulang, masuk lagi", "session_invalid");
       return { email: TOTP_ID, role: "owner", via: "session", totp: true };
     }
     return grant(env, p.e, "session");
@@ -1425,7 +1475,11 @@ export default {
 
     try {
       // --- rute publik ---
-      if (path === "/api/health") return json({ ok: true, time: Date.now(), d1: !!env.DB, r2: !!env.AUDIO, google: !!env.GOOGLE_CLIENT_ID, totp: !!env.TOTP_SECRET, vapid: !!(env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY) }, 200, env);
+      // Data terbuka BMKG (cuaca, gempa, peringatan dini): publik, di-cache di Worker.
+      if (path === "/api/bmkg" && req.method === "GET") return handleBmkg(req, env, ctx, {
+        "access-control-allow-origin": corsOrigin(env), "access-control-allow-methods": "GET, POST, DELETE, OPTIONS", vary: "Origin",
+      });
+      if (path === "/api/health") return json({ ok: true, time: Date.now(), d1: !!env.DB, r2: !!env.AUDIO, google: !!env.GOOGLE_CLIENT_ID, totp: !!(await getTotpSecret(env)), vapid: !!(env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY) }, 200, env);
       if (path === "/api/push/vapid-key") return json({ ok: true, key: env.VAPID_PUBLIC_KEY || null }, 200, env);
       if (path === "/api/auth/session" && req.method === "POST") {
         const b = await req.json().catch(() => ({}));
@@ -1433,6 +1487,10 @@ export default {
         const who = grant(env, g.email, "google");
         const exp = Math.floor(Date.now() / 1000) + SESSION_TOKEN_TTL;
         return json({ ok: true, token: await signSession(env, who.email, who.role), exp, email: who.email, name: g.name, role: who.role }, 200, env);
+      }
+      if (path === "/api/auth/totp-setup" && req.method === "POST") {
+        const b = await req.json().catch(() => ({}));
+        return json(await totpSetup(req, env, b.password), 200, env);
       }
       if (path === "/api/auth/totp" && req.method === "POST") {
         const b = await req.json().catch(() => ({}));
