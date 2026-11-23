@@ -118,6 +118,7 @@ function initMap() {
   L.control.zoom({ position: 'bottomright' }).addTo(S.map);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(S.map);
   S.hLayer = L.layerGroup().addTo(S.map);
+  if (window.BmkgLayers) BmkgLayers.attach(S.map, { workerUrl: CONFIG.WORKER_URL, getPosition: () => (S.pos ? { lat: +S.pos.lat, lon: +S.pos.lon } : null) });
   S.follow = true;
   S.map.on('dragstart', () => { S.follow = false; $('follow').setAttribute('aria-pressed', 'false'); });
 }
