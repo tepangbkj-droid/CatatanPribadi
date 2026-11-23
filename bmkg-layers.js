@@ -87,17 +87,31 @@
 
   /* ---------- CSS ---------- */
   var CSS = '' +
-    '.bmk-tools{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;max-width:230px}' +
-    '.bmk-tg{font:600 12px/1 system-ui,sans-serif;border:1px solid rgba(0,0,0,.15);background:rgba(255,255,255,.94);color:#334155;border-radius:999px;padding:7px 10px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.2);-webkit-tap-highlight-color:transparent;white-space:nowrap}' +
-    '.bmk-tg[aria-pressed="true"]{background:#2563eb;color:#fff;border-color:#1d4ed8}' +
-    '.bmk-tg.err::after{content:" ⚠";}' +
-    '.bmk-w{width:176px;margin-top:6px;background:rgba(255,255,255,.95);color:#0f172a;border-radius:14px;padding:9px 11px;box-shadow:0 2px 10px rgba(0,0,0,.25);font:12px/1.35 system-ui,sans-serif}' +
-    '.bmk-w .row{display:flex;align-items:center;gap:8px}.bmk-w .ic{width:40px;height:40px;flex:none;font-size:30px;text-align:center;line-height:40px}.bmk-w .ic img{width:40px;height:40px}' +
-    '.bmk-w .t{font:700 24px/1 system-ui,sans-serif}.bmk-w .d{font-weight:600}.bmk-w .m{display:flex;gap:10px;margin-top:6px;color:#475569}' +
-    '.bmk-w .p{margin-top:4px;color:#64748b;font-size:11px}.bmk-w .nx{display:flex;gap:6px;margin-top:6px;overflow-x:auto}.bmk-w .nx div{flex:none;text-align:center;font-size:11px;color:#475569}' +
-    '.bmk-w button{font:600 11px system-ui;border:1px solid #cbd5e1;background:#f8fafc;border-radius:8px;padding:4px 8px;margin-top:6px;cursor:pointer}' +
-    '.bmk-w input{width:100%;box-sizing:border-box;margin-top:6px;padding:5px 6px;border:1px solid #cbd5e1;border-radius:8px;font:12px system-ui}' +
-    '.bmk-w .stale{color:#b45309;font-size:11px;margin-top:4px}.bmk-w .er{color:#b91c1c}' +
+    '.bmk-ctl{display:flex;flex-direction:column;align-items:flex-start;max-width:calc(100vw - 84px);font:12px/1.35 system-ui,sans-serif;pointer-events:none}.bmk-ctl>*{pointer-events:auto}' +
+    '.bmk-ctl.r{align-items:flex-end}' +
+    '.bmk-bar{display:flex;gap:6px;align-items:center}.bmk-ctl.r .bmk-bar{flex-direction:row-reverse}' +
+    '.bmk-pill,.bmk-lay{border:0;background:rgba(255,255,255,.96);color:#0f172a;height:34px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.28);cursor:pointer;-webkit-tap-highlight-color:transparent;font-family:system-ui,sans-serif}' +
+    '.bmk-pill{display:inline-flex;align-items:center;gap:5px;padding:0 11px;font-weight:700;font-size:14px;white-space:nowrap}.bmk-pill .e{font-size:17px;line-height:1}' +
+    '.bmk-pill small{font:600 11px system-ui;color:#64748b;max-width:78px;overflow:hidden;text-overflow:ellipsis}.bmk-pill .car{font-size:9px;color:#94a3b8}' +
+    '.bmk-pill.warn{background:#dc2626;color:#fff}.bmk-pill.warn small,.bmk-pill.warn .car{color:#fecaca}' +
+    '.bmk-pill.err{background:#fef3c7}' +
+    '.bmk-lay{width:34px;padding:0;font-size:16px;display:inline-flex;align-items:center;justify-content:center}.bmk-lay.err::after{content:\"!\";position:absolute;margin:-22px -22px 0 0;width:13px;height:13px;border-radius:50%;background:#f59e0b;color:#fff;font:700 9px/13px system-ui;text-align:center}' +
+    '.bmk-menu{margin-top:6px;background:rgba(255,255,255,.98);border-radius:14px;padding:5px;box-shadow:0 6px 20px rgba(0,0,0,.3);min-width:176px}' +
+    '.bmk-row{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;border:0;background:transparent;padding:9px 10px;border-radius:10px;font:600 13px system-ui;color:#334155;cursor:pointer}' +
+    '.bmk-row i{width:34px;height:20px;border-radius:99px;background:#cbd5e1;position:relative;flex:none;transition:background .15s}.bmk-row i::after{content:\"\";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:left .15s}' +
+    '.bmk-row[aria-pressed=\"true\"] i{background:#2563eb}.bmk-row[aria-pressed=\"true\"] i::after{left:16px}.bmk-row.err span::after{content:\" ⚠\"}' +
+    '.bmk-panel{margin-top:6px;width:min(310px,calc(100vw - 84px));max-height:min(58vh,440px);overflow:auto;-webkit-overflow-scrolling:touch;background:rgba(255,255,255,.98);color:#0f172a;border-radius:16px;padding:12px;box-shadow:0 8px 26px rgba(0,0,0,.32)}' +
+    '.bmk-panel .row{display:flex;align-items:center;gap:10px}.bmk-panel .ic{width:48px;height:48px;flex:none;font-size:36px;text-align:center;line-height:48px}.bmk-panel .ic img{width:48px;height:48px}' +
+    '.bmk-panel .t{font:700 30px/1 system-ui}.bmk-panel .d{font-weight:600;font-size:13px;margin-top:2px}.bmk-panel .m{display:flex;gap:12px;margin-top:8px;color:#475569;font-size:12.5px;flex-wrap:wrap}' +
+    '.bmk-panel .p{margin-top:6px;color:#64748b;font-size:11.5px;line-height:1.4}.bmk-panel .p b{color:#334155}' +
+    '.bmk-panel .nx{display:flex;gap:4px;margin-top:10px;overflow-x:auto;padding-bottom:2px}.bmk-panel .nx div{flex:none;min-width:44px;text-align:center;font-size:11px;color:#475569;background:#f1f5f9;border-radius:10px;padding:5px 4px}' +
+    '.bmk-panel .sec{margin-top:10px;padding-top:10px;border-top:1px solid #e2e8f0}.bmk-panel .sec h5{margin:0 0 6px;font:700 12px system-ui;color:#334155}' +
+    '.bmk-panel .al{background:#fee2e2;color:#7f1d1d;border-radius:12px;padding:8px 10px;margin-bottom:10px;font-size:12px}.bmk-panel .al.s2{background:#ffedd5;color:#7c2d12}.bmk-panel .al.s1,.bmk-panel .al.s0{background:#fef9c3;color:#713f12}.bmk-panel .al b{display:block;font-size:13px}.bmk-panel .al details{margin-top:4px}.bmk-panel .al summary{cursor:pointer;font-weight:600}.bmk-panel .al .tx{white-space:pre-wrap;margin-top:4px}' +
+    '.bmk-panel button,.bmk-panel .bt{font:600 11.5px system-ui;border:1px solid #cbd5e1;background:#f8fafc;color:#0f172a;border-radius:9px;padding:6px 9px;margin:6px 6px 0 0;cursor:pointer;text-decoration:none;display:inline-block}' +
+    '.bmk-panel input{width:100%;box-sizing:border-box;margin-top:6px;padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;font:12px system-ui}' +
+    '.bmk-panel .stale{color:#b45309;font-size:11px;margin-top:6px}.bmk-panel .er{color:#b91c1c}' +
+    '.bmk-panel .li{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #e2e8f0;font-size:12px}.bmk-panel .li:last-child{border-bottom:0}.bmk-panel .li button{margin:0;flex:none}' +
+    'body.mp-lock #bmkBanner{display:none !important}' +
     '.bmk-q{position:relative;width:0;height:0}' +
     '.bmk-q i{position:absolute;left:0;top:0;border-radius:50%;transform:translate(-50%,-50%);background:var(--c);border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)}' +
     '.bmk-q b{position:absolute;left:0;top:0;border-radius:50%;transform:translate(-50%,-50%);background:var(--c);opacity:.55;animation:bmkPulse 1.8s ease-out infinite}' +
@@ -156,34 +170,45 @@
     opts = opts || {};
     var base = opts.workerUrl || '', getPos = opts.getPosition || function () { return null; };
     var st = Object.assign({ weather: true, quake: false, nowcast: true }, lsGet(KEY, {}));
-    var S = { focus: lsGet('bmk_focus', 'vehicle'), timers: {}, weather: null, wErr: '', wLast: null, wAt: 0, expand: false, quakes: [], alerts: [], err: {}, busy: {} };
+    var S = { focus: lsGet('bmk_focus', 'vehicle'), timers: {}, weather: null, wErr: '', wLast: null, wAt: 0, expand: false, open: false, menu: false, rel: [], quakes: [], alerts: [], err: {}, busy: {} };
     var quakeGroup = L.layerGroup(), alertGroup = L.layerGroup();
 
-    /* tombol toggle + widget cuaca: satu control di pojok kanan atas */
+    /* kontrol ringkas: [☁️ 27°C ▾] [🗂] — detail cuaca & info wilayah hanya muncul saat diketuk */
+    var pos = opts.position || 'topright';
     var Ctl = L.Control.extend({
-      options: { position: opts.position || 'topright' },
+      options: { position: pos },
       onAdd: function () {
-        var d = L.DomUtil.create('div', 'bmk-ctl');
-        d.innerHTML = '<div class="bmk-tools"><button class="bmk-tg" data-k="weather">☁️ Cuaca</button><button class="bmk-tg" data-k="quake">🌋 Gempa</button><button class="bmk-tg" data-k="nowcast">⚠️ Peringatan Dini</button></div><div class="bmk-w" style="display:none"></div>';
+        var d = L.DomUtil.create('div', 'bmk-ctl' + (/right/.test(pos) ? ' r' : ''));
+        d.innerHTML = '<div class="bmk-bar"><button class="bmk-pill" data-w="panel" aria-label="Cuaca" aria-expanded="false"></button><button class="bmk-lay" data-w="menu" aria-label="Lapisan peta" title="Lapisan: cuaca, gempa, peringatan dini">🗂️</button></div>' +
+          '<div class="bmk-menu" style="display:none"><button class="bmk-row" data-k="weather"><span>☁️ Cuaca</span><i></i></button><button class="bmk-row" data-k="quake"><span>🌋 Gempa</span><i></i></button><button class="bmk-row" data-k="nowcast"><span>⚠️ Peringatan dini</span><i></i></button></div>' +
+          '<div class="bmk-panel" style="display:none"></div>';
         L.DomEvent.disableClickPropagation(d); L.DomEvent.disableScrollPropagation(d);
         d.addEventListener('click', function (e) {
-          var b = e.target.closest('.bmk-tg');
-          if (b) { toggle(b.dataset.k); return; }
+          var row = e.target.closest('.bmk-row');
+          if (row) { toggle(row.dataset.k); return; }
+          var fly = e.target.closest('[data-fly]');
+          if (fly) { var ll = fly.dataset.fly.split(',').map(Number); map.setView(ll, Math.max(map.getZoom(), 17), { animate: true }); return; }
           var a = e.target.closest('[data-w]'); if (!a) return;
-          if (a.dataset.w === 'retry') { S.wLast = null; loadWeather(true); }
-          else if (a.dataset.w === 'more') { S.expand = !S.expand; drawWeather(); }
-          else if (a.dataset.w === 'focus') { S.focus = S.focus === 'vehicle' ? 'map' : 'vehicle'; lsSet('bmk_focus', S.focus); S.wLast = null; loadWeather(true); evalAlerts(); }
-          else if (a.dataset.w === 'save') {
-            var v = (d.querySelector('input') || {}).value || '';
+          var w = a.dataset.w;
+          if (w === 'panel') { S.open = !S.open; S.menu = false; drawPanel(); if (S.open) { loadWeather(false); } }
+          else if (w === 'menu') { S.menu = !S.menu; if (S.menu) S.open = false; sync(); drawPanel(); }
+          else if (w === 'retry') { S.wLast = null; loadWeather(true); }
+          else if (w === 'focus') { S.focus = S.focus === 'vehicle' ? 'map' : 'vehicle'; lsSet('bmk_focus', S.focus); S.wLast = null; loadWeather(true); evalAlerts(); }
+          else if (w === 'save') {
+            var v = (d.querySelector('.bmk-panel input') || {}).value || '';
             if (/^\d{2}\.\d{2}\.\d{2}\.\d{4}$/.test(v.trim())) { lsSet(KEY_ADM4, v.trim()); S.wLast = null; loadWeather(true); }
-            else { S.wErr = 'Format kode: 31.71.03.1001'; drawWeather(); }
-          } else if (a.dataset.w === 'auto') { try { localStorage.removeItem(KEY_ADM4); } catch (x) {} S.wLast = null; loadWeather(true); }
+            else { S.wErr = 'Format kode: 31.71.03.1001'; drawPanel(); }
+          } else if (w === 'auto') { try { localStorage.removeItem(KEY_ADM4); } catch (x) {} S.wLast = null; loadWeather(true); }
+          else if (w === 'cb' && opts.onAction) { try { opts.onAction(a.dataset.act, a.dataset, map); } catch (x) {} }
         });
         return d;
       }
     });
     var ctl = new Ctl().addTo(map);
-    var root = ctl.getContainer(), wBox = root.querySelector('.bmk-w');
+    var root = ctl.getContainer(), pillEl = root.querySelector('.bmk-pill'), menuEl = root.querySelector('.bmk-menu'), wBox = root.querySelector('.bmk-panel');
+    // ketuk peta = tutup panel/menu
+    map.on('click', function () { if (S.open || S.menu) { S.open = false; S.menu = false; sync(); drawPanel(); } });
+    map.on('dragstart', function () { if (S.menu) { S.menu = false; sync(); } });
 
     /* atribusi resmi di pojok bawah peta */
     var ATTR = 'Sumber Data: <a href="https://www.bmkg.go.id" target="_blank" rel="noopener">BMKG</a>';
@@ -193,15 +218,19 @@
     function toggle(k) { st[k] = !st[k]; lsSet(KEY, st); sync(); if (st[k]) load(k, true); }
     function sync() {
       ['weather', 'quake', 'nowcast'].forEach(function (k) {
-        var b = root.querySelector('[data-k="' + k + '"]'); b.setAttribute('aria-pressed', String(!!st[k])); b.classList.toggle('err', !!(st[k] && S.err[k]));
+        var b = menuEl.querySelector('[data-k="' + k + '"]'); b.setAttribute('aria-pressed', String(!!st[k])); b.classList.toggle('err', !!(st[k] && S.err[k]));
         b.title = S.err[k] ? 'Gagal memuat: ' + S.err[k] : '';
       });
-      wBox.style.display = st.weather ? '' : 'none';
+      var anyErr = ['weather', 'quake', 'nowcast'].some(function (k) { return st[k] && S.err[k] && S.err[k] !== 'data lama'; });
+      root.querySelector('.bmk-lay').classList.toggle('err', anyErr);
+      menuEl.style.display = S.menu ? '' : 'none';
+      pillEl.style.display = st.weather ? '' : 'none';
+      if (!st.weather) S.open = false;
       if (st.quake) quakeGroup.addTo(map); else map.removeLayer(quakeGroup);
-      if (st.nowcast) alertGroup.addTo(map); else { map.removeLayer(alertGroup); }
+      if (st.nowcast) alertGroup.addTo(map); else { map.removeLayer(alertGroup); S.rel = []; }
       if (!st.nowcast) renderBanner([]);
       else evalAlerts();
-      if (st.weather) drawWeather();
+      drawPill(); drawPanel();
     }
 
     /* ---- posisi acuan: kendaraan, bila tidak ada pusat peta ---- */
@@ -215,33 +244,52 @@
 
     /* ---- cuaca ---- */
     function wxEmoji(d) { d = String(d || '').toLowerCase(); return /petir/.test(d) ? '⛈️' : /hujan/.test(d) ? '🌧️' : /kabut|asap/.test(d) ? '🌫️' : /cerah berawan/.test(d) ? '⛅' : /berawan/.test(d) ? '☁️' : /cerah/.test(d) ? '☀️' : '🌤️'; }
-    function drawWeather() {
+    function drawPill() {
       if (!st.weather) return;
+      var w = S.weather, hasAl = st.nowcast && S.rel.some(function (x) { return !dismissed[x.a.id]; });
+      pillEl.classList.toggle('warn', !!hasAl); pillEl.classList.toggle('err', !w && !!S.wErr);
+      var pl = (w && w.place) || {}, nm = pl.kecamatan || pl.desa || '';
+      if (!w) { pillEl.innerHTML = '<span class="e">' + (S.wErr ? '⚠️' : '⏳') + '</span><small>' + (S.wErr ? 'Cuaca' : 'Memuat') + '</small>'; }
+      else { var c = w.current; pillEl.innerHTML = '<span class="e">' + (hasAl ? '⚠️' : wxEmoji(c.desc)) + '</span>' + (c.temp != null ? Math.round(c.temp) + '°' : '–') + (nm ? '<small>' + esc(nm) + '</small>' : '') + '<span class="car">' + (S.open ? '▲' : '▼') + '</span>'; }
+      pillEl.setAttribute('aria-expanded', String(!!S.open));
+    }
+    function drawPanel() {
+      drawPill();
+      wBox.style.display = (S.open && st.weather) ? '' : 'none';
+      if (!S.open || !st.weather) return;
       var w = S.weather, h = '';
+      // peringatan dini di sekitar (tampil di sini, bukan menutupi layar)
+      if (st.nowcast) S.rel.filter(function (x) { return !dismissed[x.a.id]; }).slice(0, 2).forEach(function (x) {
+        var a = x.a, names = []; a.areas.forEach(function (ar) { if (ar.name && names.indexOf(ar.name) < 0) names.push(ar.name); });
+        h += '<div class="al s' + sevRank(a) + '"><b>⚠️ ' + esc(sevLabel(a)) + ': ' + esc(a.event || a.headline || 'Cuaca ekstrem') + '</b>' + esc(names.slice(0, 3).join(', ')) +
+          '<div>' + (x.km === 0 ? '📍 Posisi Anda di area terdampak' : x.km != null && x.km < Infinity ? '📍 ± ' + Math.round(x.km) + ' km dari Anda' : '🗺️ Di area peta ini') + (a.expires ? ' · s/d ' + esc(wib(a.expires)) : '') + '</div>' +
+          '<details><summary>Detail</summary><div class="tx">' + esc(a.description || a.headline || '') + (a.instruction ? '\n' + esc(a.instruction) : '') + '</div></details></div>';
+      });
       if (!w) {
-        h = S.wErr ? '<div class="er">⚠️ ' + esc(S.wErr.length > 110 ? S.wErr.slice(0, 110) + '…' : S.wErr) + '</div>' : '<div>⏳ Memuat cuaca…</div>';
+        h += S.wErr ? '<div class="er">⚠️ ' + esc(S.wErr.length > 140 ? S.wErr.slice(0, 140) + '…' : S.wErr) + '</div><button data-w="retry">Coba lagi</button>' : '<div>⏳ Memuat cuaca…</div>';
+        if (S.needManual) h += '<input type="text" inputmode="numeric" placeholder="Kode adm4, mis. 31.71.03.1001" value="' + esc(lsGet(KEY_ADM4, '')) + '"><button data-w="save">Pakai kode ini</button>';
       } else {
-        var c = w.current, pl = w.place || {};
-        var img = safeBmkgImg(c.icon);
-        h = '<div class="row"><div class="ic">' + (img ? '<img alt="" src="' + esc(img) + '" onerror="this.replaceWith(document.createTextNode(\'' + wxEmoji(c.desc) + '\'))">' : wxEmoji(c.desc)) + '</div>' +
+        var c = w.current, pl = w.place || {}, img = safeBmkgImg(c.icon);
+        h += '<div class="row"><div class="ic">' + (img ? '<img alt="" src="' + esc(img) + '" onerror="this.replaceWith(document.createTextNode(\'' + wxEmoji(c.desc) + '\'))">' : wxEmoji(c.desc)) + '</div>' +
           '<div><div class="t">' + (c.temp != null ? Math.round(c.temp) + '°C' : '–') + '</div><div class="d">' + esc(c.desc || '-') + '</div></div></div>' +
-          '<div class="m"><span>💧 ' + (c.humidity != null ? Math.round(c.humidity) + '%' : '–') + '</span><span>💨 ' + (c.windKmh != null ? Math.round(c.windKmh) + ' km/j' : '–') + (c.windDir ? ' ' + esc(c.windDir) : '') + '</span></div>' +
-          '<div class="p">' + esc([pl.desa, pl.kecamatan, pl.kotkab].filter(Boolean).join(', ') || w.adm4 || '') + '</div>';
-        if (S.expand && w.next && w.next.length) h += '<div class="nx">' + w.next.slice(0, 6).map(function (n) {
+          '<div class="m"><span>💧 ' + (c.humidity != null ? Math.round(c.humidity) + '%' : '–') + '</span><span>💨 ' + (c.windKmh != null ? Math.round(c.windKmh) + ' km/j' : '–') + (c.windDir ? ' ' + esc(c.windDir) : '') + '</span>' +
+          (c.cloud != null ? '<span>☁️ ' + Math.round(c.cloud) + '%</span>' : '') + (c.visText ? '<span>👁️ ' + esc(c.visText) + '</span>' : '') + (c.rainMm ? '<span>🌧️ ' + c.rainMm + ' mm</span>' : '') + '</div>' +
+          '<div class="p">📍 <b>' + esc([pl.desa, pl.kecamatan].filter(Boolean).join(', ') || w.adm4 || '') + '</b>' + (pl.kotkab || pl.provinsi ? '<br>' + esc([pl.kotkab, pl.provinsi].filter(Boolean).join(', ')) : '') + '</div>';
+        if (w.next && w.next.length) h += '<div class="nx">' + w.next.slice(0, 8).map(function (n) {
           var t = new Date(n.utc), hh = ''; try { hh = t.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }).replace('.', ':'); } catch (e) {}
-          return '<div>' + hh + '<br>' + wxEmoji(n.desc) + '<br>' + (n.temp != null ? Math.round(n.temp) + '°' : '') + '</div>';
+          return '<div>' + hh + '<br>' + wxEmoji(n.desc) + '<br><b>' + (n.temp != null ? Math.round(n.temp) + '°' : '') + '</b></div>';
         }).join('') + '</div>';
         if (w.stale) h += '<div class="stale">Data lama (BMKG sedang lambat/tidak merespons)</div>';
         else if (S.wErr) h += '<div class="stale">' + esc(S.wErr) + '</div>';
-        h += '<button data-w="more">' + (S.expand ? 'Tutup' : 'Per 3 jam') + '</button>' + (vehPos() ? ' <button data-w="focus">' + (S.focus === 'vehicle' ? '🚗 Kendaraan' : '🎯 Pusat peta') + '</button>' : '');
       }
-      if (!w && S.wErr) {
-        h += '<button data-w="retry">Coba lagi</button>';
-        if (S.needManual) h += '<input type="text" inputmode="numeric" placeholder="Kode adm4, mis. 31.71.03.1001" value="' + esc(lsGet(KEY_ADM4, '')) + '"><button data-w="save">Pakai kode ini</button>';
-      }
-      if (lsGet(KEY_ADM4, '')) h += '<div class="p">Kode manual · <a href="#" data-w="auto" style="color:#2563eb" onclick="return false">otomatis</a></div>';
+      // info tambahan dari aplikasi (CCTV, lampu lalu lintas, dll. di area yang dilihat)
+      if (typeof opts.areaInfo === 'function') { var extra = ''; try { extra = opts.areaInfo(map, S.weather) || ''; } catch (e) {} if (extra) h += '<div class="sec">' + extra + '</div>'; }
+      h += '<div class="sec" style="padding-top:2px"><button data-w="retry">🔄 Segarkan</button>' + (vehPos() ? '<button data-w="focus">' + (S.focus === 'vehicle' ? '🚗 Acuan: kendaraan' : '🎯 Acuan: pusat peta') + '</button>' : '') +
+        (lsGet(KEY_ADM4, '') ? '<button data-w="auto">Lokasi otomatis</button>' : '') +
+        '<div class="p">Sumber Data: BMKG' + (S.wAt ? ' · diperbarui ' + ago(S.wAt) : '') + '</div></div>';
       wBox.innerHTML = h;
     }
+    function drawWeather() { drawPanel(); }
     async function loadWeather(force) {
       if (!st.weather || S.busy.weather) return;
       var r = refPos(), manual = lsGet(KEY_ADM4, '');
@@ -304,7 +352,9 @@
         if (near || (!r.vehicle && inView) || (r.vehicle && inView && d <= NEAR_KM * 3)) rel.push({ a: a, km: r.vehicle ? d : null });
       });
       rel.sort(function (x, y) { return sevRank(y.a) - sevRank(x.a) || (x.km || 0) - (y.km || 0); });
+      S.rel = rel;
       if (st.nowcast) renderBanner(rel);
+      drawPill(); if (S.open) drawPanel();
     }
     async function loadAlerts() {
       if (!st.nowcast || S.busy.nowcast) return; S.busy.nowcast = true;
@@ -324,10 +374,33 @@
     }
     var ticker = setInterval(function () { if (!document.hidden) schedule(); }, 60e3);
     var onVis = function () { if (!document.hidden) schedule(); }; document.addEventListener('visibilitychange', onVis);
-    var mv; var onMove = function () { clearTimeout(mv); mv = setTimeout(function () { if (!document.hidden && st.nowcast) evalAlerts(); if (st.weather && !refPos().vehicle) loadWeather(false); }, 1200); };
+    var mv; var onMove = function () { clearTimeout(mv); mv = setTimeout(function () { if (!document.hidden && st.nowcast) evalAlerts(); if (st.weather && !refPos().vehicle) loadWeather(false); if (S.open) drawPanel(); }, 1200); };
     map.on('moveend', onMove);
 
+    var wxCache = {};
     var api_ = {
+      // cuaca di titik mana pun (untuk rute): hasil di-cache 20 menit per ±1 km
+      weatherAt: async function (lat, lon) {
+        var k = lat.toFixed(2) + ',' + lon.toFixed(2), c = wxCache[k];
+        if (c && Date.now() - c.t < 20 * 60e3) return c.v;
+        var j = await api(base, 'type=weather&lat=' + lat.toFixed(4) + '&lon=' + lon.toFixed(4));
+        wxCache[k] = { t: Date.now(), v: j }; return j;
+      },
+      // peringatan dini yang mengenai titik-titik rute: [{a, idx, km}] (km = jarak terdekat ke titik)
+      alertsAlong: function (points) {
+        var out = [];
+        S.alerts.forEach(function (a) {
+          var best = Infinity, bi = -1;
+          points.forEach(function (p, i) { var d = alertDistance(a, p.lat, p.lng); if (d < best) { best = d; bi = i; } });
+          if (best <= 3) out.push({ a: a, idx: bi, km: best });
+        });
+        out.sort(function (x, y) { return sevRank(y.a) - sevRank(x.a); });
+        return out;
+      },
+      wxEmoji: wxEmoji,
+      openPanel: function () { S.open = true; S.menu = false; sync(); loadWeather(false); },
+      closePanel: function () { S.open = false; S.menu = false; sync(); },
+      redraw: function () { drawPanel(); },
       refresh: function () { S.wLast = null; last = { weather: 0, quake: 0, nowcast: 0 }; schedule(); },
       detach: function () {
         clearInterval(ticker); document.removeEventListener('visibilitychange', onVis); map.off('moveend', onMove);
@@ -344,6 +417,10 @@
   global.BmkgLayers = {
     attach: attach,
     refresh: function (m) { if (m && m._bmkg) m._bmkg.refresh(); },
+    weatherAt: function (m, lat, lon) { return m && m._bmkg ? m._bmkg.weatherAt(lat, lon) : Promise.reject(new Error('BMKG belum aktif')); },
+    wxEmoji: function (d) { d = String(d || '').toLowerCase(); return /petir/.test(d) ? '⛈️' : /hujan/.test(d) ? '🌧️' : /kabut|asap/.test(d) ? '🌫️' : /cerah berawan/.test(d) ? '⛅' : /berawan/.test(d) ? '☁️' : /cerah/.test(d) ? '☀️' : '🌤️'; },
+    redraw: function (m) { if (m && m._bmkg) m._bmkg.redraw(); },
+    alertsAlong: function (m, pts) { return m && m._bmkg ? m._bmkg.alertsAlong(pts) : []; },
     detach: function (m) { if (m && m._bmkg) m._bmkg.detach(); },
     _test: { distToPolygon: distToPolygon }
   };

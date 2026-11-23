@@ -941,8 +941,47 @@
   .nv-sub{font-size:12px;opacity:.85;margin-top:3px;}
   .nv-meta{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap;}
   .nv-meta span{font-size:12.5px;font-weight:700;background:var(--blue-soft);color:#1B4FC4;padding:5px 11px;border-radius:99px;}
-  #rdMap{height:300px;width:100%;z-index:0;}
-  .rd-mapbox{margin-top:6px;}
+  #rdMap{height:340px;width:100%;z-index:0;}
+  .rd-mapbox{margin-top:0;}
+  /* ---- Navigasi ala Google Maps: sama persis di kartu & layar penuh ---- */
+  .nv-host{display:flex;flex-direction:column;gap:8px;}
+  .nv-top{order:1;}.nv-mapwrap{order:2;}.nv-sheet{order:3;}
+  .nv-grip,#nvEnd{display:none;}
+  .nv-meta{display:flex;gap:8px;margin:2px 0 10px;flex-wrap:wrap;align-items:center;}
+  .nv-meta span{font-size:12.5px;font-weight:700;background:var(--blue-soft);color:#1B4FC4;padding:5px 11px;border-radius:99px;}
+  .nv-meta span.big{font-size:20px;font-family:var(--font-head);background:none;color:#0E7A5F;padding:0 4px 0 0;}
+  .nv-alts{display:flex;gap:8px;overflow-x:auto;margin:0 0 10px;padding-bottom:2px;}
+  .nv-alts:empty{display:none;}
+  .nv-alt{flex:none;border:2px solid var(--line);background:var(--card);border-radius:14px;padding:7px 12px;font:600 12.5px var(--font-sans);color:var(--ink);text-align:left;line-height:1.3;}
+  .nv-alt small{display:block;font-weight:500;color:var(--ink-soft);font-size:11px;}
+  .nv-alt.on{border-color:#2557E8;background:#E3EDFF;color:#1B4FC4;}
+  .nv-btns .btn{min-width:0;flex:1 1 calc(50% - 8px);padding:11px 8px;font-size:13px;}
+  .nv-ri{display:flex;gap:8px;align-items:flex-start;padding:7px 0;border-bottom:1px dashed var(--line);font-size:12.5px;line-height:1.4;}
+  .nv-ri:last-child{border-bottom:none;}
+  .nv-ri .e{font-size:20px;flex:none;width:26px;text-align:center;}
+  .nv-ri small{display:block;color:var(--ink-soft);font-size:11.5px;}
+  .nv-ri.rain{background:#EAF2FF;border-radius:10px;padding-left:8px;padding-right:8px;}
+  .nv-ri .go{margin-left:auto;flex:none;display:flex;gap:6px;}
+  .nv-ri .go button,.nv-ri .go a{border:1px solid #BCD3FF;background:#EEF4FF;color:#1B4FC4;border-radius:9px;padding:5px 9px;font:600 11.5px var(--font-sans);text-decoration:none;}
+  .nv-warn{background:#FEE2E2;color:#7F1D1D;border-radius:12px;padding:8px 10px;font-size:12.5px;margin-bottom:8px;line-height:1.4;}
+  /* layar penuh */
+  .nv-host.mp-full{display:block;background:#e5e7eb;}
+  .nv-host.mp-full .nv-mapwrap{position:absolute !important;inset:0;margin:0;border:0;border-radius:0;box-shadow:none;}
+  .nv-host.mp-full .nv-top{position:absolute;z-index:1100;left:62px;right:8px;top:calc(8px + env(safe-area-inset-top,0px));}
+  .nv-host.mp-full .nv-banner{border-radius:16px;padding:10px 12px;gap:10px;box-shadow:0 6px 18px rgba(0,0,0,.4);}
+  .nv-host.mp-full .nv-arrow{font-size:36px;width:44px;}
+  .nv-host.mp-full .nv-dist{font-size:22px;}
+  .nv-host.mp-full .nv-text{font-size:14px;}
+  .nv-host.mp-full .nv-sheet{position:absolute;z-index:1100;left:0;right:0;bottom:0;max-height:64vh;overflow:auto;-webkit-overflow-scrolling:touch;background:var(--card,#fff);border-radius:22px 22px 0 0;padding:0 14px calc(12px + env(safe-area-inset-bottom,0px));box-shadow:0 -8px 28px rgba(0,0,0,.3);}
+  .nv-host.mp-full .nv-grip{display:block;width:100%;border:0;background:transparent;padding:10px 0 8px;cursor:pointer;}
+  .nv-host.mp-full .nv-grip i{display:block;width:42px;height:5px;border-radius:99px;background:#CBD5E1;margin:0 auto;}
+  .nv-host.mp-full .nv-more{display:none;}
+  .nv-host.mp-full .nv-sheet.open .nv-more{display:block;}
+  .nv-host.mp-full #nvFull{display:none;}
+  .nv-host.mp-full #nvEnd{display:inline-block;color:#C21B3D;}
+  .nv-host.mp-full .leaflet-bottom{bottom:var(--nv-sheet-h,170px);}
+  .nv-host.mp-full .mk-tools{bottom:auto;top:calc(var(--mp-top) + 50px);z-index:900;}
+  .nv-host.mp-full .mk-hint{top:auto;bottom:calc(var(--nv-sheet-h,170px) + 14px);left:64px;right:64px;}
   .nv-step{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;}
   .nv-step:last-child{border-bottom:none;}
   .nv-step .ic{font-size:20px;width:26px;text-align:center;flex:0 0 auto;}
@@ -1377,16 +1416,28 @@
 
       <div class="rd-card hidden" id="rdNavCard">
         <div class="rd-h"><span>🧭 Petunjuk arah</span><button class="link-btn" id="nvClose">✕ Tutup</button></div>
-        <div class="nv-banner" id="nvBanner"><div class="nv-arrow" id="nvArrow">🧭</div>
-          <div style="min-width:0;flex:1;"><div class="nv-dist" id="nvDist"></div><div class="nv-text" id="nvText">Menghitung rute…</div><div class="nv-sub" id="nvSub"></div></div></div>
-        <div class="nv-meta" id="nvMeta"></div>
-        <div class="loc-mapbox rd-mapbox"><div id="rdMap"></div><div class="mk-tools" id="rdTools"></div></div>
-        <div class="rd-btns" style="margin-top:10px;">
-          <button class="btn btn-ghost" id="nvVoice">🔊 Suara: hidup</button>
-          <button class="btn btn-ghost" id="nvRecenter">🎯 Ikuti posisi</button>
+        <div class="nv-host" id="nvHost">
+          <div class="nv-top"><div class="nv-banner" id="nvBanner"><div class="nv-arrow" id="nvArrow">🧭</div>
+            <div style="min-width:0;flex:1;"><div class="nv-dist" id="nvDist"></div><div class="nv-text" id="nvText">Menghitung rute…</div><div class="nv-sub" id="nvSub"></div></div></div></div>
+          <div class="loc-mapbox rd-mapbox nv-mapwrap"><div id="rdMap"></div><div class="mk-tools" id="rdTools"></div></div>
+          <div class="nv-sheet" id="nvSheet">
+            <button type="button" class="nv-grip" id="nvGrip" aria-label="Tampilkan detail rute"><i></i></button>
+            <div class="nv-meta" id="nvMeta"></div>
+            <div class="nv-alts" id="nvAlts"></div>
+            <div class="rd-btns nv-btns">
+              <button class="btn btn-primary" id="nvGo">▶ Mulai</button>
+              <button class="btn btn-ghost" id="nvVoice">🔊 Suara: hidup</button>
+              <button class="btn btn-ghost" id="nvRecenter">🎯 Ikuti posisi</button>
+              <button class="btn btn-ghost" id="nvFull">⛶ Layar penuh</button>
+              <button class="btn btn-ghost" id="nvEnd">✕ Akhiri</button>
+            </div>
+            <div class="nv-more">
+              <details class="rd-det" open><summary>🌦️ Cuaca &amp; 📹 CCTV sepanjang rute</summary><div id="nvRoute"><div class="rd-muted">Muncul setelah rute dihitung.</div></div></details>
+              <details class="rd-det"><summary>Daftar petunjuk (<span id="nvCount">0</span>)</summary><div id="nvSteps"></div></details>
+              <div class="rd-muted" id="nvNote"></div>
+            </div>
+          </div>
         </div>
-        <details class="rd-det"><summary>Daftar petunjuk (<span id="nvCount">0</span>)</summary><div id="nvSteps"></div></details>
-        <div class="rd-muted" id="nvNote"></div>
       </div>
 
       <div class="rd-card">
@@ -1928,6 +1979,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="bmkg-layers.js"></script>
+<script src="map-pro.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script type="module">
@@ -1999,7 +2051,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.15.1';
+const APP_VERSION = '2.16.0';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -2962,7 +3014,8 @@ function kdHistAttach(){
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'© OpenStreetMap' }).addTo(kdHistMap);
     kdHistLayer = L.layerGroup().addTo(kdHistMap);
     // Layer data terbuka BMKG (cuaca, gempa, peringatan dini) — posisi acuan = posisi kendaraan terakhir
-    if(window.BmkgLayers) BmkgLayers.attach(kdHistMap, { workerUrl: GPS_WORKER_URL, getPosition: function(){ return gpsTrk ? { lat:Number(gpsTrk.lat), lon:Number(gpsTrk.lon) } : null; } });
+    if(window.BmkgLayers) BmkgLayers.attach(kdHistMap, { workerUrl: GPS_WORKER_URL, areaInfo: mapAreaInfo, getPosition: function(){ return gpsTrk ? { lat:Number(gpsTrk.lat), lon:Number(gpsTrk.lon) } : null; } });
+    if(window.MapPro) MapPro.enhance(kdHistMap);
   } else if(window.BmkgLayers){ BmkgLayers.refresh(kdHistMap); }
   setTimeout(()=>{ try{ kdHistMap.invalidateSize(); }catch(e){} }, 60);
 }
@@ -3600,7 +3653,8 @@ function locEnsureMap(){
   locMap = L.map('locMap', { zoomControl:false, attributionControl:true }).setView([-2.5, 118], 4);
   L.control.zoom({ position:'topleft' }).addTo(locMap);
   locMk = mkAttach(locMap, 'loc');
-  if(window.BmkgLayers) BmkgLayers.attach(locMap, { workerUrl: GPS_WORKER_URL, position:'topright' });
+  if(window.BmkgLayers) BmkgLayers.attach(locMap, { workerUrl: GPS_WORKER_URL, position:'topright', areaInfo: mapAreaInfo });
+  if(window.MapPro) MapPro.enhance(locMap);
   mkBindTools(document.getElementById('locTools'), locMk, locToolExtra);
   locLayerPlaces = L.layerGroup().addTo(locMap);
   locLayerTrail = L.layerGroup().addTo(locMap);
@@ -6118,6 +6172,7 @@ async function mkRefresh(c, retry){
   for(const it of ovp.items.values()){ if(!bb.contains([it.lat, it.lng])) continue; const k = ovpKind(it); if(k === 'sig') ns++; else if(k === 'cam') nc++; }
   nc += locCctv.filter(x=>bb.contains([x.lat, x.lng])).length;
   mkHint(c, `🚦 ${ns} lampu • 📹 ${nc} CCTV di area ini${(ns + nc) === 0 ? ' (data OpenStreetMap di sini masih kosong)' : ''}`);
+  try{ if(window.BmkgLayers) BmkgLayers.redraw(c.map); }catch(e){}
   clearTimeout(c.ht); c.ht = setTimeout(()=>mkHint(c, ''), 6000);
 }
 function mkSigPopup(it){
@@ -6637,13 +6692,13 @@ function nvGetPos(){
   });
 }
 async function nvFetchRoute(from, dest){
-  const base = `https://router.project-osrm.org/route/v1/driving/${from.lng.toFixed(6)},${from.lat.toFixed(6)};${dest.lng.toFixed(6)},${dest.lat.toFixed(6)}?overview=full&geometries=geojson&steps=true`;
+  const base = `https://router.project-osrm.org/route/v1/driving/${from.lng.toFixed(6)},${from.lat.toFixed(6)};${dest.lng.toFixed(6)},${dest.lat.toFixed(6)}?overview=full&geometries=geojson&steps=true&alternatives=true`;
   for(const extra of ['&exclude=toll', '']){
     try{
       const ctl = new AbortController(), to = setTimeout(()=>ctl.abort(), 15000);
       const r = await fetch(base + extra, { signal:ctl.signal }); clearTimeout(to);
       const j = await r.json().catch(()=>null);
-      if(r.ok && j && j.code === 'Ok' && j.routes && j.routes[0]) return { route:j.routes[0], tollFree:extra !== '' };
+      if(r.ok && j && j.code === 'Ok' && j.routes && j.routes[0]) return { route:j.routes[0], routes:j.routes.slice(0, 3), tollFree:extra !== '' };
     }catch(e){}
   }
   throw new Error('Rute belum bisa dihitung. Periksa internet lalu coba lagi.');
@@ -6663,7 +6718,8 @@ async function nvReplan(from){
   if(!d){ nvStatus('Isi & simpan tujuan dulu.', 'warn'); return; }
   nv.planning = true; nvStatus('Menghitung rute…');
   try{
-    const { route, tollFree } = await nvFetchRoute(from, d);
+    const { route, routes, tollFree } = await nvFetchRoute(from, d);
+    nv.alts = routes || [route]; nv.altI = 0; if(!rideOn) nv.infoAt = 0;
     nvSetRoute(route, tollFree);
     nvShow();
     if(rideOn){ nvSay('Rute siap. ' + nvInstr(nv.steps[Math.min(1, nv.steps.length - 1)] || nv.steps[0]).text); nvWakeSet(true); }
@@ -6684,36 +6740,179 @@ function nvEnsureMap(){
   nv.map = L.map('rdMap', { zoomControl:false, attributionControl:true }).setView([-2.5, 118], 5);
   L.control.zoom({ position:'topright' }).addTo(nv.map);
   nv.mk = mkAttach(nv.map, 'ride');
-  if(window.BmkgLayers) BmkgLayers.attach(nv.map, { workerUrl: GPS_WORKER_URL, position:'topleft' });
+  if(window.BmkgLayers) BmkgLayers.attach(nv.map, { workerUrl: GPS_WORKER_URL, position:'topleft', areaInfo: mapAreaInfo, getPosition: ()=> nv.pos ? { lat:nv.pos.lat, lon:nv.pos.lng } : null });
   mkBindTools(rideEl('rdTools'), nv.mk, null);
   nv.layer = L.layerGroup().addTo(nv.map);
+  nv.altLayer = L.layerGroup().addTo(nv.map);
+  nv.infoLayer = L.layerGroup().addTo(nv.map);
   nv.map.on('dragstart', ()=>{ nv.follow = false; nvSyncFollowBtn(); });
+  if(window.MapPro) MapPro.enhance(nv.map, { host:rideEl('nvHost'), locate:false, onChange:(full)=>{
+    const sh = rideEl('nvSheet'); if(sh) sh.classList.remove('open');
+    if(full) nvSheetSize();
+    setTimeout(()=>{ if(nv.pts.length && (!rideOn || !nv.follow)) nvFit(); }, 350);
+  } });
+  if(window.ResizeObserver){ try{ new ResizeObserver(nvSheetSize).observe(rideEl('nvSheet')); }catch(e){} }
+}
+function nvSheetSize(){
+  const h = rideEl('nvHost'), s = rideEl('nvSheet'); if(!h || !s) return;
+  h.style.setProperty('--nv-sheet-h', s.offsetHeight + 'px');
+}
+function nvFit(){
+  if(!nv.map || !nv.pts.length) return;
+  const full = window.MapPro && MapPro.isFull(nv.map), sh = rideEl('nvSheet') ? rideEl('nvSheet').offsetHeight : 160;
+  const line = nv.pts.map(p=>[p.lat, p.lng]);
+  try{ nv.map.fitBounds(line, full ? { paddingTopLeft:[30, 150], paddingBottomRight:[30, sh + 24] } : { padding:[30,30] }); }catch(e){}
+}
+// Rute alternatif (abu-abu, bisa diketuk) + pilihan di bawah peta
+function nvRenderAlts(){
+  const box = rideEl('nvAlts'); if(!box) return;
+  if(!nv.alts || nv.alts.length < 2 || rideOn){ box.innerHTML = ''; return; }
+  box.innerHTML = nv.alts.map((r, i)=>`<button type="button" class="nv-alt${i === nv.altI ? ' on' : ''}" data-alt="${i}">${i === 0 ? 'Tercepat' : 'Alternatif ' + i}<small>${Math.max(1, Math.round((r.duration || 0)/60))} mnt • ${nvFmt(r.distance || 0)}</small></button>`).join('');
+}
+function nvPickAlt(i){
+  if(!nv.alts || !nv.alts[i] || i === nv.altI) return;
+  nv.altI = i; nv.infoAt = 0; nvSetRoute(nv.alts[i], nv.tollFree); nvShow();
+}
+function nvSyncGo(){
+  const b = rideEl('nvGo'); if(b) b.textContent = rideOn ? '■ Berhenti' : '▶ Mulai';
+}
+
+// ----- Info wilayah: CCTV & lampu lalu lintas pada area peta yang sedang dilihat -----
+function mapAreaInfo(map, w){
+  if(!map || typeof ovpKind !== 'function') return '';
+  const b = map.getBounds(), c = map.getCenter(), cams = []; let sig = 0;
+  for(const it of ovp.items.values()){
+    if(!b.contains([it.lat, it.lng])) continue;
+    const k = ovpKind(it);
+    if(k === 'sig') sig++;
+    else if(k === 'cam'){ const t = it.tags || {}; cams.push({ lat:it.lat, lng:it.lng, name:t.name || t.description || (t.highway === 'speed_camera' ? 'Kamera kecepatan' : 'Kamera pengawas'), url:safeHttps(t.website || t['contact:website']) }); }
+  }
+  (locCctv || []).forEach(x=>{ if(b.contains([x.lat, x.lng])) cams.push({ lat:x.lat, lng:x.lng, name:x.name || 'CCTV', url:safeHttps(x.url), own:true }); });
+  cams.forEach(x=>{ x.d = locDistanceM({ lat:c.lat, lng:c.lng }, x); });
+  cams.sort((a, z)=>a.d - z.d);
+  let h = `<h5>📹 CCTV &amp; 🚦 lampu di area peta ini</h5>`;
+  if(map.getZoom() < 13) h += '<div class="p">Dekatkan peta (zoom ≥ 13) agar CCTV &amp; lampu lalu lintas dimuat.</div>';
+  else h += `<div class="p">${cams.length} CCTV • ${sig} lampu lalu lintas terdata di area ini.</div>`;
+  h += cams.slice(0, 5).map(x=>`<div class="li"><span>${x.own ? '🎥' : '📹'} ${escapeHtml(x.name)}<br><small>${nvFmt(x.d)} dari pusat peta</small></span><span><button data-fly="${x.lat},${x.lng}">Lihat</button>${x.url ? `<a class="bt" href="${escapeHtml(x.url)}" target="_blank" rel="noopener noreferrer">Siaran</a>` : ''}</span></div>`).join('');
+  const city = w && w.place && (w.place.kotkab || w.place.kecamatan);
+  if(city) h += `<a class="bt" href="https://www.google.com/search?q=${encodeURIComponent('CCTV ATCS live ' + city)}" target="_blank" rel="noopener noreferrer">🔎 Cari siaran CCTV live ${escapeHtml(city)}</a>`;
+  return h;
+}
+
+// ----- Info sepanjang rute: cuaca (di waktu perkiraan tiba), peringatan dini, CCTV -----
+function nvPointAt(d){
+  const n = nv.pts.length; if(!n) return null;
+  let i = 1; while(i < n - 1 && nv.cum[i] < d) i++;
+  return nv.pts[Math.min(i, n - 1)];
+}
+async function nvRouteInfo(){
+  const box = rideEl('nvRoute'); if(!box || !nv.pts.length || !nv.map) return;
+  const tok = nv.infoTok = (nv.infoTok || 0) + 1, route = nv.route, total = nv.total, dur = nv.dur;
+  box.innerHTML = '<div class="rd-muted">⏳ Memuat cuaca &amp; CCTV di sepanjang rute…</div>';
+  const N = total > 40000 ? 6 : total > 12000 ? 5 : total > 3000 ? 4 : 3;
+  const samples = []; for(let i = 0; i < N; i++){ const d = total*i/(N - 1), p = nvPointAt(d); if(p) samples.push({ lat:p.lat, lng:p.lng, d }); }
+  const rows = [];
+  for(const sp of samples){
+    if(tok !== nv.infoTok) return;
+    try{
+      const j = await BmkgLayers.weatherAt(nv.map, sp.lat, sp.lng);
+      const eta = Date.now() + dur*1000*(sp.d/total), slots = [j.current].concat(j.next || []);
+      let best = slots[0], bd = Infinity; slots.forEach(s=>{ if(s && s.utc != null){ const dd = Math.abs(s.utc - eta); if(dd < bd){ bd = dd; best = s; } } });
+      rows.push({ sp, place:j.place || {}, w:best });
+    }catch(e){ rows.push({ sp, err:true }); }
+  }
+  if(tok !== nv.infoTok) return;
+  // peringatan dini BMKG
+  let alerts = []; try{ alerts = BmkgLayers.alertsAlong(nv.map, samples) || []; }catch(e){}
+  // CCTV di sekitar jalur (±150 m)
+  let cams = [], camNote = '';
+  nv.infoLayer.clearLayers();
+  if(total <= 60000){
+    try{
+      const step = Math.max(1, Math.ceil(nv.pts.length/45)), poly = [];
+      for(let i = 0; i < nv.pts.length; i += step) poly.push(nv.pts[i].lat.toFixed(5) + ',' + nv.pts[i].lng.toFixed(5));
+      const last = nv.pts[nv.pts.length - 1]; poly.push(last.lat.toFixed(5) + ',' + last.lng.toFixed(5));
+      const ar = `(around:180,${poly.join(',')})`;
+      const j = await ovpQuery(`[out:json][timeout:25];(node["man_made"="surveillance"]${ar};node["highway"="speed_camera"]${ar};);out body 300;`);
+      j.elements.forEach(el=>{
+        if(el.type !== 'node') return;
+        const it = { id:el.id, lat:el.lat, lng:el.lon, tags:el.tags || {} }; if(ovpKind(it) !== 'cam') return;
+        const pos = nvAlongOf(it); if(pos.off > 150) return;
+        const t = it.tags; cams.push({ it, along:pos.along, name:t.name || t.description || (t.highway === 'speed_camera' ? 'Kamera kecepatan' : 'Kamera pengawas'), op:t.operator || '', url:safeHttps(t.website || t['contact:website']) });
+      });
+    }catch(e){ camNote = 'Data CCTV OpenStreetMap gagal dimuat (' + ((e && e.message) || 'jaringan') + ').'; }
+    (locCctv || []).forEach(x=>{ const pos = nvAlongOf(x); if(pos.off <= 200) cams.push({ own:true, along:pos.along, lat:x.lat, lng:x.lng, name:x.name || 'CCTV', op:x.by ? 'oleh ' + x.by : '', url:safeHttps(x.url) }); });
+    cams.sort((a, z)=>a.along - z.along);
+  }else camNote = 'Rute terlalu panjang untuk pemeriksaan CCTV otomatis.';
+  if(tok !== nv.infoTok || route !== nv.route) return;
+  cams.forEach(x=>{ const ll = x.own ? [x.lat, x.lng] : [x.it.lat, x.it.lng]; L.marker(ll, { icon:mkIcon(x.own ? 'cctv' : 'cam'), zIndexOffset:50 }).addTo(nv.infoLayer).bindPopup(x.own ? `<b>🎥 ${escapeHtml(x.name)}</b>${x.url ? `<br><a href="${escapeHtml(x.url)}" target="_blank" rel="noopener noreferrer">Buka siaran ↗</a>` : ''}` : mkCamPopup(x.it)); });
+  // render
+  const em = BmkgLayers.wxEmoji;
+  let h = '';
+  alerts.slice(0, 2).forEach(x=>{ h += `<div class="nv-warn">⚠️ <b>Peringatan dini BMKG: ${escapeHtml(x.a.event || x.a.headline || 'cuaca ekstrem')}</b> di sekitar jalur rute (±${Math.round(x.km)} km).</div>`; });
+  const rainy = rows.filter(r=>r.w && /hujan|petir/i.test(r.w.desc || ''));
+  if(rainy.length) h += `<div class="nv-warn" style="background:#DBEAFE;color:#1E3A8A;">🌧️ Perkiraan hujan di ${escapeHtml([...new Set(rainy.map(r=>r.place.kecamatan || r.place.kotkab || 'rute'))].slice(0, 3).join(', '))}. Siapkan jas hujan &amp; kurangi kecepatan.</div>`;
+  const seen = new Set();
+  rows.forEach(r=>{
+    if(r.err){ return; }
+    const nm = [r.place.kecamatan || r.place.desa, r.place.kotkab].filter(Boolean).join(', ') || 'Titik rute', key = nm + (r.w && r.w.desc);
+    if(seen.has(key)) return; seen.add(key);
+    const isRain = /hujan|petir/i.test(r.w.desc || '');
+    h += `<div class="nv-ri${isRain ? ' rain' : ''}"><span class="e">${em(r.w.desc)}</span><div><b>${escapeHtml(nm)}</b><small>${r.sp.d < 50 ? 'Titik awal' : 'km ' + (r.sp.d/1000).toFixed(1).replace('.', ',') + ' dari awal'} • ${r.w.temp != null ? Math.round(r.w.temp) + '°C' : ''} ${escapeHtml(r.w.desc || '')}${r.w.humidity != null ? ' • 💧' + Math.round(r.w.humidity) + '%' : ''}${r.w.windKmh != null ? ' • 💨' + Math.round(r.w.windKmh) + ' km/j' : ''}</small></div></div>`;
+  });
+  if(!rows.some(r=>!r.err)) h += '<div class="rd-muted">Cuaca di sepanjang rute belum bisa dimuat (server BMKG lambat). Buka lagi nanti.</div>';
+  else h += '<div class="rd-muted" style="margin-top:2px;">Cuaca = prakiraan BMKG pada perkiraan waktu Anda tiba di tiap titik.</div>';
+  h += `<div style="margin:10px 0 4px;font-weight:700;font-size:13px;">📹 CCTV di sepanjang jalur (${cams.length})</div>`;
+  if(camNote) h += `<div class="rd-muted">${escapeHtml(camNote)}</div>`;
+  else if(!cams.length) h += '<div class="rd-muted">Tidak ada CCTV tercatat di jalur ini (data OpenStreetMap bisa belum lengkap).</div>';
+  h += cams.slice(0, 12).map(x=>`<div class="nv-ri"><span class="e">${x.own ? '🎥' : '📹'}</span><div><b>${escapeHtml(x.name)}</b><small>km ${(x.along/1000).toFixed(1).replace('.', ',')} dari awal${x.op ? ' • ' + escapeHtml(x.op) : ''}</small></div><span class="go"><button type="button" data-fly="${x.own ? x.lat : x.it.lat},${x.own ? x.lng : x.it.lng}">Lihat</button>${x.url ? `<a href="${escapeHtml(x.url)}" target="_blank" rel="noopener noreferrer">Siaran</a>` : ''}</span></div>`).join('');
+  if(cams.length > 12) h += `<div class="rd-muted">+${cams.length - 12} CCTV lain tampil sebagai ikon di peta.</div>`;
+  const city = (rows.find(r=>r.place && r.place.kotkab) || { place:{} }).place.kotkab;
+  if(city) h += `<a class="link-btn teal" style="display:inline-block;margin-top:6px;" href="https://www.google.com/search?q=${encodeURIComponent('CCTV ATCS live ' + city)}" target="_blank" rel="noopener noreferrer">🔎 Cari siaran CCTV live ${escapeHtml(city)} ↗</a>`;
+  box.innerHTML = h;
+  nv.infoAt = Date.now();
+  nvSheetSize();
+}
+// posisi titik terhadap jalur rute: jarak tegak lurus (m) & jarak dari awal rute (m)
+function nvAlongOf(p){
+  let best = { seg:0, t:0, dist:Infinity };
+  for(let i = 0; i < nv.pts.length - 1; i++){ const r = nvProject({ lat:p.lat, lng:p.lng }, nv.pts[i], nv.pts[i + 1]); if(r.dist < best.dist) best = { seg:i, t:r.t, dist:r.dist }; }
+  return { off:best.dist, along:nv.cum[best.seg] + best.t*(nv.cum[best.seg + 1] - nv.cum[best.seg]) };
 }
 function nvShow(){
   rideEl('rdNavCard').classList.remove('hidden');
   nvEnsureMap();
   if(nv.map){
     setTimeout(()=>nv.map.invalidateSize(), 60);
-    nv.layer.clearLayers();
+    nv.layer.clearLayers(); nv.altLayer.clearLayers();
     const line = nv.pts.map(p=>[p.lat, p.lng]);
+    if(!rideOn) (nv.alts || []).forEach((r, i)=>{
+      if(i === nv.altI) return;
+      const ll = r.geometry.coordinates.map(c=>[c[1], c[0]]);
+      L.polyline(ll, { color:'#fff', weight:10, opacity:.9, lineCap:'round' }).addTo(nv.altLayer);
+      L.polyline(ll, { color:'#8B98B5', weight:6, opacity:.95, lineCap:'round' }).addTo(nv.altLayer).on('click', ()=>nvPickAlt(i));
+    });
     L.polyline(line, { color:'#fff', weight:11, opacity:.95, lineCap:'round', lineJoin:'round' }).addTo(nv.layer);
     L.polyline(line, { color:'#2557E8', weight:6, opacity:1, lineCap:'round', lineJoin:'round' }).addTo(nv.layer);
     const d = rideSt.dest;
     if(d) L.marker([d.lat, d.lng], { icon:L.divIcon({ className:'', iconSize:[30,30], iconAnchor:[6,28], html:'<div style="font-size:28px;line-height:30px;">🏁</div>' }) }).addTo(nv.layer);
-    if(!rideOn || !nv.follow) nv.map.fitBounds(line, { padding:[30,30] });
+    if(!rideOn || !nv.follow) nvFit();
   }
   nv.idx = 0; nvProgress(0);
-  nvRenderSteps(); nvSyncFollowBtn();
+  nvRenderSteps(); nvSyncFollowBtn(); nvRenderAlts(); nvSyncGo(); nvSheetSize();
+  if(!(nv.infoAt && Date.now() - nv.infoAt < 180000)) nvRouteInfo();
   rideEl('nvVoice').textContent = nv.voice ? '🔊 Suara: hidup' : '🔇 Suara: mati';
   rideEl('nvNote').textContent = nv.tollFree
-    ? 'Rute dihitung untuk kendaraan roda empat tanpa tol (server OSRM). Motor bisa lewat jalan lain; ikuti rambu & kondisi jalan.'
-    : 'Rute dihitung untuk kendaraan roda empat (server OSRM) dan mungkin melewati tol yang tidak boleh dimasuki motor. Periksa rute sebelum berangkat.';
+    ? 'Rute untuk roda empat tanpa tol (OSRM). Motor bisa lewat jalan lain; ikuti rambu & kondisi jalan.'
+    : '⚠️ Rute untuk roda empat (OSRM) dan mungkin melewati tol yang dilarang untuk motor. Periksa sebelum berangkat.';
 }
 function nvClose(){
   nv.route = null; nv.steps = []; nv.pts = []; nv.arrived = false;
   try{ speechSynthesis.cancel(); }catch(e){}
   nvWakeSet(false);
-  if(nv.layer) nv.layer.clearLayers();
+  if(nv.layer) nv.layer.clearLayers(); if(nv.altLayer) nv.altLayer.clearLayers(); if(nv.infoLayer) nv.infoLayer.clearLayers();
+  nv.alts = []; nv.infoTok = (nv.infoTok || 0) + 1; nv.infoAt = 0;
+  if(nv.map && window.MapPro) MapPro.close(nv.map);
   if(nv.userMk && nv.map){ nv.map.removeLayer(nv.userMk); nv.userMk = null; }
   const c = rideEl('rdNavCard'); if(c) c.classList.add('hidden');
 }
@@ -6737,7 +6936,7 @@ function nvProgress(along){
     rideEl('nvSub').textContent = after && dist < 600 ? 'Lalu: ' + after.text : '';
   }
   const etaMs = Date.now() + (nv.dur*(remain/nv.total))*1000;
-  rideEl('nvMeta').innerHTML = `<span>📏 ${nvFmt(remain)}</span><span>⏱️ ±${Math.max(1, Math.round(nv.dur*(remain/nv.total)/60))} mnt</span><span>🕒 tiba ${locClock(etaMs)}</span>`;
+  rideEl('nvMeta').innerHTML = `<span class="big">${Math.max(1, Math.round(nv.dur*(remain/nv.total)/60))} mnt</span><span>📏 ${nvFmt(remain)}</span><span>🕒 tiba ${locClock(etaMs)}</span>`;
   nvRenderSteps();
   if(nv.arrived || !rideOn) return;
   if(remain <= 25 || (!nv.steps[i + 1] && dist <= 25)){ nv.arrived = true; nvSay('Anda telah tiba di tujuan'); showToast('🏁 Anda telah tiba di tujuan'); nvProgress(along); return; }
@@ -6785,10 +6984,11 @@ function nvOnFix(f){
 }
 function nvOnRideStart(){
   nv.follow = true; nv.arrived = false; nvSyncFollowBtn();
-  if(rideSt.dest && !nv.route && !nv.planning) nvPlanFromHere();
+  nvSyncGo(); nvRenderAlts(); if(nv.route && nv.map && window.MapPro) MapPro.open(nv.map);
+  if(rideSt.dest && !nv.route && !nv.planning) nvPlanFromHere().then(()=>{ if(nv.route && nv.map && window.MapPro) MapPro.open(nv.map); });
   else if(nv.route){ nvSay('Navigasi dimulai. ' + nvInstr(nv.steps[Math.min(1, nv.steps.length - 1)] || nv.steps[0]).text); nvWakeSet(true); }
 }
-function nvOnRideStop(){ try{ speechSynthesis.cancel(); }catch(e){} nvWakeSet(false); RL.waiting = null; RL.ahead = null; rlRender(); }
+function nvOnRideStop(){ try{ speechSynthesis.cancel(); }catch(e){} nvWakeSet(false); nvSyncGo(); nvRenderAlts(); try{ if(nv.route) nvShow(); }catch(e){} RL.waiting = null; RL.ahead = null; rlRender(); }
 
 // ----- Lampu merah (dipelajari dari kebiasaan berhenti) -----
 const RL = { waiting:null, ahead:null, aheadAt:0, prev:null, head:null, q:null };
@@ -7262,7 +7462,19 @@ function rideInit(){
   rideEl('rdGo').addEventListener('click', ()=> rideOn ? rideStop(true) : rideStart());
   rideEl('rdDestSet').addEventListener('click', rideSetDest);
   rideEl('rdDestMaps').addEventListener('click', rideOpenMaps);
-  rideEl('rdNavGo').addEventListener('click', ()=>{ nv.route = null; nvPlanFromHere(); });
+  rideEl('rdNavGo').addEventListener('click', async ()=>{ nv.route = null; await nvPlanFromHere(); if(nv.route && nv.map && window.MapPro) MapPro.open(nv.map); });
+  rideEl('nvFull').addEventListener('click', ()=>{ if(nv.map && window.MapPro) MapPro.open(nv.map); });
+  rideEl('nvEnd').addEventListener('click', nvClose);
+  rideEl('nvGo').addEventListener('click', ()=> rideOn ? rideStop(true) : rideStart());
+  rideEl('nvGrip').addEventListener('click', ()=>{ rideEl('nvSheet').classList.toggle('open'); setTimeout(nvSheetSize, 30); });
+  rideEl('nvMeta').addEventListener('click', ()=>{ if(window.MapPro && nv.map && MapPro.isFull(nv.map)){ rideEl('nvSheet').classList.toggle('open'); setTimeout(nvSheetSize, 30); } });
+  rideEl('nvAlts').addEventListener('click', (e)=>{ const b = e.target.closest('[data-alt]'); if(b) nvPickAlt(Number(b.dataset.alt)); });
+  rideEl('nvRoute').addEventListener('click', (e)=>{
+    const b = e.target.closest('[data-fly]'); if(!b || !nv.map) return;
+    const ll = b.dataset.fly.split(',').map(Number); nv.follow = false; nvSyncFollowBtn();
+    rideEl('nvSheet').classList.remove('open'); nv.map.setView(ll, 18, { animate:true });
+    if(window.MapPro && !MapPro.isFull(nv.map)) rideEl('rdMap').scrollIntoView({ block:'center', behavior:'smooth' });
+  });
   rideEl('nvClose').addEventListener('click', nvClose);
   rideEl('nvVoice').addEventListener('click', ()=>{ nv.voice = !nv.voice; locStore('nv_voice', nv.voice ? 'on' : 'off'); rideEl('nvVoice').textContent = nv.voice ? '🔊 Suara: hidup' : '🔇 Suara: mati'; if(nv.voice) nvSay('Suara petunjuk arah aktif'); else try{ speechSynthesis.cancel(); }catch(e){} });
   rideEl('nvRecenter').addEventListener('click', ()=>{ nv.follow = true; nvSyncFollowBtn(); if(nv.map && nv.pos) nv.map.setView([nv.pos.lat, nv.pos.lng], Math.max(nv.map.getZoom(), 17), { animate:true }); });
