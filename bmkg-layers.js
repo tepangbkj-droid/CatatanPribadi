@@ -156,12 +156,12 @@
     opts = opts || {};
     var base = opts.workerUrl || '', getPos = opts.getPosition || function () { return null; };
     var st = Object.assign({ weather: true, quake: false, nowcast: true }, lsGet(KEY, {}));
-    var S = { timers: {}, weather: null, wErr: '', wLast: null, wAt: 0, expand: false, quakes: [], alerts: [], err: {}, busy: {} };
+    var S = { focus: lsGet('bmk_focus', 'vehicle'), timers: {}, weather: null, wErr: '', wLast: null, wAt: 0, expand: false, quakes: [], alerts: [], err: {}, busy: {} };
     var quakeGroup = L.layerGroup(), alertGroup = L.layerGroup();
 
     /* tombol toggle + widget cuaca: satu control di pojok kanan atas */
     var Ctl = L.Control.extend({
-      options: { position: 'topright' },
+      options: { position: opts.position || 'topright' },
       onAdd: function () {
         var d = L.DomUtil.create('div', 'bmk-ctl');
         d.innerHTML = '<div class="bmk-tools"><button class="bmk-tg" data-k="weather">☁️ Cuaca</button><button class="bmk-tg" data-k="quake">🌋 Gempa</button><button class="bmk-tg" data-k="nowcast">⚠️ Peringatan Dini</button></div><div class="bmk-w" style="display:none"></div>';
@@ -172,6 +172,7 @@
           var a = e.target.closest('[data-w]'); if (!a) return;
           if (a.dataset.w === 'retry') { S.wLast = null; loadWeather(true); }
           else if (a.dataset.w === 'more') { S.expand = !S.expand; drawWeather(); }
+          else if (a.dataset.w === 'focus') { S.focus = S.focus === 'vehicle' ? 'map' : 'vehicle'; lsSet('bmk_focus', S.focus); S.wLast = null; loadWeather(true); evalAlerts(); }
           else if (a.dataset.w === 'save') {
             var v = (d.querySelector('input') || {}).value || '';
             if (/^\d{2}\.\d{2}\.\d{2}\.\d{4}$/.test(v.trim())) { lsSet(KEY_ADM4, v.trim()); S.wLast = null; loadWeather(true); }
@@ -204,7 +205,13 @@
     }
 
     /* ---- posisi acuan: kendaraan, bila tidak ada pusat peta ---- */
-    function refPos() { var p = null; try { p = getPos(); } catch (e) {} if (validPos(p)) return { lat: +p.lat, lon: +p.lon, vehicle: true }; var c = map.getCenter(); return { lat: c.lat, lon: c.lng, vehicle: false }; }
+    // Acuan lokasi: "kendaraan" bila tersedia dan dipilih, selain itu pusat peta yang sedang dilihat
+    function vehPos() { var p = null; try { p = getPos(); } catch (e) {} return validPos(p) ? { lat: +p.lat, lon: +p.lon } : null; }
+    function refPos() {
+      var v = vehPos();
+      if (v && S.focus === 'vehicle') return { lat: v.lat, lon: v.lon, vehicle: true };
+      var c = map.getCenter(); return { lat: c.lat, lon: c.lng, vehicle: false };
+    }
 
     /* ---- cuaca ---- */
     function wxEmoji(d) { d = String(d || '').toLowerCase(); return /petir/.test(d) ? '⛈️' : /hujan/.test(d) ? '🌧️' : /kabut|asap/.test(d) ? '🌫️' : /cerah berawan/.test(d) ? '⛅' : /berawan/.test(d) ? '☁️' : /cerah/.test(d) ? '☀️' : '🌤️'; }
@@ -212,7 +219,7 @@
       if (!st.weather) return;
       var w = S.weather, h = '';
       if (!w) {
-        h = S.wErr ? '<div class="er">⚠️ ' + esc(S.wErr) + '</div>' : '<div>⏳ Memuat cuaca…</div>';
+        h = S.wErr ? '<div class="er">⚠️ ' + esc(S.wErr.length > 110 ? S.wErr.slice(0, 110) + '…' : S.wErr) + '</div>' : '<div>⏳ Memuat cuaca…</div>';
       } else {
         var c = w.current, pl = w.place || {};
         var img = safeBmkgImg(c.icon);
@@ -226,7 +233,7 @@
         }).join('') + '</div>';
         if (w.stale) h += '<div class="stale">Data lama (BMKG sedang lambat/tidak merespons)</div>';
         else if (S.wErr) h += '<div class="stale">' + esc(S.wErr) + '</div>';
-        h += '<button data-w="more">' + (S.expand ? 'Tutup' : 'Per 3 jam') + '</button>';
+        h += '<button data-w="more">' + (S.expand ? 'Tutup' : 'Per 3 jam') + '</button>' + (vehPos() ? ' <button data-w="focus">' + (S.focus === 'vehicle' ? '🚗 Kendaraan' : '🎯 Pusat peta') + '</button>' : '');
       }
       if (!w && S.wErr) {
         h += '<button data-w="retry">Coba lagi</button>';

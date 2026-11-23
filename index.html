@@ -1999,7 +1999,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.15.0';
+const APP_VERSION = '2.15.1';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -3600,6 +3600,7 @@ function locEnsureMap(){
   locMap = L.map('locMap', { zoomControl:false, attributionControl:true }).setView([-2.5, 118], 4);
   L.control.zoom({ position:'topleft' }).addTo(locMap);
   locMk = mkAttach(locMap, 'loc');
+  if(window.BmkgLayers) BmkgLayers.attach(locMap, { workerUrl: GPS_WORKER_URL, position:'topright' });
   mkBindTools(document.getElementById('locTools'), locMk, locToolExtra);
   locLayerPlaces = L.layerGroup().addTo(locMap);
   locLayerTrail = L.layerGroup().addTo(locMap);
@@ -6683,6 +6684,7 @@ function nvEnsureMap(){
   nv.map = L.map('rdMap', { zoomControl:false, attributionControl:true }).setView([-2.5, 118], 5);
   L.control.zoom({ position:'topright' }).addTo(nv.map);
   nv.mk = mkAttach(nv.map, 'ride');
+  if(window.BmkgLayers) BmkgLayers.attach(nv.map, { workerUrl: GPS_WORKER_URL, position:'topleft' });
   mkBindTools(rideEl('rdTools'), nv.mk, null);
   nv.layer = L.layerGroup().addTo(nv.map);
   nv.map.on('dragstart', ()=>{ nv.follow = false; nvSyncFollowBtn(); });
