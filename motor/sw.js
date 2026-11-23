@@ -1,6 +1,6 @@
 // Service worker: PWA shell offline, Web Push SOS (prioritas tinggi), Background Sync & Periodic Sync.
 // Naikkan VERSION setiap rilis supaya cache lama dibuang.
-const VERSION = '1.2.0';
+const VERSION = '1.2.1';
 const SHELL_CACHE = 'motor-shell-' + VERSION;
 const CDN_CACHE = 'motor-cdn-v1';
 const SHELL = ['./', './index.html', './app.js', './manifest.json', '../bmkg-layers.js', '../icon-192.png', '../icon-512.png'];
