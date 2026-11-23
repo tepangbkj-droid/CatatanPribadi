@@ -49,13 +49,13 @@ LEGACY_READ = "1"
 # Bila endpoint portal berubah: CMD_CANDIDATES / HISTORY_CANDIDATES (JSON) menggantikan daftar bawaan.
 
 # ---- SECRETS (jangan ditulis di sini; diisi dari GitHub Secrets oleh workflow) ----
-#   ACCOUNT, PASSWORD, USER_ID                akun & objectid perangkat di CantrackPortal
+#   ACCOUNT, PASSWORD, USER_ID                akun & objectid perangkat di CantrackPortal (PASSWORD juga dipakai membuktikan pemilik saat membuat kunci Authenticator)
 #   GOOGLE_CLIENT_ID                          Client ID OAuth Web (xxxx.apps.googleusercontent.com); boleh beberapa, pisah koma
 #   OWNER_EMAILS / FAMILY_EMAILS              email Google pemilik / keluarga, pisah koma
 #   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY       pasangan kunci Web Push (cara membuat: PANDUAN-GPS.md)
-#   SIGNING_SECRET                            string acak panjang (tanda tangan token sesi & URL audio)
+#   SIGNING_SECRET                            (opsional) string acak panjang; bila kosong dibuat otomatis & disimpan di D1
 #   SIM_NUMBER                                nomor SIM di tracker (tombol telepon)
-#   TOTP_SECRET                               kunci rahasia Authenticator (base32, 32 karakter A-Z & 2-7). Masuk & perintah di Buku Kas memakai kode 6 digit
+#   TOTP_SECRET                               (opsional) kunci Authenticator manual. Bila kosong, kunci dibuat dari aplikasi (tab Kendaraan) dan disimpan di D1
 #   CMD_PASSWORD                              (opsional) sandi perintah tracker; bawaan 123456. GANTI di tracker lalu isi di sini
 #   APP_KEY                                   hanya untuk LEGACY_READ = "1"
 #   SOS_PUSH_URL, SOS_PUSH_KEY                (opsional) layanan FCM yang sudah ada (sos-push-gas.gs / sos-push-worker.js) agar SOS juga masuk ke APK
