@@ -201,23 +201,45 @@ function bestMatch(list, names, minScore) {
   for (const it of list) for (const n of names) { const sc = sim(n, it.name); if (sc > bs) { bs = sc; best = it; } }
   return bs >= (minScore || 0.5) ? best : null;
 }
+// Kode provinsi Kemendagri dari ISO 3166-2 (Nominatim memberi "ISO3166-2-lvl4": "ID-JB")
+const ISO_PROV = { AC: "11", SU: "12", SB: "13", RI: "14", JA: "15", SS: "16", BE: "17", LA: "18", BB: "19", KR: "21", JK: "31", JB: "32", JT: "33", YO: "34", JI: "35", BT: "36", BA: "51", NB: "52", NT: "53", KB: "61", KT: "62", KS: "63", KI: "64", KU: "65", SA: "71", ST: "72", SN: "73", SG: "74", GO: "75", SR: "76", MA: "81", MU: "82", PB: "91", PA: "92" };
+const dotted = (c) => { const d = String(c).replace(/\D/g, ""); return [d.slice(0, 2), d.slice(2, 4), d.slice(4, 6), d.slice(6, 10)].filter(Boolean).join("."); };
+// Dua sumber daftar wilayah (cadangan bila salah satu mati / bentuknya berubah). Hasil: [{code:"31.71", name:"KOTA ..."}]
+const SOURCES = [
+  { name: "wilayah.id", url: (lvl, code) => `https://wilayah.id/api/${lvl}${code ? "/" + code : ""}.json` },
+  { name: "emsifa", url: (lvl, code) => `https://www.emsifa.com/api-wilayah-indonesia/api/${lvl}${code ? "/" + String(code).replace(/\./g, "") : ""}.json` },
+];
+function toList(j) {
+  const arr = Array.isArray(j) ? j : (j && (j.data || j.results || j.items)) || [];
+  return (Array.isArray(arr) ? arr : []).map((x) => ({ code: dotted(x.code || x.kode || x.id || ""), name: String(x.name || x.nama || "") })).filter((x) => x.code && x.name);
+}
+async function wilayahList(lvl, code) {
+  let lastErr;
+  for (const src of SOURCES) {
+    try { const l = toList(await getJson(src.url(lvl, code), 6000)); if (l.length) return l; lastErr = new Error(src.name + ": daftar " + lvl + " kosong"); }
+    catch (e) { lastErr = new Error(src.name + ": " + (e.message || e)); }
+  }
+  throw lastErr;
+}
 async function resolveAdm4(lat, lon) {
   const rev = await getJson(`${URLS.nominatim}?format=jsonv2&zoom=18&addressdetails=1&accept-language=id&lat=${lat}&lon=${lon}`, 7000);
   const a = (rev && rev.address) || {};
   if (a.country_code && a.country_code !== "id") throw Object.assign(new Error("koordinat di luar Indonesia"), { code: "outside_id" });
-  const prov = [a.state, a.region].filter(Boolean);
-  const kab = [a.city, a.county, a.regency, a.municipality, a.town].filter(Boolean);
+  const iso = String(a["ISO3166-2-lvl4"] || "").replace(/^ID-/, "");
+  const prov = [a.state, a.region, a.state_district].filter(Boolean);
+  const kab = [a.city, a.county, a.regency, a.municipality, a.town, a.state_district].filter(Boolean);
   const kec = [a.city_district, a.suburb, a.district, a.subdistrict, a.municipality].filter(Boolean);
   const des = [a.village, a.neighbourhood, a.quarter, a.hamlet, a.suburb].filter(Boolean);
-  const list = async (path) => { const j = await getJson(`${URLS.wilayah}/${path}.json`, 7000); return (j && j.data) || []; };
-  const p = bestMatch(await list("provinces"), prov, 0.4); if (!p) throw new Error("provinsi tidak cocok");
-  const k = bestMatch(await list(`regencies/${p.code}`), kab, 0.4); if (!k) throw new Error("kabupaten/kota tidak cocok");
-  const dsts = await list(`districts/${k.code}`);
-  const c = bestMatch(dsts, kec.length ? kec : des, 0.4) || dsts[0]; if (!c) throw new Error("kecamatan tidak cocok");
-  const vils = await list(`villages/${c.code}`);
-  const v = bestMatch(vils, des, 0.4) || vils[0]; if (!v) throw new Error("kelurahan/desa tidak cocok");
-  if (!ADM4_RE.test(v.code)) throw new Error("format kode wilayah tak dikenal");
-  return { adm4: v.code, name: [v.name, c.name, k.name, p.name].join(", ") };
+  let pcode = ISO_PROV[iso];
+  if (!pcode) { const p = bestMatch(await wilayahList("provinces"), prov, 0.3); if (!p) throw new Error("provinsi tidak cocok (" + (prov[0] || iso || "?") + ")"); pcode = p.code; }
+  const regs = await wilayahList("regencies", pcode);
+  const k = bestMatch(regs, kab, 0.3); if (!k) throw new Error("kabupaten/kota tidak cocok (" + (kab[0] || "?") + ")");
+  const dsts = await wilayahList("districts", k.code);
+  const c = bestMatch(dsts, kec.length ? kec : des, 0.3) || dsts[0];
+  const vils = await wilayahList("villages", c.code);
+  const v = bestMatch(vils, des, 0.3) || vils[0];
+  if (!ADM4_RE.test(v.code)) throw new Error("format kode wilayah tak dikenal: " + v.code);
+  return { adm4: v.code, name: [v.name, c.name, k.name].join(", ") };
 }
 
 // ---------- peringatan dini (CAP) ----------
