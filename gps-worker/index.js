@@ -5,12 +5,13 @@
 // rekaman audio di R2, sesi portal tersimpan di D1. Konfigurasi lengkap: lihat wrangler.toml dan README.md.
 //
 // Endpoint (semua butuh "Authorization: Bearer <Google ID token>" atau "Authorization: Session <token>", kecuali yang publik):
-//   publik : GET /api/health   GET /api/push/vapid-key   POST /api/auth/session   POST /api/auth/totp   GET /api/audio/file/:id?exp&sig (URL bertanda tangan)
+//   publik : GET /api/cctv (kamera publik: Windy + titik statis, CORS *)   GET /api/health   GET /api/push/vapid-key   POST /api/auth/session   POST /api/auth/totp   GET /api/audio/file/:id?exp&sig (URL bertanda tangan)
 //   baca   : GET /api/me /api/config /api/sync /api/history /api/commands /api/audio/list /api/push/list   (+ /pos /alarms /info)
 //   tulis  : POST /api/command (WAJIB Google ID token segar)   POST /api/push/subscribe|unsubscribe|test
 //            POST /api/audio/upload   DELETE /api/audio/:id (pemilik)   GET /debug (pemilik)
 
 import { handleBmkg } from "./bmkg.js";
+import { handleCctv, cctvPreflight } from "./cctv.js";
 
 const PORTAL = "https://www.cantrackportal.com";
 const UA =
@@ -1465,6 +1466,14 @@ async function backfillHistory(env) {
 // ---------- Router ----------
 export default {
   async fetch(req, env, ctx) {
+    // Layer CCTV publik: data terbuka, CORS "*" (sengaja di depan pemeriksaan ALLOW_ORIGIN). Kunci Windy hanya ada di Worker.
+    if (new URL(req.url).pathname === "/api/cctv") {
+      if (req.method === "OPTIONS") return cctvPreflight();
+      if (req.method === "GET") {
+        try { return await handleCctv(req, env, ctx); }
+        catch (e) { return new Response(JSON.stringify({ ok: false, error: "CCTV gagal: " + (e && e.message || e) }), { status: 502, headers: { "content-type": "application/json; charset=utf-8", "access-control-allow-origin": "*" } }); }
+      }
+    }
     if (req.method === "OPTIONS") return preflight(env);
     const u = new URL(req.url);
     const origin = req.headers.get("origin");

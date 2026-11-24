@@ -58,4 +58,6 @@ LEGACY_READ = "1"
 #   TOTP_SECRET                               (opsional) kunci Authenticator manual. Bila kosong, kunci dibuat dari aplikasi (tab Kendaraan) dan disimpan di D1
 #   CMD_PASSWORD                              (opsional) sandi perintah tracker; bawaan 123456. GANTI di tracker lalu isi di sini
 #   APP_KEY                                   hanya untuk LEGACY_READ = "1"
+#   WINDY_API_KEY                             (opsional) kunci Windy Webcams API v3 untuk GET /api/cctv (https://api.windy.com/keys). Tanpa ini hanya titik statis yang tampil
+#   CCTV_EXTRA                                (opsional) JSON array titik CCTV tambahan (hls/portal), tanpa ubah kode
 #   SOS_PUSH_URL, SOS_PUSH_KEY                (opsional) layanan FCM yang sudah ada (sos-push-gas.gs / sos-push-worker.js) agar SOS juga masuk ke APK
