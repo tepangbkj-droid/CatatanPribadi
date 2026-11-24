@@ -62,6 +62,8 @@ jobs:
           GPS_TOTP_SECRET: ${{ secrets.GPS_TOTP_SECRET }}
           GPS_SOS_PUSH_URL: ${{ secrets.GPS_SOS_PUSH_URL }}
           GPS_SOS_PUSH_KEY: ${{ secrets.GPS_SOS_PUSH_KEY }}
+          GPS_WINDY_API_KEY: ${{ secrets.GPS_WINDY_API_KEY }}
+          GPS_CCTV_EXTRA: ${{ secrets.GPS_CCTV_EXTRA }}
         run: |
           put() {
             if [ -n "$2" ]; then
@@ -85,6 +87,8 @@ jobs:
           put TOTP_SECRET      "$GPS_TOTP_SECRET"
           put SOS_PUSH_URL     "$GPS_SOS_PUSH_URL"
           put SOS_PUSH_KEY     "$GPS_SOS_PUSH_KEY"
+          put WINDY_API_KEY    "$GPS_WINDY_API_KEY"
+          put CCTV_EXTRA       "$GPS_CCTV_EXTRA"
           for need in GPS_ACCOUNT GPS_PASSWORD GPS_USER_ID GPS_GOOGLE_CLIENT_ID GPS_OWNER_EMAILS GPS_SIGNING_SECRET; do
             if [ -z "${!need}" ]; then echo "::warning::Secret GitHub $need kosong. Pastikan nilainya sudah diset langsung di Cloudflare, atau isi di GitHub lalu jalankan ulang."; fi
           done
