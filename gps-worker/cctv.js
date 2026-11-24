@@ -4,14 +4,19 @@
 // Menggabungkan:
 //   1. Windy Webcams API v3 (kamera publik sekitar Depok, radius 50 km) -> sourceType "windy"
 //      (bila kamera tidak punya URL player, dikirim sebagai "portal" ke halaman detail Windy)
-//   2. Titik statis lokal: stream HLS (.m3u8) -> "hls"; halaman portal resmi -> "portal"
-//   3. (opsional) env.CCTV_EXTRA = JSON array titik tambahan, tanpa perlu ubah kode
+//   2. JakCCTV resmi Pemprov DKI (jakcctv.jakarta.go.id/publik/data?q=&page=1..7) -> "hls"
+//      URL Balitower/Flussonic ".../embed.html" otomatis diubah ke ".../index.m3u8" (siap Hls.js).
+//      Hasil digabung (nama, lat, lng, URL) lalu di-cache 30 menit (Cache API + memori isolate).
+//      Bila JakCCTV gagal / kosong: pakai cache lama (stale), terakhir titik statis dki(...) di bawah.
+//   3. Titik statis lokal: stream HLS (.m3u8) -> "hls"; halaman portal resmi -> "portal"
+//   4. (opsional) env.CCTV_EXTRA = JSON array titik tambahan, tanpa perlu ubah kode
 //
 // Respons seragam:
 //   { ok, count, cameras:[{ id, title, lat, lng, sourceType, streamUrl, streamUrls, playerUrl, embedUrl, portalUrl,
 //                           provider, approx }], sources:{...}, attribution }
 //
 // Query opsional:  ?nearby=lat,lon,radiusKm (default -6.4025,106.7942,50; radius maks 250)   ?windy=0 (lewati Windy)
+//                  ?jakcctv=0 (lewati JakCCTV)   ?debug=1 (tampilkan diagnosa parsing JakCCTV di sources.jakcctv.diag)
 //
 // Rahasia: env.WINDY_API_KEY (Windy memakai header x-windy-api-key). Kunci TIDAK pernah dikirim ke browser.
 // CORS: Access-Control-Allow-Origin: * (data publik). Hasil Windy di-cache 10 menit di isolate Worker agar kuota
@@ -25,6 +30,13 @@ const MAX_PAGES = 3;
 const FETCH_TIMEOUT_MS = 8000;
 const TTL_MS = 10 * 60 * 1000;
 const UA = "BukuKasGPS/1.0 (peta CCTV publik)";
+
+// JakCCTV (portal publik DKI Jakarta)
+const JAK_DATA_URL = "https://jakcctv.jakarta.go.id/publik/data";
+const JAK_PAGES = 7;                 // 52 kamera / ~8 per halaman
+const JAK_TTL_S = 30 * 60;           // 30 menit (max-age=1800)
+const JAK_CACHE_PATH = "/__cache/jakcctv-v1";
+const JAK_UA = "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36";
 
 const CORS = {
   "access-control-allow-origin": "*",
@@ -101,11 +113,11 @@ function normalize(c) {
   };
 }
 
-async function fetchT(url, init) {
+async function fetchT(url, init, label = "Windy") {
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), FETCH_TIMEOUT_MS);
   try { return await fetch(url, { ...init, signal: ctl.signal }); }
-  catch (e) { throw e && e.name === "AbortError" ? new Error("Windy tidak merespons (timeout)") : e; }
+  catch (e) { throw e && e.name === "AbortError" ? new Error(label + " tidak merespons (timeout)") : e; }
   finally { clearTimeout(timer); }
 }
 
@@ -168,6 +180,177 @@ async function getWindy(env, nearby) {
   }
 }
 
+// ---------- JakCCTV (portal publik Pemprov DKI) ----------
+const jakMem = { t: 0, data: null };   // cache memori isolate (cadangan bila Cache API tidak aktif, mis. di *.workers.dev)
+let jakInflight = null;
+
+const STREAM_RE = /https?:\/\/[^\s"'<>\\]+?\/(?:embed\.html|index\.m3u8|video\.m3u8|[^\s"'<>\\\/]+\.m3u8)(?:\?[^\s"'<>\\]*)?/i;
+
+/** Balitower/Flussonic: ".../embed.html[?...]" -> ".../index.m3u8". URL .m3u8 dibiarkan. Selain itu -> "". */
+export function toHls(raw) {
+  if (raw === null || raw === undefined) return "";
+  const m = String(raw).replace(/&amp;/g, "&").replace(/\\\//g, "/").match(STREAM_RE);
+  if (!m) return "";
+  const u = m[0];
+  if (/\/embed\.html(?:[?#].*)?$/i.test(u)) return u.replace(/\/embed\.html(?:[?#].*)?$/i, "/index.m3u8");
+  return /\.m3u8(?:\?|$)/i.test(u) ? u : "";
+}
+const toEmbed = (raw) => {
+  const m = String(raw || "").replace(/&amp;/g, "&").replace(/\\\//g, "/").match(/https?:\/\/[^\s"'<>\\]+?\/embed\.html(?:\?[^\s"'<>\\]*)?/i);
+  return m ? m[0] : null;
+};
+
+const pick = (o, keys) => { for (const k of keys) if (o[k] !== undefined && o[k] !== null && o[k] !== "") return o[k]; return undefined; };
+const prettyFolder = (f) => f.replace(/_CCTV-\d+$/i, "").replace(/^\d+_/, "").replace(/_/g, " ").replace(/-/g, " ").replace(/\s+/g, " ").trim();
+const folderOf = (u) => { const m = String(u).match(/\/([^\/?#]+)\/(?:embed\.html|index\.m3u8|video\.m3u8)/i); return m ? decodeURIComponent(m[1]) : ""; };
+const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+
+/** Satu objek mentah JakCCTV -> kamera ternormalisasi, atau { skip: "alasan" }. */
+function mapJakItem(it) {
+  if (!it || typeof it !== "object") return { skip: "bukan objek" };
+  const loc = it.location && typeof it.location === "object" ? it.location : {};
+  let lat = num(pick(it, ["lat", "latitude", "Latitude", "LAT"]) ?? pick(loc, ["lat", "latitude"]));
+  let lng = num(pick(it, ["lng", "lon", "long", "longitude", "Longitude", "LNG"]) ?? pick(loc, ["lng", "lon", "long", "longitude"]));
+  if (!okCoord(lat, lng)) {
+    const ll = String(pick(it, ["latlng", "coordinates", "coordinate", "koordinat", "position"]) || "").match(/(-?\d+\.\d+)\s*[,;\s]\s*(-?\d+\.\d+)/);
+    if (ll) { lat = Number(ll[1]); lng = Number(ll[2]); }
+  }
+  if (!okCoord(lat, lng)) return { skip: "tanpa koordinat" };
+
+  // URL video: kolom yang umum dulu, lalu cari di semua nilai string (mis. potongan <iframe src="...">)
+  let raw = pick(it, ["url", "stream_url", "streamUrl", "embed_url", "embedUrl", "embed", "link", "src", "video", "video_url", "iframe", "cctv_url"]);
+  let hls = toHls(raw);
+  if (!hls) { for (const v of Object.values(it)) { if (typeof v === "string" && (hls = toHls(v))) { raw = v; break; } } }
+  if (!hls) return { skip: "tanpa URL stream" };
+
+  const folder = folderOf(hls);
+  const title = String(pick(it, ["title", "name", "nama", "lokasi", "location_name", "label", "cctv_name", "nama_cctv"]) || (folder ? prettyFolder(folder) : "CCTV DKI Jakarta")).replace(/\s+/g, " ").trim();
+  const rawId = pick(it, ["id", "cctv_id", "camera_id", "kode", "code"]);
+  const idPart = rawId !== undefined ? slug(rawId) : slug(folder || title + "-" + lat.toFixed(4) + "-" + lng.toFixed(4));
+  const cam = normalize({
+    id: "jakcctv-" + idPart, title, lat, lng, sourceType: "hls",
+    streamUrl: hls, streamUrls: [hls], embedUrl: toEmbed(raw) || (toEmbed(Object.values(it).join(" "))),
+    portalUrl: DKI_PORTAL, provider: "CCTV Publik DKI Jakarta", approx: false,
+  });
+  return cam || { skip: "URL/koordinat tidak valid" };
+}
+
+/** Cari array kamera di dalam JSON (data / data.data / items / cameras / ...). */
+function findItems(j) {
+  if (Array.isArray(j)) return j;
+  if (!j || typeof j !== "object") return null;
+  for (const k of ["data", "items", "cameras", "cctv", "result", "results", "rows", "records"]) {
+    const v = j[k];
+    if (Array.isArray(v)) return v;
+    if (v && typeof v === "object") { const r = findItems(v); if (r) return r; }
+  }
+  return null;
+}
+
+function parseAttrs(tag) {
+  const o = {}; const re = /([\w:.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g; let m;
+  while ((m = re.exec(tag))) o[m[1].toLowerCase().replace(/^data-/, "")] = m[2] !== undefined ? m[2] : m[3];
+  return o;
+}
+
+/** Cadangan bila respons bukan JSON: potongan HTML (atribut data-lat/data-lng) atau objek JSON di dalam <script>. */
+function parseJakHtml(html) {
+  const items = [];
+  const tagRe = /<[a-z][^>]*\bdata-(?:lat|latitude)\s*=\s*["'][^"']+["'][^>]*>/gi; let m;
+  while ((m = tagRe.exec(html))) {
+    const attrs = parseAttrs(m[0]);
+    const after = html.slice(m.index + m[0].length, m.index + m[0].length + 1500);
+    if (!attrs.url && !toHls(Object.values(attrs).join(" "))) attrs.url = (after.match(STREAM_RE) || [""])[0];
+    if (!attrs.title && !attrs.name && !attrs.nama) attrs.title = after.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
+    items.push(attrs);
+  }
+  const objRe = /\{[^{}]*["']?(?:lat|latitude)["']?\s*:[^{}]*\}/gi;
+  while ((m = objRe.exec(html))) { try { items.push(JSON.parse(m[0])); } catch (e) { /* bukan JSON valid: lewati */ } }
+  return items;
+}
+
+async function fetchJakPage(page) {
+  const info = { page, status: 0 };
+  try {
+    const r = await fetchT(`${JAK_DATA_URL}?q=&page=${page}`, {
+      headers: {
+        "user-agent": JAK_UA, accept: "application/json, text/html;q=0.9, */*;q=0.8", "accept-language": "id-ID,id;q=0.9",
+        referer: DKI_PORTAL, "x-requested-with": "XMLHttpRequest",
+      },
+      cf: { cacheTtl: 0 },
+    }, "JakCCTV");
+    info.status = r.status;
+    info.type = (r.headers.get("content-type") || "").split(";")[0];
+    const text = await r.text();
+    if (!r.ok) { info.error = "HTTP " + r.status; info.sample = text.slice(0, 200); return { info, items: [] }; }
+    let items = null;
+    try { items = findItems(JSON.parse(text)); } catch (e) { /* bukan JSON */ }
+    if (!items) { items = parseJakHtml(text); info.mode = "html"; } else info.mode = "json";
+    info.items = items.length;
+    if (!items.length) info.sample = text.slice(0, 300);   // bantu diagnosa bila format berubah
+    return { info, items };
+  } catch (e) {
+    info.error = (e && e.message) || "gagal";
+    return { info, items: [] };
+  }
+}
+
+/** Ambil halaman 1..7 paralel, ubah ke HLS, hapus duplikat. */
+export async function fetchJakCCTV() {
+  const pages = await Promise.all(Array.from({ length: JAK_PAGES }, (_, i) => fetchJakPage(i + 1)));
+  const byId = new Map(); const skipped = {};
+  for (const p of pages) {
+    for (const it of p.items) {
+      const c = mapJakItem(it);
+      if (c.skip) { skipped[c.skip] = (skipped[c.skip] || 0) + 1; continue; }
+      if (!byId.has(c.id)) byId.set(c.id, c);
+    }
+  }
+  const cams = [...byId.values()];
+  const hosts = [...new Set(cams.flatMap((c) => c.streamUrls).map((u) => { try { return new URL(u).origin; } catch (e) { return null; } }).filter(Boolean))];
+  return { cams, diag: { pages: pages.map((p) => p.info), skipped, hosts } };
+}
+
+/** Cache 30 menit: memori isolate -> Cache API (edge) -> fetch ke JakCCTV. Hasil kosong TIDAK di-cache. */
+async function getJak(req, env, ctx) {
+  const now = Date.now();
+  if (jakMem.data && now - jakMem.t < JAK_TTL_S * 1000) return { cams: jakMem.data.cams, status: { count: jakMem.data.cams.length, cached: "memory", hosts: jakMem.data.diag.hosts, diag: jakMem.data.diag } };
+
+  let cache = null; const key = new Request(new URL(JAK_CACHE_PATH, req.url).toString());
+  try { cache = caches.default; } catch (e) { cache = null; }
+  if (cache) {
+    try {
+      const hit = await cache.match(key);
+      if (hit) {
+        const data = await hit.json();
+        if (data && Array.isArray(data.cams) && data.cams.length) {
+          jakMem.t = Number(data.t) || now; jakMem.data = data;
+          return { cams: data.cams, status: { count: data.cams.length, cached: "edge", hosts: data.diag && data.diag.hosts, diag: data.diag } };
+        }
+      }
+    } catch (e) { /* cache rusak: lanjut ambil baru */ }
+  }
+
+  if (!jakInflight) jakInflight = fetchJakCCTV().finally(() => { jakInflight = null; });
+  try {
+    const { cams, diag } = await jakInflight;
+    if (cams.length) {
+      const data = { t: Date.now(), cams, diag };
+      jakMem.t = data.t; jakMem.data = data;
+      if (cache) {
+        const put = cache.put(key, new Response(JSON.stringify(data), { headers: { "content-type": "application/json", "cache-control": `public, max-age=${JAK_TTL_S}` } })).catch(() => {});
+        if (ctx && ctx.waitUntil) ctx.waitUntil(put);
+      }
+      return { cams, status: { count: cams.length, cached: false, hosts: diag.hosts, diag } };
+    }
+    if (jakMem.data) return { cams: jakMem.data.cams, status: { count: jakMem.data.cams.length, stale: true, error: "JakCCTV kosong/gagal, memakai data lama", diag } };
+    return { cams: [], status: { count: 0, error: "JakCCTV tidak mengembalikan kamera yang bisa dibaca", diag } };
+  } catch (e) {
+    if (jakMem.data) return { cams: jakMem.data.cams, status: { count: jakMem.data.cams.length, stale: true, error: e.message } };
+    return { cams: [], status: { count: 0, error: (e && e.message) || "JakCCTV gagal" } };
+  }
+}
+
 // ---------- titik tambahan dari env ----------
 function extraCameras(env) {
   if (!env.CCTV_EXTRA) return { cams: [], error: null };
@@ -185,26 +368,33 @@ export function cctvPreflight() {
   return new Response(null, { status: 204, headers: CORS });
 }
 
-export async function handleCctv(req, env) {
+export async function handleCctv(req, env, ctx) {
   const u = new URL(req.url);
   let nearby = u.searchParams.get("nearby") || DEFAULT_NEARBY;
   if (!NEARBY_RE.test(nearby) || Number(nearby.split(",")[2]) > 250) nearby = DEFAULT_NEARBY;
+  const debug = u.searchParams.get("debug") === "1";
 
-  const [windy, extra] = await Promise.all([
+  const [windy, jak, extra] = await Promise.all([
     u.searchParams.get("windy") === "0" ? { cams: [], status: { configured: !!env.WINDY_API_KEY, skipped: true } } : getWindy(env, nearby),
+    u.searchParams.get("jakcctv") === "0" ? { cams: [], status: { skipped: true } } : getJak(req, env, ctx),
     Promise.resolve(extraCameras(env)),
   ]);
-  const stat = STATIC_CAMERAS.map(normalize).filter(Boolean);
 
-  // gabung; id yang sama: titik statis/extra menang atas Windy
+  // Titik statis dki(...) hanya tebakan: bila JakCCTV berhasil memberi kamera, yang statis dki-* dibuang
+  let stat = STATIC_CAMERAS.map(normalize).filter(Boolean);
+  if (jak.cams.length) stat = stat.filter((c) => !c.id.startsWith("dki-"));
+
+  // gabung; id yang sama: JakCCTV/statis/extra menang atas Windy
   const byId = new Map();
-  [...windy.cams, ...stat, ...extra.cams].forEach((c) => byId.set(c.id, c));
+  [...windy.cams, ...stat, ...jak.cams, ...extra.cams].forEach((c) => byId.set(c.id, c));
   const cameras = [...byId.values()];
+
+  if (!debug && jak.status && jak.status.diag) { const { diag, ...rest } = jak.status; jak.status = { ...rest, pages: diag.pages.filter((p) => p.error).length ? diag.pages.filter((p) => p.error).length + " halaman gagal" : undefined }; }
 
   return new Response(JSON.stringify({
     ok: true, count: cameras.length, nearby, cameras,
-    sources: { windy: windy.status, static: { count: stat.length }, extra: { count: extra.cams.length, error: extra.error } },
-    attribution: "Webcam publik: Windy Webcams (windy.com). CCTV pemerintah: milik masing-masing pengelola.",
+    sources: { windy: windy.status, jakcctv: jak.status, static: { count: stat.length }, extra: { count: extra.cams.length, error: extra.error } },
+    attribution: "Webcam publik: Windy Webcams (windy.com). CCTV pemerintah: milik masing-masing pengelola (JakCCTV: Pemprov DKI Jakarta).",
     time: Date.now(),
   }), {
     status: 200,
