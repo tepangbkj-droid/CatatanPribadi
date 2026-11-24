@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://cdnjs.cloudflare.com; media-src 'self' blob: data:; connect-src 'self' https://*.googleapis.com wss://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://api.telegram.org https://nominatim.openstreetmap.org https://router.project-osrm.org https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://api.gold-api.com https://open.er-api.com https://api.frankfurter.app https://cdn.jsdelivr.net https://*.workers.dev https://script.google.com https://script.googleusercontent.com https://api.anthropic.com https://api.groq.com https://openrouter.ai; frame-src https://*.firebaseapp.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; manifest-src 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://cdnjs.cloudflare.com; media-src 'self' blob: data: https://*.workers.dev https://dki-jkt.balitower.co.id:7028 https://cctv.balitower.co.id; connect-src 'self' https://dki-jkt.balitower.co.id:7028 https://cctv.balitower.co.id https://*.googleapis.com wss://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://api.telegram.org https://nominatim.openstreetmap.org https://router.project-osrm.org https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://api.gold-api.com https://open.er-api.com https://api.frankfurter.app https://cdn.jsdelivr.net https://*.workers.dev https://script.google.com https://script.googleusercontent.com https://api.anthropic.com https://api.groq.com https://openrouter.ai; frame-src https://*.firebaseapp.com https://accounts.google.com https://*.windy.com https://dki-jkt.balitower.co.id:7028 https://cctv.balitower.co.id; worker-src 'self' blob:; object-src 'none'; manifest-src 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <script>if(window.top!==window.self){document.documentElement.style.display="none";try{window.top.location=window.self.location;}catch(e){}}</script>
 <title>Buku Kas — Catatan Keuangan &amp; Tabungan Emas</title>
@@ -1006,8 +1006,12 @@
   .kd-ctl-st{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 10px;font-size:12.5px;font-weight:600;}
   .kd-chip{padding:4px 10px;border-radius:999px;background:var(--rose-soft);color:var(--ink);}
   .kd-chip.bad{background:var(--rose);color:#fff;}
-  .kd-ctl-row{display:flex;gap:8px;align-items:stretch;margin-top:8px;}
-  .kd-ctl-row input{flex:1;min-width:0;}
+  .kd-ctl-row{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;}
+  .kd-ctl-row input{flex:1;min-width:110px;min-height:52px;font-size:16px;box-sizing:border-box;}
+  .kd-aud-item{border:1px solid var(--line);border-radius:14px;padding:10px;margin-top:8px;}
+  .kd-aud-item audio{width:100%;margin-top:8px;}
+  .kd-aud-meta{display:flex;justify-content:space-between;gap:8px;font-size:13px;flex-wrap:wrap;}
+  .kd-aud-sub{font-size:12px;color:var(--ink-soft);margin-top:2px;word-break:break-word;}
   .kd-ctl-row .btn{flex:1.2;}
   .kd-reply{margin-top:10px;font-size:11.5px;white-space:pre-wrap;word-break:break-word;background:rgba(127,127,127,.12);border-radius:10px;padding:8px 10px;max-height:160px;overflow:auto;}
 </style>
@@ -1980,6 +1984,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="bmkg-layers.js"></script>
 <script src="map-pro.js"></script>
+<script src="cctv-public.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script type="module">
@@ -2051,7 +2056,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.16.0';
+const APP_VERSION = '2.17.0';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -2849,7 +2854,7 @@ function gpsSosUpdate(){
 document.getElementById('gpsSosOk').addEventListener('click', ()=>{ gpsSosHideUntil = Date.now() + 5*60*1000; gpsSosUpdate(); });
 setInterval(()=>{ if(document.visibilityState === 'visible' && activeTab !== 'lokasi' && activeTab !== 'kendaraan') gpsPoll(false); }, 15000);
 
-let kdIntervalVal = '30', kdCmdBusy = false, kdLastReply = '', kdLoginBusy = false;
+let kdIntervalVal = '30', kdCmdBusy = false, kdLastReply = '', kdLastDiag = '', kdLoginBusy = false;
 const KD_FAST_KMH = 10;   // di atas ini, Putus BBM diberi peringatan keras
 
 // ---- Verifikasi Authenticator (TOTP, 6 digit) — semua di dalam Buku Kas, tanpa pindah aplikasi ----
@@ -2949,7 +2954,7 @@ async function kdApiCommand(action, extra, label){
   const code = inp ? inp.value.replace(/\D/g, '') : '';
   if(code.length !== 6){ showToast('Isi kode 6 digit BARU dari Authenticator dulu', true); if(inp) inp.focus(); return; }
   if(kdCmdBusy) return;
-  kdCmdBusy = true; kdLastReply = '⏳ Mengirim ' + label + '…';
+  kdCmdBusy = true; kdLastReply = '⏳ Mengirim ' + label + '…'; kdLastDiag = '';
   if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
   renderKendaraan();
   try{
@@ -2957,7 +2962,11 @@ async function kdApiCommand(action, extra, label){
     const j = await r.json().catch(()=>null);
     if(gpsDropBadSession(j)) kdLastReply = '🔓 Sesi habis. Masuk lagi dengan kode Authenticator.';
     else if(j && j.ok){ kdLastReply = '✅ ' + label + ' terkirim. ' + (j.note || ''); showToast(label + ' terkirim ✅'); gpsPoll(true, true); }
-    else{ kdLastReply = '❌ ' + ((j && (j.error || j.reply)) || ('HTTP ' + r.status)); showToast('Gagal: ' + ((j && j.error) || r.status), true); }
+    else{
+      kdLastReply = '❌ ' + ((j && (j.error || j.reply)) || ('HTTP ' + r.status));
+      if(j && (j.tries || j.hint)) kdLastDiag = JSON.stringify({ action:action, httpStatus:j.httpStatus, kind:j.kind, reply:j.reply, tries:j.tries, hint:j.hint }, null, 1);
+      showToast('Gagal: ' + ((j && j.error) || r.status), true);
+    }
   }catch(e){ kdLastReply = '❌ ' + (e.message || e); showToast('Gagal mengirim perintah', true); }
   kdCmdBusy = false;
   renderKendaraan();
@@ -2975,6 +2984,122 @@ function kdCtlAction(act){
     kdApiCommand('set_interval', { intervalSeconds:n }, 'Atur rentang ' + n + ' dtk');
   }
 }
+
+// ---- Suara kendaraan: dengar langsung (telepon SIM), perintah rekam/monitor, putar rekaman dari server ----
+// Kartu ini DIBANGUN SEKALI dan dipindah ke slot tiap render ulang (pola yang sama dengan peta riwayat),
+// agar audio yang sedang diputar tidak terputus oleh penyegaran data tracker.
+let kdAudEl = null, kdAudBusy = false, kdAudLoaded = false, kdAudSim = null, kdAudSimLoaded = false;
+function kdAudBytes(n){ n = Number(n) || 0; return n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
+function kdAudDur(sec){ sec = Math.round(Number(sec) || 0); if(!sec) return ''; return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
+function kdAudBuild(){
+  if(kdAudEl) return kdAudEl;
+  kdAudEl = document.createElement('div'); kdAudEl.className = 'loc-card';
+  kdAudEl.innerHTML = '<div style="font-weight:700;margin-bottom:4px;">🎧 Suara kendaraan</div>'
+    + '<div class="field-hint" id="kdAudSimHint" style="margin-bottom:6px;">Memuat nomor SIM tracker…</div>'
+    + '<div class="kd-btns" style="margin-top:0;"><a class="btn btn-primary hidden" id="kdAudCall" style="text-align:center;text-decoration:none;">📞 Dengar langsung (telepon SIM)</a></div>'
+    + '<div class="kd-ctl-row"><input id="kdAudSec" type="number" inputmode="numeric" min="5" max="120" value="30" aria-label="Lama rekam (detik)"><button class="btn btn-ghost" data-aud="rec">🎙️ Rekam suara (detik)</button></div>'
+    + '<div class="kd-btns"><button class="btn btn-ghost" data-aud="mon">👂 Aktifkan mode monitor</button><button class="btn btn-ghost" data-aud="refresh">🔄 Muat rekaman</button></div>'
+    + '<div class="field-hint" style="margin-top:6px;">Perintah rekam &amp; monitor memakai kode Authenticator BARU di kotak “Kontrol tracker” di atas, dan baru bekerja bila perintah ke tracker sudah diterima server (lihat status di kotak itu).</div>'
+    + '<div class="kd-ctl-row"><label class="btn btn-ghost" style="flex:1;text-align:center;cursor:pointer;">⬆️ Unggah file audio<input type="file" id="kdAudFile" accept="audio/*" hidden></label></div>'
+    + '<div class="field-hint" id="kdAudInfo" style="margin-top:6px;"></div>'
+    + '<div id="kdAudList"></div>';
+  kdAudEl.addEventListener('click', (e)=>{
+    const b = e.target.closest('[data-aud],[data-auddel]'); if(!b) return;
+    if(b.dataset.auddel){ kdAudDelete(b.dataset.auddel); return; }
+    const act = b.dataset.aud;
+    if(act === 'refresh'){ kdAudLoad(true); return; }
+    if(act === 'rec'){
+      const n = Math.round(Number(document.getElementById('kdAudSec').value));
+      if(!(n >= 5 && n <= 120)){ showToast('Lama rekam 5 sampai 120 detik', true); return; }
+      kdApiCommand('record', { seconds:n }, 'Rekam suara ' + n + ' dtk'); return;
+    }
+    if(act === 'mon'){
+      if(!confirm('Aktifkan mode monitor? Setelah aktif, telepon nomor SIM tracker untuk mendengar sekitar kendaraan.')) return;
+      kdApiCommand('monitor', null, 'Mode monitor'); return;
+    }
+  });
+  kdAudEl.querySelector('#kdAudFile').addEventListener('change', (e)=>{ const f = e.target.files && e.target.files[0]; if(f) kdAudUpload(f); e.target.value = ''; });
+  return kdAudEl;
+}
+function kdAudAttach(){
+  const slot = document.getElementById('kdAudSlot'); if(!slot) return;
+  const ses = gpsSession(); if(!ses || !ses.token){ slot.innerHTML = ''; return; }
+  const el = kdAudBuild();
+  if(el.parentNode !== slot) slot.appendChild(el);
+  if(!kdAudLoaded && !kdAudBusy) kdAudLoad(false);
+}
+function kdAudSetSim(sim){
+  const call = document.getElementById('kdAudCall'), hint = document.getElementById('kdAudSimHint'); if(!call || !hint) return;
+  const digits = String(sim || '').replace(/[^+\d]/g, '');
+  if(digits){
+    call.href = 'tel:' + digits; call.classList.remove('hidden');
+    hint.textContent = 'Tombol telepon memanggil SIM tracker. Bila fitur jawab-otomatis tracker aktif, panggilan tersambung dan Anda bisa mendengar sekitar kendaraan.';
+  }else{
+    call.removeAttribute('href'); call.classList.add('hidden');
+    hint.textContent = 'Nomor SIM tracker belum diatur di server (secret GPS_SIM_NUMBER), jadi tombol telepon belum muncul. Rekaman yang sudah diunggah tetap bisa diputar di bawah.';
+  }
+}
+async function kdAudLoad(force){
+  if(kdAudBusy) return;
+  const info = document.getElementById('kdAudInfo'), list = document.getElementById('kdAudList');
+  if(!gpsSession()) return;
+  kdAudBusy = true; if(info) info.textContent = '⏳ Memuat rekaman…';
+  try{
+    if(!kdAudSimLoaded || force){
+      const rm = await fetch(GPS_WORKER_URL + '/api/me', { headers:gpsHeaders(), cache:'no-store' });
+      const jm = await rm.json().catch(()=>null);
+      if(gpsDropBadSession(jm)) throw new Error('Sesi habis, masuk lagi');
+      if(jm && jm.ok){ kdAudSim = jm.simNumber || ''; kdAudSimLoaded = true; }
+    }
+    kdAudSetSim(kdAudSim);
+    const r = await fetch(GPS_WORKER_URL + '/api/audio/list', { headers:gpsHeaders(), cache:'no-store' });
+    const j = await r.json().catch(()=>null);
+    if(gpsDropBadSession(j)) throw new Error('Sesi habis, masuk lagi');
+    if(!r.ok || !j || !j.ok) throw new Error((j && j.error) || ('HTTP ' + r.status));
+    kdAudLoaded = true;
+    const items = j.items || [];
+    if(info) info.textContent = items.length ? items.length + ' rekaman (tautan putar berlaku 1 jam; tekan “Muat rekaman” bila kedaluwarsa).' : 'Belum ada rekaman. Unggah file audio atau tunggu rekaman masuk.';
+    if(list) list.innerHTML = items.map(a=>{
+      const when = new Date(a.createdAt).toLocaleString('id-ID', { dateStyle:'medium', timeStyle:'short' });
+      return '<div class="kd-aud-item"><div class="kd-aud-meta"><b>' + escapeHtml(when) + '</b><span>' + escapeHtml(kdAudBytes(a.size)) + (a.durationSec ? ' • ' + escapeHtml(kdAudDur(a.durationSec)) : '') + '</span></div>'
+        + (a.note ? '<div class="kd-aud-sub">' + escapeHtml(a.note) + '</div>' : '')
+        + '<div class="kd-aud-sub">oleh ' + escapeHtml(String(a.by || '-').split('@')[0]) + ' • ' + escapeHtml(a.source || '-') + '</div>'
+        + '<audio controls preload="none" src="' + escapeHtml(a.url) + '"></audio>'
+        + '<div class="kd-btns" style="margin-top:8px;"><a class="btn btn-ghost" style="text-align:center;text-decoration:none;" href="' + escapeHtml(a.downloadUrl) + '" download>⬇️ Simpan</a>'
+        + '<button class="btn btn-danger" data-auddel="' + escapeHtml(a.id) + '">🗑️ Hapus</button></div></div>';
+    }).join('');
+  }catch(e){ if(info) info.textContent = '❌ ' + (e.message || e); }
+  kdAudLoaded = true; // sudah dicoba: jangan ulangi otomatis tiap penyegaran; pengguna menekan "Muat rekaman"
+  kdAudBusy = false;
+}
+async function kdAudDelete(id){
+  if(!confirm('Hapus rekaman ini secara permanen?')) return;
+  try{
+    const r = await fetch(GPS_WORKER_URL + '/api/audio/' + encodeURIComponent(id), { method:'DELETE', headers:gpsHeaders(), cache:'no-store' });
+    const j = await r.json().catch(()=>null);
+    if(gpsDropBadSession(j)){ showToast('Sesi habis, masuk lagi', true); renderKendaraan(); return; }
+    if(r.ok && j && j.ok){ showToast('Rekaman dihapus'); kdAudLoad(true); }
+    else showToast('Gagal: ' + ((j && j.error) || ('HTTP ' + r.status)), true);
+  }catch(e){ showToast('Gagal menghapus (koneksi)', true); }
+}
+function kdAudFileDuration(file){
+  return new Promise((res)=>{ const a = new Audio(), u = URL.createObjectURL(file); const done = (v)=>{ URL.revokeObjectURL(u); res(v); };
+    a.preload = 'metadata'; a.onloadedmetadata = ()=>done(isFinite(a.duration) ? a.duration : null); a.onerror = ()=>done(null); setTimeout(()=>done(null), 3000); a.src = u; });
+}
+async function kdAudUpload(file){
+  const info = document.getElementById('kdAudInfo');
+  if(file.size > 25 * 1024 * 1024){ showToast('File lebih dari 25 MB', true); return; }
+  if(info) info.textContent = '⏳ Mengunggah ' + kdAudBytes(file.size) + '…';
+  const fd = new FormData(); fd.append('file', file, file.name || 'rekaman'); fd.append('source', 'upload');
+  const d = await kdAudFileDuration(file); if(d) fd.append('duration', String(d));
+  try{
+    const r = await fetch(GPS_WORKER_URL + '/api/audio/upload', { method:'POST', headers:gpsHeaders(), body:fd });
+    const j = await r.json().catch(()=>null);
+    if(gpsDropBadSession(j)){ showToast('Sesi habis, masuk lagi', true); renderKendaraan(); return; }
+    if(r.ok && j && j.ok){ showToast('Rekaman tersimpan ✅'); kdAudLoad(true); }
+    else{ if(info) info.textContent = '❌ ' + ((j && j.error) || ('HTTP ' + r.status)); }
+  }catch(e){ if(info) info.textContent = '❌ Gagal mengunggah (koneksi putus). Coba lagi.'; }
+}
 function kdCtlHtml(){
   const t = gpsTrk || {}, ses = gpsSession();
   const fuel = t.fuelCutSource === 'unknown' ? '❔ BBM: belum diketahui' : (t.fuelCut ? '⛔ BBM: TERPUTUS' : '✅ BBM: normal') + (t.fuelCutSource === 'lastCommand' ? ' (perkiraan dari perintah terakhir)' : '');
@@ -2987,6 +3112,7 @@ function kdCtlHtml(){
     + '<button class="btn btn-ghost" data-kd="ctl" data-act="restore"' + (kdCmdBusy ? ' disabled' : '') + '>✅ Pulihkan BBM</button></div>'
     + '<div class="kd-ctl-row"><input id="kdIntervalInput" type="number" inputmode="numeric" min="10" max="86400" value="' + escapeHtml(kdIntervalVal) + '" placeholder="detik"><button class="btn btn-ghost" data-kd="ctl" data-act="interval"' + (kdCmdBusy ? ' disabled' : '') + '>⏱️ Atur rentang (detik)</button></div>'
     + (kdLastReply ? '<div class="field-hint" style="margin-top:8px;word-break:break-word;">' + escapeHtml(kdLastReply) + '</div>' : '')
+    + (kdLastDiag ? '<button class="btn btn-ghost" style="margin-top:6px;width:100%;" data-kd="copydiag">📋 Salin diagnostik (untuk perbaikan endpoint)</button>' : '')
     + '<div class="field-hint warn">Putus BBM hanya saat kendaraan diam &amp; aman.</div>'
     + '<div style="font-size:12px;margin-top:8px;color:var(--ink-soft);display:flex;justify-content:space-between;gap:8px;align-items:center;"><span>🔐 Sesi aktif sampai ' + new Date(ses.exp).toLocaleDateString('id-ID') + '</span><span><button class="link-btn" data-kd="resetkey">Buat ulang kunci</button> · <button class="link-btn rose" data-kd="logout">Keluar</button></span></div>'
     + '</div>';
@@ -3096,7 +3222,7 @@ function renderKendaraan(){
     h += '<div class="loc-card"><div style="font-weight:700;margin-bottom:4px;">Riwayat titik (sesi ini)</div>' + rows
       + '<div style="font-size:11px;color:var(--ink-soft);margin-top:6px;">Kalau kendaraan diam tapi titiknya terus bergeser puluhan meter, sinyal GPS tracker kurang bagus.</div></div>';
   }
-  h += kdCtlHtml() + '<div id="kdHistSlot"></div>' + kdAlarmsHtml() + kdSmsHtml() + kdCmdHtml();
+  h += kdCtlHtml() + '<div id="kdAudSlot"></div><div id="kdHistSlot"></div>' + kdAlarmsHtml() + kdSmsHtml() + kdCmdHtml();
   if(gpsInfo){
     const rows = Object.entries(gpsInfo).map(([k, v])=>k + ' = ' + (v && typeof v === 'object' ? JSON.stringify(v) : v)).join('\n');
     h += '<details class="loc-card"><summary style="font-weight:700;cursor:pointer;">Info perangkat (dari portal)</summary><pre class="kd-raw">' + escapeHtml(rows || '(kosong)') + '</pre></details>';
@@ -3107,6 +3233,7 @@ function renderKendaraan(){
   h += '<details class="loc-card"><summary style="font-weight:700;cursor:pointer;">Data mentah dari tracker</summary><pre class="kd-raw">' + escapeHtml(raw || '(kosong)') + '</pre></details>';
   el.innerHTML = h;
   kdHistAttach();
+  kdAudAttach();
 }
 document.getElementById('kdBody').addEventListener('input', (e)=>{ if(e.target && e.target.id === 'kdIntervalInput') kdIntervalVal = e.target.value; });
 document.getElementById('kdBody').addEventListener('change', (e)=>{
@@ -3122,6 +3249,7 @@ document.getElementById('kdBody').addEventListener('click', async (e)=>{
   if(act === 'setup'){ kdTotpSetup(); return; }
   if(act === 'resetkey'){ kdResetKey(); return; }
   if(act === 'cancelsetup'){ kdSetupMode = false; renderKendaraan(); return; }
+  if(act === 'copydiag'){ try{ await navigator.clipboard.writeText(kdLastDiag); showToast('Diagnostik tersalin 📋'); }catch(err){ showToast('Gagal menyalin', true); } return; }
   if(act === 'copykey'){ try{ await navigator.clipboard.writeText(kdSetup ? kdSetup.secret : ''); showToast('Kunci tersalin 📋'); }catch(err){ showToast('Gagal menyalin, salin manual', true); } return; }
   if(act === 'logout'){ kdLogout(); return; }
   if(act === 'cmd'){ kdCmdSend(b.dataset.cmd); return; }
@@ -6127,7 +6255,7 @@ function mkIcon(kind){
 function mkToolsHtml(withAdd){
   return `<button type="button" data-mk="style" aria-label="Ganti gaya peta" title="Gaya peta">🗺️</button>
     <button type="button" data-mk="sig" aria-label="Lampu lalu lintas" title="Lampu lalu lintas">🚦</button>
-    <button type="button" data-mk="cctv" aria-label="CCTV" title="CCTV">📹</button>${withAdd ? '<button type="button" data-mk="add" aria-label="Tambah CCTV" title="Tambah CCTV">➕</button>' : ''}`;
+    <button type="button" data-mk="cctv" aria-label="CCTV" title="CCTV">📹</button><button type="button" data-mk="pub" aria-label="CCTV publik live" title="CCTV publik (live)">📺</button>${withAdd ? '<button type="button" data-mk="add" aria-label="Tambah CCTV" title="Tambah CCTV">➕</button>' : ''}`;
 }
 function mkAttach(map, key){
   const c = { map, key, styleI:0, base:null, on:{ sig:true, cctv:true }, sig:L.layerGroup().addTo(map), cam:L.layerGroup().addTo(map), cctv:L.layerGroup().addTo(map), t:null, hint:null };
@@ -6140,6 +6268,7 @@ function mkAttach(map, key){
   mkApplyStyle(c, false);
   map.on('moveend', ()=>{ clearTimeout(c.t); c.t = setTimeout(()=>mkRefresh(c), 700); });
   MKS.push(c);
+  if(window.CctvPublic) CctvPublic.attach(map, { workerUrl: GPS_WORKER_URL, control:false, onStatus:(m, err)=>showToast(m, !!err) });
   mkDrawCctv(c);
   setTimeout(()=>mkRefresh(c), 400);
   return c;
@@ -6212,7 +6341,7 @@ function mkDrawCctv(c){
 }
 function mkRedrawAll(){ MKS.forEach(mkDrawCctv); }
 function mkSyncButtons(box, c){
-  box.querySelectorAll('[data-mk="sig"],[data-mk="cctv"]').forEach(b=>b.classList.toggle('on', !!c.on[b.dataset.mk]));
+  box.querySelectorAll('[data-mk="sig"],[data-mk="cctv"],[data-mk="pub"]').forEach(b=>b.classList.toggle('on', b.dataset.mk === 'pub' ? !!(window.CctvPublic && CctvPublic.isOn(c.map)) : !!c.on[b.dataset.mk]));
 }
 function mkBindTools(box, c, extra){
   if(!box) return;
@@ -6227,6 +6356,10 @@ function mkBindTools(box, c, extra){
       c.on[k] = !c.on[k]; locStore('mk_on_' + k, c.on[k] ? 'on' : 'off');
       mkSyncButtons(box, c); mkDrawCctv(c); mkRefresh(c);
       showToast((k === 'sig' ? 'Lampu lalu lintas: ' : 'CCTV: ') + (c.on[k] ? 'tampil' : 'sembunyi'));
+    }
+    else if(k === 'pub'){
+      if(!window.CctvPublic){ showToast('Modul CCTV publik belum termuat, muat ulang halaman', true); return; }
+      CctvPublic.toggle(c.map); mkSyncButtons(box, c);
     }
     else if(extra) extra(k);
   });
