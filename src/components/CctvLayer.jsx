@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import CctvPlayerModal from "./CctvPlayerModal";
-import { CCTV_ATCS, CCTV_GROUPS, filterCctv } from "../data/cctvAtcsData";
+import { CCTV_ATCS, CCTV_GROUPS, filterCctv, hasLive } from "../data/cctvAtcsData";
 
 const SRC = "cctv-atcs";
 const L_HALO = "cctv-atcs-halo";
@@ -20,7 +20,7 @@ const toGeoJson = (list) => ({
   type: "FeatureCollection",
   features: list.map((c) => ({
     type: "Feature",
-    properties: { id: c.id, live: c.streamUrl ? 1 : 0 },
+    properties: { id: c.id, live: hasLive(c) ? 1 : 0 },
     geometry: { type: "Point", coordinates: [c.lng, c.lat] },
   })),
 });
@@ -151,10 +151,10 @@ export default function CctvLayer({ map, ready, onFocusCamera, className = "left
               {list.map((c) => (
                 <li key={c.id}>
                   <button type="button" onClick={() => { if (!enabled) setEnabled(true); focusOn(c); }} className="flex min-h-11 w-full items-center gap-2 rounded-lg px-2 text-left active:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-600">
-                    <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${c.streamUrl ? "bg-red-600" : "bg-slate-500"}`} aria-hidden="true" />
+                    <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${hasLive(c) ? "bg-red-600" : "bg-slate-500"}`} aria-hidden="true" />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium text-slate-900">{c.nama}</span>
-                      <span className="block truncate text-xs text-slate-600">{c.wilayah}</span>
+                      <span className="block truncate text-xs text-slate-600">{c.wilayah}{c.feeds && c.feeds.length > 1 ? ` • ${c.feeds.length} kamera` : ""}</span>
                     </span>
                   </button>
                 </li>
