@@ -38,14 +38,20 @@
   var STATIC_URL = 'cctv-data.json';              // dataset statis ~23 ribu titik (dibuat tools/build-cctv-data.py)
   // Sebagian kamera di dataset memakai alamat relatif "/api/proxy/cctv/..." milik situs ATCS Indonesia.
   // Awalan ini ditambahkan agar jadi URL penuh. Ganti bila proxy-nya berada di host lain (atau lewat opsi attach({proxyBase})).
-  var PROXY_BASE = 'https://atcsindonesia.com';
+  // Host kandidat untuk alamat relatif "/api/proxy/cctv/..." (dicoba berurutan; yang berhasil diingat di localStorage).
+  var PROXY_BASES = ['https://atcsindonesia.info', 'https://atcsindonesia.com'];
+  var LS_BASE_KEY = 'cctv_rel_base_v1';
   var MAX_SINGLE = 2500;                         // batas marker tunggal di layar
   var CLUSTER_PX = 56;                           // ukuran sel pengelompokan (piksel)
 
   var WORKER = '';               // alamat Worker (diisi attach); dipakai untuk /api/proxy-cctv
   var states = new Map();        // map -> state
   var shared = { data: null, at: 0, promise: null };
-  var stat = { cams: null, promise: null };   // dataset statis (diunduh sekali)
+  var stat = { cams: null, promise: null };
+  function relBases() {
+    var b = ''; try { b = global.localStorage.getItem(LS_BASE_KEY) || ''; } catch (e) {}
+    return b && PROXY_BASES.indexOf(b) >= 0 ? [b].concat(PROXY_BASES.filter(function (x) { return x !== b; })) : PROXY_BASES.slice();
+  }   // dataset statis (diunduh sekali)
   var active = null;             // pemutar yang sedang aktif { destroy() }
 
   /* ---------- util ---------- */
@@ -72,7 +78,7 @@
       '.cpv-ico.hls,.cpv-ico.image,.cpv-ico.video,.cpv-ico.iframe,.cpv-ico.auto{background:#fee2e2;border-color:#dc2626}.cpv-ico.off{background:#e5e7eb;border-color:#9ca3af;opacity:.7;filter:grayscale(1)}',
       '.cpv-cl{display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(220,38,38,.9);color:#fff;font:700 12px system-ui,sans-serif;border:3px solid rgba(255,255,255,.95);box-shadow:0 2px 8px rgba(0,0,0,.45)}',
       '.cpv-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}',
-      '.cpv-idle{display:flex;flex-direction:column;align-items:center;gap:10px;padding:22px 12px;text-align:center;font-size:12px;line-height:1.4;color:#475569;background:#f1f5f9;border-radius:12px}.cpv-warn{font-size:11px;color:#92400e;background:#fef3c7;border-radius:8px;padding:6px 8px;margin-top:6px}.cpv-ico.windy{background:#e0f2fe;border-color:#0284c7}.cpv-ico.portal{background:#f1f5f9;border-color:#64748b}',
+      '.cpv-idle{display:flex;flex-direction:column;align-items:center;gap:10px;padding:22px 12px;text-align:center;font-size:12px;line-height:1.4;color:#475569;background:#f1f5f9;border-radius:12px}.cpv-msg small{white-space:pre-line;word-break:break-word}.cpv-warn{font-size:11px;color:#92400e;background:#fef3c7;border-radius:8px;padding:6px 8px;margin-top:6px}.cpv-ico.windy{background:#e0f2fe;border-color:#0284c7}.cpv-ico.portal{background:#f1f5f9;border-color:#64748b}',
       '.cpv-pop .leaflet-popup-content{margin:10px;width:min(320px,calc(100vw - 80px))!important}',
       '.cpv-box{font:14px/1.35 system-ui,sans-serif;color:#111827}',
       '.cpv-title{font-weight:700;margin:0 24px 2px 0}.cpv-sub{font-size:12px;color:#4b5563;margin-bottom:8px}',
@@ -218,6 +224,50 @@
   }
 
 
+  // ---- Periksa alamat kamera lewat proxy: tahu persis kenapa gagal & host mana yang benar ----
+  function hostOf(u) { return String(u).replace(/^https?:\/\//, '').split('/')[0]; }
+  function probe(url) {
+    var ctl = new AbortController(), t = setTimeout(function () { ctl.abort(); }, 9000);
+    return fetch(proxify(url), { cache: 'no-store', signal: ctl.signal }).then(function (r) {
+      var ct = (r.headers.get('content-type') || '').toLowerCase();
+      if (!r.ok) {
+        clearTimeout(t);
+        return r.json().then(function (j) {
+          var msg = (j && j.error) || ('HTTP ' + r.status);
+          if (r.status === 404 && !/server kamera/.test(msg)) msg += ' (bila bukan dari server kamera: Worker belum memakai entry.js)';
+          return { ok: false, reason: msg };
+        }, function () { return { ok: false, reason: 'HTTP ' + r.status }; });
+      }
+      if (/^image\/|multipart\//.test(ct)) { clearTimeout(t); try { r.body.cancel(); } catch (e) {} return { ok: true, kind: 'image' }; }
+      return r.text().then(function (txt) {
+        clearTimeout(t);
+        if (txt.replace(/^\uFEFF/, '').trimStart().indexOf('#EXTM3U') === 0) return { ok: true, kind: 'hls' };
+        return { ok: false, reason: 'balasan bukan stream (' + (ct.split(';')[0] || 'tanpa tipe') + ')' };
+      });
+    }).catch(function (e) {
+      clearTimeout(t);
+      return { ok: false, net: true, reason: e && e.name === 'AbortError' ? 'waktu habis (9 dtk)' : 'Worker tidak dapat dijangkau (belum ter-deploy, ALLOW_ORIGIN tidak cocok, atau diblokir CORS)' };
+    });
+  }
+  function resolveCam(cam) {
+    if (cam.resolved) return Promise.resolve(cam.resolved);
+    var cands = cam.relPath ? relBases().map(function (b) { return b + cam.relPath; }) : [cam.streamUrl], i = 0, fails = [];
+    function next() {
+      if (i >= cands.length) return Promise.resolve({ ok: false, reason: fails.join('\n') });
+      var u = cands[i++];
+      return probe(u).then(function (r) {
+        if (r.ok) {
+          cam.streamUrl = u; cam.streamUrls = [u]; cam.resolved = r;
+          if (cam.relPath) { try { global.localStorage.setItem(LS_BASE_KEY, u.slice(0, u.length - cam.relPath.length)); } catch (e) {} }
+          return r;
+        }
+        fails.push(hostOf(u) + ' → ' + r.reason);
+        return r.net ? { ok: false, reason: fails.join('\n') } : next();       // Worker tak terjangkau: percuma coba host lain
+      });
+    }
+    return next();
+  }
+
   function mountImage(cam, stage, onFail) {
     var raw = cam.streamUrl, url = proxify(raw), dead = false, timer = null;
     var snap = /\.(jpe?g|png)(\?|$)|\/img\?/i.test(raw);            // snapshot: segarkan berkala; selain itu MJPEG (mengalir sendiri)
@@ -263,33 +313,37 @@
       disposers.push(mountIframe(stage, cam.embedUrl, cam.title));
     }
 
+    function onHlsFail() {
+      // semua kandidat HLS gagal: tawarkan pemutar embed resmi
+      if (https(cam.embedUrl) && rowHolder && !rowHolder.querySelector('[data-embed]')) {
+        var b = btn('Coba pemutar embed resmi', function () { showEmbedFallback(); b.remove(); }); b.setAttribute('data-embed', '1');
+        rowHolder.insertBefore(b, rowHolder.firstChild);
+      }
+    }
+    function startProbed() {
+      var my = stage;
+      message(stage, 'Memeriksa kamera…', '', true);
+      resolveCam(cam).then(function (r) {
+        if (cleaned || stage !== my) return;                        // sudah ditutup/dihentikan selagi memeriksa
+        if (!r.ok) { message(stage, 'Kamera tidak dapat dibuka', r.reason); return; }
+        var m = stage.querySelector('.cpv-msg'); if (m) m.remove();
+        if (r.kind === 'image') disposers.push(mountImage(cam, stage, null));
+        else disposers.push(mountHls({ title: cam.title, streamUrls: [cam.streamUrl] }, stage, onHlsFail));
+      });
+    }
+
     // ---- pemutar menurut tipe (dipanggil setiap kali pemutaran dimulai) ----
     if (type === 'windy' && windyHost(cam.playerUrl)) {
       starter = function () { disposers.push(mountIframe(stage, cam.playerUrl, cam.title)); };
       var win = https(cam.portalUrl);
       rowHolder = el('div', 'cpv-note', 'Sumber: ' + (win ? '<a href="' + esc(win) + '" target="_blank" rel="noopener noreferrer">Windy Webcams ↗</a>' : 'Windy Webcams'));
     } else if (type === 'hls') {
-      starter = function () {
-        disposers.push(mountHls(cam, stage, function () {
-          // semua kandidat HLS gagal: tawarkan pemutar embed resmi
-          if (https(cam.embedUrl) && rowHolder && !rowHolder.querySelector('[data-embed]')) {
-            var b = btn('Coba pemutar embed resmi', function () { showEmbedFallback(); b.remove(); }); b.setAttribute('data-embed', '1');
-            rowHolder.insertBefore(b, rowHolder.firstChild);
-          }
-        }));
-      };
+      starter = cam.relPath ? startProbed : function () { disposers.push(mountHls(cam, stage, onHlsFail)); };
     } else if (type === 'iframe' && https(cam.embedUrl)) {
       starter = function () { disposers.push(mountIframe(stage, cam.embedUrl, cam.title)); };
     } else if ((type === 'image' || type === 'auto') && https(cam.streamUrl)) {
-      starter = function () {
-        if (type === 'auto') {
-          // "auto" = format tak dikenal (mis. balitower-m): coba HLS lewat proxy dulu, bila gagal coba sebagai gambar/MJPEG
-          disposers.push(mountHls({ title: cam.title, streamUrls: [cam.streamUrl] }, stage, function () {
-            var m = stage.querySelector('video'); if (m) m.remove();
-            disposers.push(mountImage(cam, stage, null));
-          }));
-        } else disposers.push(mountImage(cam, stage, null));
-      };
+      // alamat relatif / format tak dikenal: periksa dulu lewat proxy, lalu pilih pemutar yang cocok (HLS atau gambar/MJPEG)
+      starter = (cam.relPath || type === 'auto') ? startProbed : function () { disposers.push(mountImage(cam, stage, null)); };
     } else if (type === 'video' && https(cam.streamUrl)) {
       starter = function () { disposers.push(mountVideo(cam, stage)); };
     }
@@ -345,12 +399,12 @@
     var S = d.S, n = d.count, out = new Array(n), TYPE = { h: 'hls', y: 'iframe', e: 'iframe', i: 'image', v: 'video', a: 'auto', p: 'portal' };
     for (var i = 0; i < n; i++) {
       var k = d.k.charAt(i), f = d.f[i], u = d.u[i] || '', type = TYPE[k] || 'portal';
-      if (u && u.charAt(0) === '/') u = proxyBase + u;
+      var rel = ''; if (u && u.charAt(0) === '/') { rel = u; u = proxyBase + u; }
       var pu = d.pu[i] >= 0 ? S[d.pu[i]] : null, reg = [d.ci[i] >= 0 ? S[d.ci[i]] : '', d.pr[i] >= 0 ? S[d.pr[i]] : ''].filter(Boolean);
       if (reg.length === 2 && reg[0] === reg[1]) reg.pop();
       var st = d.s.charAt(i);
       out[i] = {
-        id: 's:' + d.i[i], title: d.t[i], lat: d.la[i], lng: d.ln[i], sourceType: type,
+        relPath: rel, id: 's:' + d.i[i], title: d.t[i], lat: d.la[i], lng: d.ln[i], sourceType: type,
         streamUrl: u, streamUrls: type === 'hls' ? [u] : [], embedUrl: type === 'iframe' ? u : null,
         portalUrl: https(pu), provider: d.so[i] >= 0 ? S[d.so[i]] : '', region: reg.join(', '),
         approx: !!(f & 1), needsHeaders: !!(f & 2), status: st === '1' ? 'offline' : st === '0' ? 'live' : '', note: d.n[i] >= 0 ? S[d.n[i]] : ''
@@ -431,7 +485,7 @@
   function load(st, force) {
     st.loading = true;
     var pw = fetchCams(st.opts.workerUrl, force).then(function (j) { return { j: j }; }, function (e) { return { err: e }; });
-    var ps = fetchStatic(st.opts.dataUrl || STATIC_URL, st.opts.proxyBase || PROXY_BASE).then(function (c) { return { cams: c }; }, function (e) { return { err: e }; });
+    var ps = fetchStatic(st.opts.dataUrl || STATIC_URL, st.opts.proxyBase || relBases()[0]).then(function (c) { return { cams: c }; }, function (e) { return { err: e }; });
     return Promise.all([pw, ps]).then(function (r) {
       st.loading = false; if (!st.on) return;
       var wj = r[0].j, sc = r[1].cams, cams = [], seen = new Set();
