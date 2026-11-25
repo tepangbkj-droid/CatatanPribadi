@@ -3,7 +3,7 @@
 // Menambah dua endpoint publik, selebihnya diteruskan apa adanya ke index.js (tidak diubah):
 //
 //   GET /api/proxy-cctv?url=<URL stream/gambar/segmen>
-//       Proxy HLS. Menyuntikkan Referer + Origin atcsindonesia.com, lalu untuk playlist .m3u8
+//       Proxy HLS. Menyuntikkan Referer + Origin (atcsindonesia.com; untuk host atcsindonesia.info/.com: origin host itu), lalu untuk playlist .m3u8
 //       menulis ulang semua URL di dalamnya (segmen .ts/.m4s, sub-playlist, #EXT-X-KEY, #EXT-X-MAP,
 //       #EXT-X-MEDIA ...) agar ikut lewat proxy ini. Segmen & gambar dialirkan (streaming).
 //   GET /api/cctv-points?bbox=S,W,N,E
@@ -26,6 +26,13 @@ import base from "./index.js";
 const REFERER = "https://atcsindonesia.com/";
 const ORIGIN = "https://atcsindonesia.com";
 const UA = "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36";
+// Referer/Origin yang dikirim ke server kamera: bawaan atcsindonesia.com; untuk host atcsindonesia.info/.com dipakai origin host itu
+// sendiri (jalur /api/proxy/... hanya menerima Referer dari situsnya). Bisa dipaksa lewat variabel CCTV_REFERER.
+function refererFor(env, target) {
+  if (env.CCTV_REFERER) { try { const o = new URL(env.CCTV_REFERER); return { referer: o.origin + "/", origin: o.origin }; } catch (err) { /* abaikan */ } }
+  if (/(^|\.)atcsindonesia\.(info|com)$/i.test(target.hostname)) return { referer: target.origin + "/", origin: target.origin };
+  return { referer: REFERER, origin: ORIGIN };
+}
 const UPSTREAM_TIMEOUT_MS = 15000;
 const SNIFF_MAX_BYTES = 3 * 1024 * 1024;
 
@@ -145,8 +152,8 @@ async function handleProxy(req, env) {
 
   const headers = new Headers({
     "user-agent": UA,
-    referer: REFERER,
-    origin: ORIGIN,
+    referer: refererFor(env, target).referer,
+    origin: refererFor(env, target).origin,
     accept: req.headers.get("accept") || "*/*",
     "accept-language": "id-ID,id;q=0.9,en;q=0.8",
   });

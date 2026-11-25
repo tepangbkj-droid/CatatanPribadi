@@ -33,7 +33,7 @@ IMEI = "868720062744036"
 # Segmen/CDN di host lain akan ditolak dengan pesan "host tidak ada di daftar CCTV_PROXY_HOSTS: <host>" -> tambahkan host itu di sini.
 # Proxy juga hanya melayani permintaan yang Origin/Referer-nya sama dengan ALLOW_ORIGIN (di atas).
 CCTV_PROXY_HOSTS = """\
-  atcsindonesia.com,balitower.co.id,jasamarga.com,acehtengahkab.go.id,app-intracs.co.id,\
+  atcsindonesia.com,atcsindonesia.info,balitower.co.id,jasamarga.com,acehtengahkab.go.id,app-intracs.co.id,\
   badilag.net,balangankab.go.id,bandaacehkota.info,bandung.go.id,bandungkab.go.id,\
   banggaikab.go.id,bangkalankab.go.id,banjarbarukota.go.id,banjarkota.go.id,\
   banjarmasinkota.go.id,bantenprov.go.id,bantulkab.go.id,banyuasinkab.go.id,banyumaskab.go.id,\
