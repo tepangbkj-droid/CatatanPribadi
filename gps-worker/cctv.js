@@ -7,7 +7,10 @@
 //   2. JakCCTV resmi Pemprov DKI (jakcctv.jakarta.go.id/publik/data?q=&page=1..7) -> "hls"
 //      URL Balitower/Flussonic ".../embed.html" otomatis diubah ke ".../index.m3u8" (siap Hls.js).
 //      Hasil digabung (nama, lat, lng, URL) lalu di-cache 30 menit (Cache API + memori isolate).
-//      Bila JakCCTV gagal / kosong: pakai cache lama (stale), terakhir titik statis dki(...) di bawah.
+//      Katalog 52 kamera sudah tertanam (JAK_CATALOG) sebagai data dasar; scraping live hanya menambah kamera baru.
+//      Format portal: { cards, pagination, count, total }. Koordinat tidak selalu ada: dicari di data, env.JAKCCTV_COORDS,
+//      lalu tabel patokan bawaan (perkiraan); sisanya tidak digambar (dilaporkan di sources.jakcctv.unplaced).
+//      Bila JakCCTV gagal / kosong: pakai cache lama (stale).
 //   3. Titik statis lokal: stream HLS (.m3u8) -> "hls"; halaman portal resmi -> "portal"
 //   4. (opsional) env.CCTV_EXTRA = JSON array titik tambahan, tanpa perlu ubah kode
 //
@@ -16,6 +19,7 @@
 //                           provider, approx }], sources:{...}, attribution }
 //
 // Query opsional:  ?nearby=lat,lon,radiusKm (default -6.4025,106.7942,50; radius maks 250)   ?windy=0 (lewati Windy)
+//                  env.JAKCCTV_COORDS = JSON {"nama/folder":[lat,lng]} untuk koordinat akurat kamera JakCCTV
 //                  ?jakcctv=0 (lewati JakCCTV)   ?debug=1 (tampilkan diagnosa parsing JakCCTV di sources.jakcctv.diag)
 //
 // Rahasia: env.WINDY_API_KEY (Windy memakai header x-windy-api-key). Kunci TIDAK pernah dikirim ke browser.
@@ -49,32 +53,12 @@ const CORS = {
 // Koordinat dengan approx:true adalah PERKIRAAN. Perbaiki lewat Google Maps (tekan lama di titik -> salin lat,lng).
 const DEPOK_PORTAL = "https://dishub.depok.go.id/cctv";
 const DKI_PORTAL = "https://jakcctv.jakarta.go.id/publik";
-const DKI_HOST = "https://dki-jkt.balitower.co.id:7028";
-
-// Kamera portal publik DKI: pola alamat stream = TEBAKAN pola server Flussonic (belum diuji). Pemutar di aplikasi
-// mencoba semua kandidat, lalu menawarkan pemutar embed resmi dan tombol portal bila semuanya gagal.
-const dki = (id, title, lat, lng, kode, n) => {
-  const base = `${DKI_HOST}/${kode}_CCTV-0${n}`;
-  return {
-    id, title: `${title} (CCTV-0${n})`, lat, lng, sourceType: "hls",
-    streamUrl: `${base}/index.m3u8`, streamUrls: [`${base}/index.m3u8`, `${base}/video.m3u8`],
-    embedUrl: `${base}/embed.html`, portalUrl: DKI_PORTAL, provider: "CCTV Publik DKI Jakarta", approx: true,
-  };
-};
 
 const STATIC_CAMERAS = [
   // --- Kota Depok (portal Dishub) ---
   { id: "depok-margonda-juanda", title: "Simpang Margonda - Juanda, Depok", lat: -6.3896, lng: 106.8226, sourceType: "portal", portalUrl: DEPOK_PORTAL, provider: "ATCS Dishub Kota Depok", approx: true },
   { id: "depok-gdc", title: "Simpang GDC (Grand Depok City), Depok", lat: -6.4148, lng: 106.8665, sourceType: "portal", portalUrl: DEPOK_PORTAL, provider: "ATCS Dishub Kota Depok", approx: true },
-  // --- Jakarta: portal publik DKI (jakcctv.jakarta.go.id/publik) ---
-  dki("dki-gatot-subroto-jpo7-1", "JPO Jl. Gatot Subroto 7", -6.2137, 106.8081, "502045_JKP_POLDA_JPO-JL.-GATOT-SUBROTO-7", 1),
-  dki("dki-gatot-subroto-jpo7-2", "JPO Jl. Gatot Subroto 7", -6.2137, 106.8081, "502045_JKP_POLDA_JPO-JL.-GATOT-SUBROTO-7", 2),
-  dki("dki-gerbang-pemuda-c02-1", "Jl. Gerbang Pemuda C02", -6.2150, 106.8068, "502155_JKP_POLDA_JL.-GERBANG-PEMUDA-C02", 1),
-  dki("dki-gerbang-pemuda-c02-2", "Jl. Gerbang Pemuda C02", -6.2150, 106.8068, "502155_JKP_POLDA_JL.-GERBANG-PEMUDA-C02", 2),
-  dki("dki-gerbang-pemuda-c03-1", "Jl. Gerbang Pemuda C03", -6.2165, 106.8055, "502160_JKP_POLDA_JL.-GERBANG-PEMUDA-C03", 1),
-  dki("dki-gerbang-pemuda-c03-2", "Jl. Gerbang Pemuda C03", -6.2165, 106.8055, "502160_JKP_POLDA_JL.-GERBANG-PEMUDA-C03", 2),
-  dki("dki-gerbang-pemuda-c04-1", "Jl. Gerbang Pemuda C04", -6.2180, 106.8042, "502506_JKP_SATPOL-PP_JL.-GERBANG-PEMUDA-C04", 1),
-  dki("dki-gerbang-pemuda-c04-2", "Jl. Gerbang Pemuda C04", -6.2180, 106.8042, "502506_JKP_SATPOL-PP_JL.-GERBANG-PEMUDA-C04", 2),
+  // Kamera Jakarta diambil otomatis dari portal JakCCTV (lihat fetchJakCCTV); tidak ada titik tebakan lagi.
   // ATCS Bandung / Semarang: tambahkan lewat env CCTV_EXTRA setelah URL .m3u8 resminya Anda verifikasi, contoh:
   // [{"id":"bdg-1","title":"Simpang Dago","lat":-6.8915,"lng":107.6107,"sourceType":"hls","streamUrl":"https://.../index.m3u8","portalUrl":"https://atcs-dishub.bandung.go.id","provider":"ATCS Kota Bandung"}]
 ];
@@ -181,68 +165,79 @@ async function getWindy(env, nearby) {
 }
 
 // ---------- JakCCTV (portal publik Pemprov DKI) ----------
+// Format asli /publik/data?q=&page=N : JSON { cards, pagination, count, total }. Tiap "card" berisi nama lokasi + iframe
+// Balitower (.../embed.html). Portal TIDAK pasti menyertakan koordinat, jadi koordinat dicari berurutan:
+//   1) di data kartu (data-lat/data-lng, lat/lng)  2) env.JAKCCTV_COORDS (milik Anda, akurat)  3) tabel patokan bawaan (perkiraan)
+// Kamera yang koordinatnya tidak ketemu TIDAK digambar di peta (agar tidak salah tempat); namanya dilaporkan di sources.jakcctv.unplaced.
 const jakMem = { t: 0, data: null };   // cache memori isolate (cadangan bila Cache API tidak aktif, mis. di *.workers.dev)
 let jakInflight = null;
 
-const STREAM_RE = /https?:\/\/[^\s"'<>\\]+?\/(?:embed\.html|index\.m3u8|video\.m3u8|[^\s"'<>\\\/]+\.m3u8)(?:\?[^\s"'<>\\]*)?/i;
+const STREAM_RE = /https?:\/\/[^\s"'<>\\]+?\/(?:embed\.html|[^\s"'<>\\\/]+\.m3u8)(?:\?[^\s"'<>\\]*)?/i;
+const unesc = (s) => String(s).replace(/&amp;/g, "&").replace(/&#0?38;/g, "&").replace(/\\\//g, "/");
 
-/** Balitower/Flussonic: ".../embed.html[?...]" -> ".../index.m3u8". URL .m3u8 dibiarkan. Selain itu -> "". */
+/** Balitower/Flussonic: ".../embed.html[?...]" -> ".../index.m3u8". URL .m3u8 dibiarkan. http port 80 dinaikkan ke https. */
 export function toHls(raw) {
   if (raw === null || raw === undefined) return "";
-  const m = String(raw).replace(/&amp;/g, "&").replace(/\\\//g, "/").match(STREAM_RE);
+  const m = unesc(raw).match(STREAM_RE);
   if (!m) return "";
-  const u = m[0];
+  let u = m[0].replace(/^http:\/\/([^\/:]+)(?::80)?(?=\/)/i, "https://$1");
+  // Embed di jakcctv.jakarta.go.id -> stream aslinya di cctv-jsc.balitower.co.id:8011 (terkonfirmasi dari dataset ATCS)
+  u = u.replace(/^https:\/\/jakcctv\.jakarta\.go\.id\/(?=[^\/]+\/embed\.html)/i, "https://cctv-jsc.balitower.co.id:8011/");
   if (/\/embed\.html(?:[?#].*)?$/i.test(u)) return u.replace(/\/embed\.html(?:[?#].*)?$/i, "/index.m3u8");
   return /\.m3u8(?:\?|$)/i.test(u) ? u : "";
 }
 const toEmbed = (raw) => {
-  const m = String(raw || "").replace(/&amp;/g, "&").replace(/\\\//g, "/").match(/https?:\/\/[^\s"'<>\\]+?\/embed\.html(?:\?[^\s"'<>\\]*)?/i);
-  return m ? m[0] : null;
+  const m = unesc(raw || "").match(/https?:\/\/[^\s"'<>\\]+?\/embed\.html(?:\?[^\s"'<>\\]*)?/i);
+  return m ? m[0].replace(/^http:\/\/([^\/:]+)(?::80)?(?=\/)/i, "https://$1") : null;
 };
 
 const pick = (o, keys) => { for (const k of keys) if (o[k] !== undefined && o[k] !== null && o[k] !== "") return o[k]; return undefined; };
-const prettyFolder = (f) => f.replace(/_CCTV-\d+$/i, "").replace(/^\d+_/, "").replace(/_/g, " ").replace(/-/g, " ").replace(/\s+/g, " ").trim();
-const folderOf = (u) => { const m = String(u).match(/\/([^\/?#]+)\/(?:embed\.html|index\.m3u8|video\.m3u8)/i); return m ? decodeURIComponent(m[1]) : ""; };
+const decodeEnt = (s) => String(s).replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#0?39;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+const stripTags = (s) => decodeEnt(String(s).replace(/<(script|style)[\s\S]*?<\/\1>/gi, " ").replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim();
+const prettyFolder = (f) => f.replace(/_CCTV-?\d+$/i, "").replace(/^\d+_(?:JKP_)?(?:POLDA_|SATPOL-PP_|DISHUB_)?/i, "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+const folderOf = (u) => { const m = String(u).match(/\/([^\/?#]+)\/(?:embed\.html|index\.m3u8|video\.m3u8|index\.fmp4\.m3u8)/i); return m ? decodeURIComponent(m[1]) : ""; };
 const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+const normKey = (s) => " " + String(s).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim() + " ";
 
-/** Satu objek mentah JakCCTV -> kamera ternormalisasi, atau { skip: "alasan" }. */
-function mapJakItem(it) {
-  if (!it || typeof it !== "object") return { skip: "bukan objek" };
-  const loc = it.location && typeof it.location === "object" ? it.location : {};
-  let lat = num(pick(it, ["lat", "latitude", "Latitude", "LAT"]) ?? pick(loc, ["lat", "latitude"]));
-  let lng = num(pick(it, ["lng", "lon", "long", "longitude", "Longitude", "LNG"]) ?? pick(loc, ["lng", "lon", "long", "longitude"]));
-  if (!okCoord(lat, lng)) {
-    const ll = String(pick(it, ["latlng", "coordinates", "coordinate", "koordinat", "position"]) || "").match(/(-?\d+\.\d+)\s*[,;\s]\s*(-?\d+\.\d+)/);
-    if (ll) { lat = Number(ll[1]); lng = Number(ll[2]); }
-  }
-  if (!okCoord(lat, lng)) return { skip: "tanpa koordinat" };
-
-  // URL video: kolom yang umum dulu, lalu cari di semua nilai string (mis. potongan <iframe src="...">)
-  let raw = pick(it, ["url", "stream_url", "streamUrl", "embed_url", "embedUrl", "embed", "link", "src", "video", "video_url", "iframe", "cctv_url"]);
-  let hls = toHls(raw);
-  if (!hls) { for (const v of Object.values(it)) { if (typeof v === "string" && (hls = toHls(v))) { raw = v; break; } } }
-  if (!hls) return { skip: "tanpa URL stream" };
-
-  const folder = folderOf(hls);
-  const title = String(pick(it, ["title", "name", "nama", "lokasi", "location_name", "label", "cctv_name", "nama_cctv"]) || (folder ? prettyFolder(folder) : "CCTV DKI Jakarta")).replace(/\s+/g, " ").trim();
-  const rawId = pick(it, ["id", "cctv_id", "camera_id", "kode", "code"]);
-  const idPart = rawId !== undefined ? slug(rawId) : slug(folder || title + "-" + lat.toFixed(4) + "-" + lng.toFixed(4));
-  const cam = normalize({
-    id: "jakcctv-" + idPart, title, lat, lng, sourceType: "hls",
-    streamUrl: hls, streamUrls: [hls], embedUrl: toEmbed(raw) || (toEmbed(Object.values(it).join(" "))),
-    portalUrl: DKI_PORTAL, provider: "CCTV Publik DKI Jakarta", approx: false,
-  });
-  return cam || { skip: "URL/koordinat tidak valid" };
+/** Judul dari potongan HTML satu kartu. */
+function titleFromHtml(chunk) {
+  let m = chunk.match(/<(h[1-6])\b[^>]*>([\s\S]*?)<\/\1>/i); if (m && stripTags(m[2])) return stripTags(m[2]);
+  m = chunk.match(/class=["'][^"']*(?:title|name|nama|lokasi|location)[^"']*["'][^>]*>([\s\S]*?)<\/[a-z0-9]+>/i); if (m && stripTags(m[1])) return stripTags(m[1]);
+  m = chunk.match(/<iframe[^>]*\btitle=["']([^"']+)["']/i) || chunk.match(/\b(?:data-title|data-name|aria-label|alt|title)=["']([^"']{3,})["']/i); if (m) return decodeEnt(m[1]).trim();
+  const t = stripTags(chunk); return t ? t.slice(0, 90) : "";
 }
 
-/** Cari array kamera di dalam JSON (data / data.data / items / cameras / ...). */
+/** String HTML (satu kartu) -> objek mentah. */
+function cardFromHtml(chunk) {
+  const attrs = {}; const re = /\bdata-([\w-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g; let m;
+  while ((m = re.exec(chunk))) attrs[m[1].toLowerCase()] = m[2] !== undefined ? m[2] : m[3];
+  const o = { ...attrs };
+  o.url = (chunk.match(STREAM_RE) || [""])[0];
+  o.title = attrs.title || attrs.name || attrs.nama || titleFromHtml(chunk);
+  return o;
+}
+
+/** Satu string HTML berisi banyak kartu -> potongan per kartu. */
+function splitCards(html) {
+  const n = (html.match(new RegExp(STREAM_RE.source, "gi")) || []).length;
+  if (n <= 1) return [html];
+  const parts = html.split(/(?=<(?:div|article|li|section)\b[^>]*class=["'](?:[^"']*\s)?card(?:\s[^"']*)?["'])/i).filter((p) => STREAM_RE.test(p));
+  if (parts.length >= n && parts.every((p) => (p.match(new RegExp(STREAM_RE.source, "gi")) || []).length === 1)) return parts;
+  const out = []; const re = new RegExp(STREAM_RE.source, "gi"); let prev = 0, mm;   // cadangan: teks sebelum tiap iframe = milik iframe itu
+  while ((mm = re.exec(html))) { const end = html.indexOf(">", mm.index + mm[0].length); const e = end < 0 ? mm.index + mm[0].length : end + 1; out.push(html.slice(prev, e)); prev = e; }
+  return out;
+}
+
+/** Cari array kartu/kamera di dalam JSON. Mengembalikan array objek atau string. */
 function findItems(j) {
   if (Array.isArray(j)) return j;
+  if (typeof j === "string" && /</.test(j)) return splitCards(j);
   if (!j || typeof j !== "object") return null;
-  for (const k of ["data", "items", "cameras", "cctv", "result", "results", "rows", "records"]) {
+  for (const k of ["cards", "data", "items", "cameras", "cctv", "result", "results", "rows", "records", "html"]) {
     const v = j[k];
-    if (Array.isArray(v)) return v;
-    if (v && typeof v === "object") { const r = findItems(v); if (r) return r; }
+    if (v === undefined || v === null) continue;
+    const r = findItems(v);
+    if (r && r.length) return r;
   }
   return null;
 }
@@ -253,20 +248,138 @@ function parseAttrs(tag) {
   return o;
 }
 
-/** Cadangan bila respons bukan JSON: potongan HTML (atribut data-lat/data-lng) atau objek JSON di dalam <script>. */
+/** Cadangan bila respons bukan JSON: HTML langsung. */
 function parseJakHtml(html) {
   const items = [];
-  const tagRe = /<[a-z][^>]*\bdata-(?:lat|latitude)\s*=\s*["'][^"']+["'][^>]*>/gi; let m;
-  while ((m = tagRe.exec(html))) {
-    const attrs = parseAttrs(m[0]);
-    const after = html.slice(m.index + m[0].length, m.index + m[0].length + 1500);
-    if (!attrs.url && !toHls(Object.values(attrs).join(" "))) attrs.url = (after.match(STREAM_RE) || [""])[0];
-    if (!attrs.title && !attrs.name && !attrs.nama) attrs.title = after.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
-    items.push(attrs);
-  }
-  const objRe = /\{[^{}]*["']?(?:lat|latitude)["']?\s*:[^{}]*\}/gi;
-  while ((m = objRe.exec(html))) { try { items.push(JSON.parse(m[0])); } catch (e) { /* bukan JSON valid: lewati */ } }
+  if (STREAM_RE.test(html)) for (const c of splitCards(html)) items.push(cardFromHtml(c));
+  const objRe = /\{[^{}]*["']?(?:lat|latitude)["']?\s*:[^{}]*\}/gi; let m;
+  while ((m = objRe.exec(html))) { try { items.push(JSON.parse(m[0])); } catch (e) { /* bukan JSON valid */ } }
   return items;
+}
+
+/** Satu kartu mentah -> { raw } (koordinat boleh kosong) atau { skip }. */
+function mapJakItem(item) {
+  const it = typeof item === "string" ? cardFromHtml(item) : item;
+  if (!it || typeof it !== "object") return { skip: "bukan objek" };
+  if (Object.values(it).some((v) => typeof v === "string" && /<(iframe|div|a)\b/i.test(v)) && !pick(it, ["title", "name", "nama"])) {
+    for (const v of Object.values(it)) if (typeof v === "string" && /<(iframe|div|a)\b/i.test(v)) { const t = titleFromHtml(v); if (t) { it.title = t; break; } }
+  }
+  const loc = it.location && typeof it.location === "object" ? it.location : {};
+  let lat = num(pick(it, ["lat", "latitude", "Latitude", "LAT"]) ?? pick(loc, ["lat", "latitude"]));
+  let lng = num(pick(it, ["lng", "lon", "long", "longitude", "Longitude", "LNG"]) ?? pick(loc, ["lng", "lon", "long", "longitude"]));
+  if (!okCoord(lat, lng)) {
+    const ll = String(pick(it, ["latlng", "coordinates", "coordinate", "koordinat", "position"]) || "").match(/(-?\d+\.\d+)\s*[,;\s]\s*(-?\d+\.\d+)/);
+    if (ll) { lat = Number(ll[1]); lng = Number(ll[2]); }
+  }
+  const hasCoord = okCoord(lat, lng);
+
+  let raw = pick(it, ["url", "stream_url", "streamUrl", "embed_url", "embedUrl", "embed", "link", "src", "video", "video_url", "iframe", "cctv_url"]);
+  let hls = toHls(raw);
+  if (!hls) { for (const v of Object.values(it)) { if (typeof v === "string" && (hls = toHls(v))) { raw = v; break; } } }
+  if (!hls) return { skip: "tanpa URL stream" };
+  if (!isHttps(hls)) return { skip: "stream bukan https" };
+
+  const folder = folderOf(hls);
+  const title = String(pick(it, ["title", "name", "nama", "lokasi", "location_name", "label", "cctv_name", "nama_cctv"]) || (folder ? prettyFolder(folder) : "CCTV DKI Jakarta")).replace(/\s+/g, " ").trim();
+  const rawId = pick(it, ["id", "cctv_id", "camera_id", "kode", "code"]);
+  const idPart = slug(folder || (rawId !== undefined ? rawId : title));
+  const embed = toEmbed(raw) || toEmbed(Object.values(it).filter((v) => typeof v === "string").join(" "));
+  return { raw: { id: "jakcctv-" + idPart, title, folder, lat: hasCoord ? lat : null, lng: hasCoord ? lng : null, hls, embed } };
+}
+
+// Koordinat per kamera, dikunci dengan ID 6 digit di nama folder stream (nama folder = label teknis kamera yang paling bisa dipercaya;
+// judul di portal untuk ~10 kamera tidak sesuai dengan folder-nya, mis. judul "Pasar Tanah Abang" berfolder "...S.-PARMAN-C02").
+// [lat, lng, akurat]. akurat=true: titik dari registri Balitower. Selain itu PERKIRAAN tingkat ruas jalan (beberapa ratus meter).
+// Sumber: dataset ATCS yang Anda unggah + pengecekan manual; koordinat kamera jakcctv di dataset itu sendiri banyak yang salah
+// (mis. Gatot Subroto 7 CCTV-01 jatuh di Jakarta Timur), jadi hanya yang masuk akal yang dipakai. Perbaiki lewat env.JAKCCTV_COORDS.
+const JAK_COORDS = {
+  502045: [-6.20763, 106.80376],   // JPO Gatot Subroto 7 (Gatsu seberang DPR)
+  502155: [-6.213496, 106.802207], // Gerbang Pemuda C02
+  502160: [-6.213496, 106.802207], // Gerbang Pemuda C03
+  502506: [-6.213496, 106.802207], // Gerbang Pemuda C04
+  502507: [-6.20763, 106.80376],   // Gatot Subroto C11
+  503300: [-6.221569, 106.80987],  // Gatot Subroto C13
+  503303: [-6.221569, 106.80987],  // Gatot Subroto C14
+  503301: [-6.2155, 106.8000],     // Tentara Pelajar C04 (Senayan)
+  503536: [-6.2118, 106.8030],     // Flyover Ladokgi (Senayan, Gatsu x Gerbang Pemuda)
+  502535: [-6.193739, 106.797456], // S. Parman C07 (JKB)
+  502645: [-6.193739, 106.797456], // S. Parman C08 (JKB)
+  501862: [-6.2005, 106.7978],     // S. Parman C01 (JKB)
+  502540: [-6.1860, 106.7940],     // S. Parman C02 (JKB)
+  502491: [-6.195297, 106.823627], // Thamrin C07 (sekitar Bundaran HI)
+  502492: [-6.195297, 106.823627], // Thamrin C08
+  502493: [-6.195297, 106.823627], // Thamrin C09
+  501844: [-6.195297, 106.823627], // Thamrin C01
+  501941: [-6.195297, 106.823627], // Thamrin C02
+  504866: [-6.1935, 106.8236],     // UOB Plaza (Jl. MH Thamrin 10)
+  501478: [-6.2447, 106.7996],     // Taman Literasi (Blok M)
+  501493: [-6.1855, 106.8118],     // Pasar Tanah Abang C02
+  501594: [-6.2100, 106.8480],     // Manggarai Utara 2 C01
+  502041: [-6.1985, 106.8168],     // KH Mas Mansyur C02
+  503343: [-6.1735, 106.8100],     // JPO Cideng Timur C02
+  503675: [-6.186921, 106.807942], // Jati Baru Raya C02
+  501968: [-6.158821, 106.793722], // Simpang Jl Nurdin Raya C01 (JKB)
+  705979: [-6.2235, 106.8015],     // Senayan 018
+  705084: [-6.229418, 106.800027, true], // Senayan 001 (Jl. Sisingamangaraja) - registri Balitower
+  700014: [-6.205555, 106.807644, true], // Bendungan Hilir 003 (Jl. Mesjid 1 / Pejompongan) - registri Balitower
+  700332: [-6.19792, 106.82334],   // Kebon Melati 010
+};
+
+// Patokan umum berdasarkan kata di judul/folder (cadangan untuk kamera BARU dari portal yang belum ada di JAK_COORDS)
+const JAK_ANCHORS = [
+  [["bundaran hi", "bundaran hotel indonesia"], -6.19508, 106.82308],
+  [["uob"], -6.1935, 106.8236],
+  [["sarinah"], -6.1875, 106.8233],
+  [["thamrin"], -6.195297, 106.823627],
+  [["dukuh atas"], -6.2008, 106.8223],
+  [["monas", "medan merdeka"], -6.1754, 106.8272],
+  [["semanggi"], -6.2189, 106.8142],
+  [["gerbang pemuda"], -6.213496, 106.802207],
+  [["ladokgi"], -6.2118, 106.8030],
+  [["gelora", "gbk"], -6.2185, 106.8018],
+  [["senayan"], -6.2262, 106.7992],
+];
+
+function envCoords(env) {
+  if (!env || !env.JAKCCTV_COORDS) return [];
+  try {
+    const j = typeof env.JAKCCTV_COORDS === "string" ? JSON.parse(env.JAKCCTV_COORDS) : env.JAKCCTV_COORDS;
+    return Object.entries(j || {}).map(([k, v]) => {
+      const lat = num(Array.isArray(v) ? v[0] : v && v.lat), lng = num(Array.isArray(v) ? v[1] : v && (v.lng ?? v.lon));
+      return okCoord(lat, lng) ? { key: normKey(k), lat, lng } : null;
+    }).filter(Boolean).sort((a, b) => b.key.length - a.key.length);
+  } catch (e) { return []; }
+}
+
+/** Tentukan koordinat tiap kamera mentah; kembalikan { cams, unplaced }. */
+function resolveCoords(raws, env) {
+  const mine = envCoords(env); const cams = []; const unplaced = []; const seen = new Map();
+  for (const r of raws) {
+    let lat = r.lat, lng = r.lng, approx = false;
+    if (!okCoord(lat, lng)) {
+      const hay = normKey(r.title + " " + r.folder + " " + r.id);
+      const hit = mine.find((e) => hay.includes(e.key));
+      const fid = (String(r.folder).match(/\d{6}/) || [""])[0];
+      const known = JAK_COORDS[fid];
+      if (hit) { lat = hit.lat; lng = hit.lng; }
+      else if (known) { lat = known[0]; lng = known[1]; approx = !known[2]; }
+      else {
+        const a = JAK_ANCHORS.find(([kw]) => kw.some((k) => hay.includes(" " + k + " ")));
+        if (a) { lat = a[1]; lng = a[2]; approx = true; }
+      }
+    }
+    if (!okCoord(lat, lng)) { unplaced.push({ id: r.id, title: r.title, folder: r.folder }); continue; }
+    // beberapa kamera di titik yang sama: sebar sedikit agar penanda tidak menumpuk
+    const k = lat.toFixed(5) + "," + lng.toFixed(5); const n = seen.get(k) || 0; seen.set(k, n + 1);
+    if (n > 0) { const ring = 1 + Math.floor((n - 1) / 6), ang = (n - 1) * (Math.PI / 3); lat += 0.00013 * ring * Math.sin(ang); lng += 0.00013 * ring * Math.cos(ang); }
+    const c = normalize({
+      id: r.id, title: r.title, lat, lng, sourceType: "hls",
+      streamUrl: r.hls, streamUrls: [r.hls, r.hls.replace(/\/index\.m3u8$/, "/index.fmp4.m3u8")],
+      embedUrl: r.embed, portalUrl: DKI_PORTAL, provider: "CCTV Publik DKI Jakarta", approx,
+    });
+    if (c) cams.push(c); else unplaced.push({ id: r.id, title: r.title, folder: r.folder });
+  }
+  return { cams, unplaced };
 }
 
 async function fetchJakPage(page) {
@@ -284,10 +397,15 @@ async function fetchJakPage(page) {
     const text = await r.text();
     if (!r.ok) { info.error = "HTTP " + r.status; info.sample = text.slice(0, 200); return { info, items: [] }; }
     let items = null;
-    try { items = findItems(JSON.parse(text)); } catch (e) { /* bukan JSON */ }
+    try {
+      const j = JSON.parse(text);
+      items = findItems(j);
+      if (j && typeof j === "object") { if (j.total !== undefined) info.total = j.total; if (j.count !== undefined) info.count = j.count; }
+    } catch (e) { /* bukan JSON */ }
     if (!items) { items = parseJakHtml(text); info.mode = "html"; } else info.mode = "json";
     info.items = items.length;
-    if (!items.length) info.sample = text.slice(0, 300);   // bantu diagnosa bila format berubah
+    if (!items.length) info.sample = text.slice(0, 300);                       // bantu diagnosa bila format berubah
+    else if (page === 1) info.cardSample = (typeof items[0] === "string" ? items[0] : JSON.stringify(items[0])).slice(0, 400);
     return { info, items };
   } catch (e) {
     info.error = (e && e.message) || "gagal";
@@ -295,7 +413,7 @@ async function fetchJakPage(page) {
   }
 }
 
-/** Ambil halaman 1..7 paralel, ubah ke HLS, hapus duplikat. */
+/** Ambil halaman 1..7 paralel, ubah ke HLS, hapus duplikat. Koordinat diselesaikan terpisah (resolveCoords). */
 export async function fetchJakCCTV() {
   const pages = await Promise.all(Array.from({ length: JAK_PAGES }, (_, i) => fetchJakPage(i + 1)));
   const byId = new Map(); const skipped = {};
@@ -303,18 +421,91 @@ export async function fetchJakCCTV() {
     for (const it of p.items) {
       const c = mapJakItem(it);
       if (c.skip) { skipped[c.skip] = (skipped[c.skip] || 0) + 1; continue; }
-      if (!byId.has(c.id)) byId.set(c.id, c);
+      if (!byId.has(c.raw.id)) byId.set(c.raw.id, c.raw);
     }
   }
-  const cams = [...byId.values()];
-  const hosts = [...new Set(cams.flatMap((c) => c.streamUrls).map((u) => { try { return new URL(u).origin; } catch (e) { return null; } }).filter(Boolean))];
-  return { cams, diag: { pages: pages.map((p) => p.info), skipped, hosts } };
+  const raws = [...byId.values()];
+  const hosts = [...new Set(raws.map((r) => { try { return new URL(r.hls).origin; } catch (e) { return null; } }).filter(Boolean))];
+  return { raws, diag: { pages: pages.map((p) => p.info), skipped, hosts } };
 }
 
-/** Cache 30 menit: memori isolate -> Cache API (edge) -> fetch ke JakCCTV. Hasil kosong TIDAK di-cache. */
+// Katalog 52 kamera dari portal JakCCTV (salinan /publik/data): [judul, badge, URL embed]. Dipakai sebagai data dasar agar peta
+// tetap terisi walau scraping gagal; hasil scraping live hanya menambah kamera baru. Perbarui bila portal menambah kamera.
+const JAK_CATALOG = [
+  ["JKP POLDA JPO JL. GATOT SUBROTO 7", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/502045_JKP_POLDA_JPO-JL.-GATOT-SUBROTO-7_CCTV-01/embed.html"],
+  ["JKP POLDA JPO JL. GATOT SUBROTO 7", "CCTV-02", "https://dki-jkt.balitower.co.id:7028/502045_JKP_POLDA_JPO-JL.-GATOT-SUBROTO-7_CCTV-02/embed.html"],
+  ["JKP POLDA JL. GERBANG PEMUDA C02", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/502155_JKP_POLDA_JL.-GERBANG-PEMUDA-C02_CCTV-01/embed.html"],
+  ["JKP POLDA JL. GERBANG PEMUDA C02", "CCTV-02", "https://dki-jkt.balitower.co.id:7028/502155_JKP_POLDA_JL.-GERBANG-PEMUDA-C02_CCTV-02/embed.html"],
+  ["JKP POLDA JL. GERBANG PEMUDA C03", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/502160_JKP_POLDA_JL.-GERBANG-PEMUDA-C03_CCTV-01/embed.html"],
+  ["JKP POLDA JL. GERBANG PEMUDA C03", "CCTV-02", "https://dki-jkt.balitower.co.id:7028/502160_JKP_POLDA_JL.-GERBANG-PEMUDA-C03_CCTV-02/embed.html"],
+  ["JKP SATPOL PP JL. GERBANG PEMUDA C04", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/502506_JKP_SATPOL-PP_JL.-GERBANG-PEMUDA-C04_CCTV-01/embed.html"],
+  ["JKP SATPOL PP JL. GERBANG PEMUDA C04", "CCTV-02", "https://dki-jkt.balitower.co.id:7028/502506_JKP_SATPOL-PP_JL.-GERBANG-PEMUDA-C04_CCTV-02/embed.html"],
+  ["JKP SATPOL PP JL. JEND. GATOT SUBROTO C11", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/502507_JKP_SATPOL-PP_JL.-JEND.-GATOT-SUBROTO-C11_CCTV-01/embed.html"],
+  ["JKP SATPOL PP JL. JEND. GATOT SUBROTO C11", "CCTV-02", "https://dki-jkt.balitower.co.id:7028/502507_JKP_SATPOL-PP_JL.-JEND.-GATOT-SUBROTO-C11_CCTV-02/embed.html"],
+  ["JKB SATPOL PP SIMPANG JL. LETJEN. S. PARMAN C07", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/502535_JKB_SATPOL-PP_SIMPANG-JL.-LETJEN.-S.-PARMAN-C07_CCTV-01/embed.html"],
+  ["JKB SATPOL PP SIMPANG JL. LETJEN. S. PARMAN C07", "CCTV-02", "https://dki-jkt.balitower.co.id:7028/502535_JKB_SATPOL-PP_SIMPANG-JL.-LETJEN.-S.-PARMAN-C07_CCTV-02/embed.html"],
+  ["JKB SATPOL PP SIMPANG JL. LETJEN. S. PARMAN C08", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/502645_JKB_SATPOL-PP_SIMPANG-JL.-LETJEN.-S.-PARMAN-C08_CCTV-01/embed.html"],
+  ["JKB SATPOL PP SIMPANG JL. LETJEN. S. PARMAN C08", "CCTV-02", "https://dki-jkt.balitower.co.id:7028/502645_JKB_SATPOL-PP_SIMPANG-JL.-LETJEN.-S.-PARMAN-C08_CCTV-02/embed.html"],
+  ["JKP POLDA JL. JEND. GATOT SUBROTO C13", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/503300_JKP_POLDA_JL.-JEND.-GATOT-SUBROTO-C13_CCTV-01/embed.html"],
+  ["JKP POLDA JL. JEND. GATOT SUBROTO C13", "CCTV-02", "https://dki-jkt.balitower.co.id:7028/503300_JKP_POLDA_JL.-JEND.-GATOT-SUBROTO-C13_CCTV-02/embed.html"],
+  ["JKP POLDA JL. TENTARA PELAJAR C04", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/503301_JKP_POLDA_JL.-TENTARA-PELAJAR-C04_CCTV-01/embed.html"],
+  ["JKP POLDA JL. TENTARA PELAJAR C04", "CCTV-02", "https://dki-jkt.balitower.co.id:7028/503301_JKP_POLDA_JL.-TENTARA-PELAJAR-C04_CCTV-02/embed.html"],
+  ["JKP POLDA JL. JEND. GATOT SUBROTO C14", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/503303_JKP_POLDA_JL.-JEND.-GATOT-SUBROTO-C14_CCTV-01/embed.html"],
+  ["JKP POLDA JL. JEND. GATOT SUBROTO C14", "CCTV-02", "https://dki-jkt.balitower.co.id:7028/503303_JKP_POLDA_JL.-JEND.-GATOT-SUBROTO-C14_CCTV-02/embed.html"],
+  ["JKP DBM FLYOVER LADOKGI C01", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/503536_JKP_DBM_FLYOVER-LADOKGI-C01_CCTV-01/embed.html"],
+  ["JKP DBM FLYOVER LADOKGI C01", "CCTV-02", "https://dki-jkt.balitower.co.id:7028/503536_JKP_DBM_FLYOVER-LADOKGI-C01_CCTV-02/embed.html"],
+  ["JKP SATPOL PP SIMPANG JL. MH. THAMRIN C07", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/502491_JKP_SATPOL-PP_SIMPANG-JL.-MH.-THAMRIN-C07_CCTV-01/embed.html"],
+  ["JKP SATPOL PP SIMPANG JL. MH. THAMRIN C07", "CCTV-02", "https://dki-jkt.balitower.co.id:7028/502491_JKP_SATPOL-PP_SIMPANG-JL.-MH.-THAMRIN-C07_CCTV-02/embed.html"],
+  ["JKP SATPOL PP SIMPANG JL. MH. THAMRIN C08", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/502492_JKP_SATPOL-PP_SIMPANG-JL.-MH.-THAMRIN-C08_CCTV-01/embed.html"],
+  ["JKP SATPOL PP SIMPANG JL. MH. THAMRIN C08", "CCTV-02", "https://dki-jkt.balitower.co.id:7028/502492_JKP_SATPOL-PP_SIMPANG-JL.-MH.-THAMRIN-C08_CCTV-02/embed.html"],
+  ["JKP DISHUB JL. MH. THAMRIN C01", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/501844_JKP_DISHUB_JL.-MH.-THAMRIN-C01_CCTV-01/embed.html"],
+  ["JKP DISHUB JL. MH. THAMRIN C01", "CCTV-02", "https://dki-jkt.balitower.co.id:7028/501844_JKP_DISHUB_JL.-MH.-THAMRIN-C01_CCTV-02/embed.html"],
+  ["JKP SATPOLPP JL. MH. THAMRIN C02", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/501941_JKP_SATPOLPP_JL.-MH.-THAMRIN-C02_CCTV-01/embed.html"],
+  ["JKP SATPOLPP JL. MH. THAMRIN C02", "CCTV-02", "https://dki-jkt.balitower.co.id:7028/501941_JKP_SATPOLPP_JL.-MH.-THAMRIN-C02_CCTV-02/embed.html"],
+  ["JKP SATPOL PP SIMPANG JL. MH. THAMRIN C09", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/502493_JKP_SATPOL-PP_SIMPANG-JL.-MH.-THAMRIN-C09_CCTV-01/embed.html"],
+  ["JKP SATPOL PP SIMPANG JL. MH. THAMRIN C09", "CCTV-02", "https://dki-jkt.balitower.co.id:7028/502493_JKP_SATPOL-PP_SIMPANG-JL.-MH.-THAMRIN-C09_CCTV-02/embed.html"],
+  ["JKP POLRI UOB PLAZA C01", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/504866_JKP_POLRI_UOB-PLAZA-C01_CCTV-01/embed.html"],
+  ["JKP POLRI UOB PLAZA C01", "CCTV-02", "https://dki-jkt.balitower.co.id:7028/504866_JKP_POLRI_UOB-PLAZA-C01_CCTV-02/embed.html"],
+  ["JKP POLRI UOB PLAZA C01", "CCTV-03", "https://dki-jkt.balitower.co.id:7028/504866_JKP_POLRI_UOB-PLAZA-C01_CCTV-03/embed.html"],
+  ["Taman Literasi-C01", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/501478_JKS_SATPOLPP_TAMAN-LITERASI-C01_CCTV-01/embed.html"],
+  ["Simpang Jl. Panglima Polim-C01", "CCTV-02", "https://dki-jkt.balitower.co.id:7028/501493_JKP_SATPOLPP_PASAR-TANAH-ABANG-C02_CCTV-02/embed.html"],
+  ["Jl. Sultan Agung-C03", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/501594_JKS_DISGULKARMAT_JL.-MANGGARAI-UTARA-2-C01_CCTV-01/embed.html"],
+  ["Simpang Jl. Sultan Agung-C01", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/501862_JKB_DISHUB_JL.-LETJEN.-S.-PARMAN-C01_CCTV-01/embed.html"],
+  ["Simpang Jl. Sultan Agung-C01", "CCTV-03", "https://dki-jkt.balitower.co.id:7028/501862_JKB_DISHUB_JL.-LETJEN.-S.-PARMAN-C01_CCTV-03/embed.html"],
+  ["Simpang Jl. Sultan Agung-C02", "CCTV-02", "https://dki-jkt.balitower.co.id:7028/502041_JKP_POLDA_JL.-KH.-MAS-MANSYUR-C02_CCTV-02/embed.html"],
+  ["Pasar Tanah Abang-C02", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/502540_JKB_SATPOL-PP_SIMPANG-JL.-LETJEN.-S.-PARMAN-C02_CCTV-01/embed.html"],
+  ["Pasar Tanah Abang-C02", "CCTV-02", "https://dki-jkt.balitower.co.id:7028/502540_JKB_SATPOL-PP_SIMPANG-JL.-LETJEN.-S.-PARMAN-C02_CCTV-02/embed.html"],
+  ["Jl. KH. Mas Mansyur-C02", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/503343_JKP_DBM_JPO-JL.-CIDENG-TIMUR-C02_CCTV-01/embed.html"],
+  ["Jl. KH. Mas Mansyur-C02", "CCTV-02", "https://dki-jkt.balitower.co.id:7028/503343_JKP_DBM_JPO-JL.-CIDENG-TIMUR-C02_CCTV-02/embed.html"],
+  ["Jl. Jati Baru Raya-C02", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/503675_JKP_BAKESBANGPOL_JL.-JATI-BARU-RAYA-C02_CCTV-01/embed.html"],
+  ["Simpang Jl Nurdin Raya C01", "CCTV-01", "https://dki-jkt.balitower.co.id:7028/501968-Simpang-Jl-Nurdin-Raya-C01_CCTV-01/embed.html"],
+  ["Simpang Jl Nurdin Raya C01", "CCTV-02", "https://dki-jkt.balitower.co.id:7028/501968-Simpang-Jl-Nurdin-Raya-C01_CCTV-02/embed.html"],
+  ["Senayan 018", "CCTV-2", "https://jakcctv.jakarta.go.id/Senayan-018-705979_2/embed.html?proto=hls"],
+  ["Senayan 001", "CCTV-2", "https://jakcctv.jakarta.go.id/Senayan-001-705084_2/embed.html?proto=hls"],
+  ["Bendungan Hilir 003", "CCTV-1", "https://jakcctv.jakarta.go.id/Bendungan-Hilir-003-700014_1/embed.html?proto=hls"],
+  ["Kebon Melati 010", "CCTV-2", "https://jakcctv.jakarta.go.id/Kebon-Melati-010-700332_2/embed.html?proto=hls"]
+];
+
+function catalogRaws() {
+  const out = [];
+  for (const [title, badge, url] of JAK_CATALOG) {
+    const m = mapJakItem({ title: `${title} (${badge})`, url });
+    if (m.raw) out.push(m.raw);
+  }
+  return out;
+}
+
+/** Cache 30 menit (memori isolate -> Cache API edge -> fetch). Yang di-cache adalah hasil scraping mentah; katalog dasar dan koordinat digabung tiap respons. */
 async function getJak(req, env, ctx) {
   const now = Date.now();
-  if (jakMem.data && now - jakMem.t < JAK_TTL_S * 1000) return { cams: jakMem.data.cams, status: { count: jakMem.data.cams.length, cached: "memory", hosts: jakMem.data.diag.hosts, diag: jakMem.data.diag } };
+  const build = (data, extra) => {
+    const byId = new Map(catalogRaws().map((r) => [r.id, r]));
+    let added = 0;
+    for (const r of data.raws) { if (!byId.has(r.id)) { byId.set(r.id, r); added++; } else { const o = byId.get(r.id); if (r.lat != null && o.lat == null) { o.lat = r.lat; o.lng = r.lng; } } }
+    const { cams, unplaced } = resolveCoords([...byId.values()], env);
+    return { cams, status: { count: cams.length, source: data.raws.length ? "live+catalog" : "catalog", liveCount: data.raws.length, newFromLive: added, placedApprox: cams.filter((c) => c.approx).length, unplaced: unplaced.length ? unplaced : undefined, hosts: data.diag && data.diag.hosts, diag: data.diag, ...extra } };
+  };
+  if (jakMem.data && now - jakMem.t < JAK_TTL_S * 1000) return build(jakMem.data, { cached: "memory" });
 
   let cache = null; const key = new Request(new URL(JAK_CACHE_PATH, req.url).toString());
   try { cache = caches.default; } catch (e) { cache = null; }
@@ -323,31 +514,28 @@ async function getJak(req, env, ctx) {
       const hit = await cache.match(key);
       if (hit) {
         const data = await hit.json();
-        if (data && Array.isArray(data.cams) && data.cams.length) {
-          jakMem.t = Number(data.t) || now; jakMem.data = data;
-          return { cams: data.cams, status: { count: data.cams.length, cached: "edge", hosts: data.diag && data.diag.hosts, diag: data.diag } };
-        }
+        if (data && Array.isArray(data.raws) && data.raws.length) { jakMem.t = Number(data.t) || now; jakMem.data = data; return build(data, { cached: "edge" }); }
       }
     } catch (e) { /* cache rusak: lanjut ambil baru */ }
   }
 
   if (!jakInflight) jakInflight = fetchJakCCTV().finally(() => { jakInflight = null; });
   try {
-    const { cams, diag } = await jakInflight;
-    if (cams.length) {
-      const data = { t: Date.now(), cams, diag };
+    const { raws, diag } = await jakInflight;
+    if (raws.length) {
+      const data = { t: Date.now(), raws, diag };
       jakMem.t = data.t; jakMem.data = data;
       if (cache) {
         const put = cache.put(key, new Response(JSON.stringify(data), { headers: { "content-type": "application/json", "cache-control": `public, max-age=${JAK_TTL_S}` } })).catch(() => {});
         if (ctx && ctx.waitUntil) ctx.waitUntil(put);
       }
-      return { cams, status: { count: cams.length, cached: false, hosts: diag.hosts, diag } };
+      return build(data, { cached: false });
     }
-    if (jakMem.data) return { cams: jakMem.data.cams, status: { count: jakMem.data.cams.length, stale: true, error: "JakCCTV kosong/gagal, memakai data lama", diag } };
-    return { cams: [], status: { count: 0, error: "JakCCTV tidak mengembalikan kamera yang bisa dibaca", diag } };
+    if (jakMem.data) return build(jakMem.data, { stale: true, error: "scraping JakCCTV kosong, memakai data lama" });
+    return build({ raws: [], diag }, { error: "scraping JakCCTV tidak membaca kamera; memakai katalog bawaan" });
   } catch (e) {
-    if (jakMem.data) return { cams: jakMem.data.cams, status: { count: jakMem.data.cams.length, stale: true, error: e.message } };
-    return { cams: [], status: { count: 0, error: (e && e.message) || "JakCCTV gagal" } };
+    if (jakMem.data) return build(jakMem.data, { stale: true, error: e.message });
+    return build({ raws: [], diag: null }, { error: (e && e.message) || "JakCCTV gagal; memakai katalog bawaan" });
   }
 }
 
@@ -380,9 +568,7 @@ export async function handleCctv(req, env, ctx) {
     Promise.resolve(extraCameras(env)),
   ]);
 
-  // Titik statis dki(...) hanya tebakan: bila JakCCTV berhasil memberi kamera, yang statis dki-* dibuang
-  let stat = STATIC_CAMERAS.map(normalize).filter(Boolean);
-  if (jak.cams.length) stat = stat.filter((c) => !c.id.startsWith("dki-"));
+  const stat = STATIC_CAMERAS.map(normalize).filter(Boolean);
 
   // gabung; id yang sama: JakCCTV/statis/extra menang atas Windy
   const byId = new Map();
