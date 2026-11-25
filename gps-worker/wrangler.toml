@@ -2,7 +2,7 @@
 # push SOS (Web Push + FCM ke APK), rekaman suara, dan pemantau cron tiap menit.
 # Dideploy otomatis oleh .github/workflows/deploy-gps-worker.yml (lihat PANDUAN-GPS.md).
 name = "gps-worker"
-main = "index.js"
+main = "entry.js"
 compatibility_date = "2025-01-01"
 workers_dev = true
 
@@ -27,6 +27,42 @@ bucket_name = "gps-audio"
 ALLOW_ORIGIN = "https://tepangbkj-droid.github.io"
 TIMEZONE = "7"
 IMEI = "868720062744036"
+# ---- Proxy CCTV (/api/proxy-cctv, lihat entry.js) ----
+# Daftar host yang BOLEH diproxy: akhiran domain (subdomain & CDN-nya ikut), IP ditulis persis. Kosong = proxy menolak semua.
+# Disusun dari 151 domain stream di data CCTV (jasamarga.com, atcsindonesia.com, balitower.co.id, *.go.id, dst).
+# Segmen/CDN di host lain akan ditolak dengan pesan "host tidak ada di daftar CCTV_PROXY_HOSTS: <host>" -> tambahkan host itu di sini.
+# Proxy juga hanya melayani permintaan yang Origin/Referer-nya sama dengan ALLOW_ORIGIN (di atas).
+CCTV_PROXY_HOSTS = """\
+  atcsindonesia.com,balitower.co.id,jasamarga.com,acehtengahkab.go.id,app-intracs.co.id,\
+  badilag.net,balangankab.go.id,bandaacehkota.info,bandung.go.id,bandungkab.go.id,\
+  banggaikab.go.id,bangkalankab.go.id,banjarbarukota.go.id,banjarkota.go.id,\
+  banjarmasinkota.go.id,bantenprov.go.id,bantulkab.go.id,banyuasinkab.go.id,banyumaskab.go.id,\
+  baritoutarakab.go.id,batam.go.id,batukota.go.id,bekasikota.go.id,belitung.go.id,\
+  bimakota.go.id,bogorkab.go.id,bondowosokab.go.id,boyolali.go.id,bsdtol.com,\
+  bukittinggikota.go.id,cast-tv.com,cctvbadilag.my.id,cctvbadilag2.my.id,cctvbadilag3.my.id,\
+  cctvbakter.my.id,cctvdesari.online,cctvjorrw1.com,ciamiskab.go.id,cianjurkab.go.id,\
+  cilacapkab.go.id,cimahikota.go.id,cirebonkota.go.id,citramarga.com,cms.co.id,cradnu.com,\
+  cruiser.my.id,ctptollways.com,data.gov.sg,denpasarkota.go.id,dishubkotabaru.id,\
+  grobogan.go.id,gunungkidulkab.go.id,hk-opt.com,hk-opt2.com,hmwtoll.com,\
+  hulusungaiselatankab.go.id,iconpln.co.id,indramayukab.go.id,inti.net.id,ithka.my.id,\
+  jambikota.go.id,jaring.host,jembranakab.go.id,jepara.go.id,jogjakota.go.id,jogjaprov.go.id,\
+  jombangkab.go.id,jtd.co.id,karokab.go.id,katingankab.go.id,kebumenkab.go.id,kedirikota.go.id,\
+  kemenhub.go.id,kendalkab.go.id,kkdm.co.id,kotabogor.go.id,kuduskab.go.id,kuningankab.go.id,\
+  kutaitimurkab.go.id,langkatkab.go.id,lifemedia.id,lintasmarga.com,livecctv.id,\
+  magelangkota.go.id,margaharjaya.co.id,mataramkota.go.id,medan.go.id,mms-corp.id,\
+  mojokertokab.go.id,nusantarainfrastructure.com,padang.go.id,padangpanjang.go.id,\
+  palembang.go.id,paserkab.go.id,paspro-streaming.co.id,pasuruankota.go.id,payakumbuhkota.go.id,\
+  pbtr.co.id,pekalongankab.go.id,pekalongankota.go.id,pekanbaru.go.id,pemalangkab.go.id,\
+  perhubunganjateng.online,pesisirselatankab.go.id,pptrlive.co.id,pringsewukab.go.id,\
+  priokport.co.id,ptbtu.com,pu.go.id,purwakartakab.go.id,purworejokab.go.id,rekasadigital.id,\
+  salatiga.go.id,sampangkab.go.id,saranganvision.my.id,serangkab.go.id,serangkota.go.id,\
+  serbaraja-tollroad.co.id,sibolgakota.go.id,sidoarjokab.go.id,sigikab.go.id,sintang.go.id,\
+  situbondokab.go.id,smr.web.id,solokkota.go.id,streaming-cct.co.id,sukabumikab.go.id,\
+  sukoharjokab.go.id,sumedangkab.go.id,tabalongkab.go.id,tanahbumbukab.go.id,tapinkab.go.id,\
+  tasikmalayakab.go.id,tasikmalayakota.go.id,tjt-info.co.id,trenggalekkab.go.id,tubankab.go.id,\
+  tulungagung.go.id,ub.ac.id,unnes.ac.id,unpak.ac.id,urbanaccess.net,villabs.id,\
+  waskitabumiwira.com,wikaserangpanimbang.com,wiraraja.ac.id,wonogirikab.go.id,103.161.206.164,\
+  103.87.16.55,103.87.19.7"""
 # Alarm pemicu notifikasi: SOS_TYPE_IDS = SOS prioritas tertinggi; ALERT_TYPE_IDS = peringatan biasa
 # (5 listrik terputus, 23 diderek, 38 perangkat dilepas, 48 cabut-colok). Kosongkan ALERT_TYPE_IDS untuk mematikan.
 SOS_TYPE_IDS = "1"
