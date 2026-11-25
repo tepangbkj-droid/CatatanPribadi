@@ -36,22 +36,16 @@
   var LS_LIST_KEY = 'cctv_list_v1';              // cache daftar titik dari Worker di localStorage
   var LS_TTL_MS = 2 * 60 * 60 * 1000;            // 2 jam
   var STATIC_URL = 'cctv-data.json';              // dataset statis ~23 ribu titik (dibuat tools/build-cctv-data.py)
-  // Sebagian kamera di dataset memakai alamat relatif "/api/proxy/cctv/..." milik situs ATCS Indonesia.
-  // Awalan ini ditambahkan agar jadi URL penuh. Ganti bila proxy-nya berada di host lain (atau lewat opsi attach({proxyBase})).
-  // Host kandidat untuk alamat relatif "/api/proxy/cctv/..." (dicoba berurutan; yang berhasil diingat di localStorage).
-  var PROXY_BASES = ['https://atcsindonesia.info', 'https://atcsindonesia.com'];
-  var LS_BASE_KEY = 'cctv_rel_base_v1';
+  // Host yang punya CORS publik & port standar: diputar LANGSUNG dari browser (hemat kuota Worker). Selain ini lewat Worker.
+  var DIRECT_OK_HOSTS = ['cctvbadilag.my.id'];
   var MAX_SINGLE = 2500;                         // batas marker tunggal di layar
   var CLUSTER_PX = 56;                           // ukuran sel pengelompokan (piksel)
 
-  var WORKER = '';               // alamat Worker (diisi attach); dipakai untuk /api/proxy-cctv
+  var WORKER = '';               // alamat Worker (diisi attach); dipakai untuk /api/proxy/cctv
   var states = new Map();        // map -> state
   var shared = { data: null, at: 0, promise: null };
   var stat = { cams: null, promise: null };
-  function relBases() {
-    var b = ''; try { b = global.localStorage.getItem(LS_BASE_KEY) || ''; } catch (e) {}
-    return b && PROXY_BASES.indexOf(b) >= 0 ? [b].concat(PROXY_BASES.filter(function (x) { return x !== b; })) : PROXY_BASES.slice();
-  }   // dataset statis (diunduh sekali)
+  // (dataset statis diunduh sekali)
   var active = null;             // pemutar yang sedang aktif { destroy() }
 
   /* ---------- util ---------- */
@@ -61,10 +55,25 @@
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
   function el(tag, cls, html) { var n = document.createElement(tag); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; }
-  // Alamat lewat proxy Worker (menyuntikkan Referer/Origin atcsindonesia.com + menulis ulang playlist .m3u8)
+  // Resolver alamat stream:
+  //  - "/api/proxy/cctv/..."        -> dipakai langsung di Worker (Worker memetakan prefix ke upstream aslinya)
+  //  - path relatif lain "/api/..." -> Worker /api/proxy/cctv?url=<path>
+  //  - URL penuh dari host ber-CORS publik & port standar (DIRECT_OK_HOSTS) -> langsung, tanpa Worker
+  //  - URL penuh lainnya / port non-standar (mis. pelindung.bandung.go.id:3443) / http:// -> Worker /api/proxy/cctv?url=<URL>
+  function directOk(u) {
+    try {
+      var p = new URL(u), h = p.hostname.toLowerCase();
+      if (p.protocol !== 'https:' || (p.port && p.port !== '443')) return false;
+      return DIRECT_OK_HOSTS.some(function (d) { return h === d || h.slice(-(d.length + 1)) === '.' + d; });
+    } catch (e) { return false; }
+  }
   function proxify(u) {
-    if (!WORKER || typeof u !== 'string' || !/^https?:\/\//i.test(u) || u.indexOf(WORKER + '/api/proxy-cctv') === 0) return u;
-    return WORKER + '/api/proxy-cctv?url=' + encodeURIComponent(u);
+    if (!WORKER || typeof u !== 'string' || !u) return u;
+    if (u.indexOf(WORKER + '/api/proxy/cctv') === 0) return u;
+    if (u.indexOf('/api/proxy/cctv/') === 0) return WORKER + u;
+    if (u.charAt(0) === '/') return WORKER + '/api/proxy/cctv?url=' + encodeURIComponent(u);
+    if (!/^https?:\/\//i.test(u) || directOk(u)) return u;
+    return WORKER + '/api/proxy/cctv?url=' + encodeURIComponent(u);
   }
   function searchUrl(t) { return 'https://www.google.com/search?q=' + encodeURIComponent('live cctv ' + t); }
 
@@ -198,7 +207,7 @@
         } else if (d.type === Hls.ErrorTypes.MEDIA_ERROR) {
           if (mediaRec < 2) { mediaRec++; mine.recoverMediaError(); return; }
           next('Video tidak bisa diputar', 'Format video tidak didukung perangkat ini.');
-        } else next('Stream ATCS sedang offline atau dibatasi CORS', '');
+        } else next('Stream tidak dapat dibuka lewat proxy', 'Kamera offline, atau Worker menolak (cek ALLOW_ORIGIN dan CCTV_PROXY_HOSTS).');
       });
       mine.loadSource(urls[idx]); mine.attachMedia(video);
     }
@@ -208,11 +217,11 @@
     else loadHls().then(function (Hls) {
       if (dead) return;
       if (Hls.isSupported()) start();
-      else if (video.canPlayType('application/vnd.apple.mpegurl')) { native = true; onErr = function () { next('Stream ATCS sedang offline atau dibatasi CORS', ''); }; video.addEventListener('error', onErr); start(); }
+      else if (video.canPlayType('application/vnd.apple.mpegurl')) { native = true; onErr = function () { next('Stream tidak dapat dibuka lewat proxy', 'Kamera offline, atau Worker menolak (cek ALLOW_ORIGIN dan CCTV_PROXY_HOSTS).'); }; video.addEventListener('error', onErr); start(); }
       else fail('Perangkat ini tidak mendukung HLS', 'Gunakan portal resmi.');
     }).catch(function (e) {
       if (dead) return;
-      if (video.canPlayType('application/vnd.apple.mpegurl')) { native = true; onErr = function () { next('Stream ATCS sedang offline atau dibatasi CORS', ''); }; video.addEventListener('error', onErr); start(); }
+      if (video.canPlayType('application/vnd.apple.mpegurl')) { native = true; onErr = function () { next('Stream tidak dapat dibuka lewat proxy', 'Kamera offline, atau Worker menolak (cek ALLOW_ORIGIN dan CCTV_PROXY_HOSTS).'); }; video.addEventListener('error', onErr); start(); }
       else fail('Pemutar HLS tidak termuat', e.message + '. Periksa koneksi lalu coba lagi.');
     });
 
@@ -251,21 +260,11 @@
   }
   function resolveCam(cam) {
     if (cam.resolved) return Promise.resolve(cam.resolved);
-    var cands = cam.relPath ? relBases().map(function (b) { return b + cam.relPath; }) : [cam.streamUrl], i = 0, fails = [];
-    function next() {
-      if (i >= cands.length) return Promise.resolve({ ok: false, reason: fails.join('\n') });
-      var u = cands[i++];
-      return probe(u).then(function (r) {
-        if (r.ok) {
-          cam.streamUrl = u; cam.streamUrls = [u]; cam.resolved = r;
-          if (cam.relPath) { try { global.localStorage.setItem(LS_BASE_KEY, u.slice(0, u.length - cam.relPath.length)); } catch (e) {} }
-          return r;
-        }
-        fails.push(hostOf(u) + ' → ' + r.reason);
-        return r.net ? { ok: false, reason: fails.join('\n') } : next();       // Worker tak terjangkau: percuma coba host lain
-      });
-    }
-    return next();
+    return probe(cam.streamUrl).then(function (r) {
+      if (r.ok) cam.resolved = r;
+      else r.reason = (cam.relPath || hostOf(cam.streamUrl)) + ' → ' + r.reason;
+      return r;
+    });
   }
 
   function mountImage(cam, stage, onFail) {
@@ -395,11 +394,11 @@
   }
 
   /* ---------- dataset statis (cctv-data.json) ---------- */
-  function expandStatic(d, proxyBase) {
+  function expandStatic(d) {
     var S = d.S, n = d.count, out = new Array(n), TYPE = { h: 'hls', y: 'iframe', e: 'iframe', i: 'image', v: 'video', a: 'auto', p: 'portal' };
     for (var i = 0; i < n; i++) {
       var k = d.k.charAt(i), f = d.f[i], u = d.u[i] || '', type = TYPE[k] || 'portal';
-      var rel = ''; if (u && u.charAt(0) === '/') { rel = u; u = proxyBase + u; }
+      var rel = ''; if (u && u.charAt(0) === '/') { rel = u; u = proxify(u); }   // relatif: Worker yang memetakan upstream-nya
       var pu = d.pu[i] >= 0 ? S[d.pu[i]] : null, reg = [d.ci[i] >= 0 ? S[d.ci[i]] : '', d.pr[i] >= 0 ? S[d.pr[i]] : ''].filter(Boolean);
       if (reg.length === 2 && reg[0] === reg[1]) reg.pop();
       var st = d.s.charAt(i);
@@ -412,11 +411,11 @@
     }
     return out;
   }
-  function fetchStatic(url, proxyBase) {
+  function fetchStatic(url) {
     if (stat.cams) return Promise.resolve(stat.cams);
     if (stat.promise) return stat.promise;
     stat.promise = fetch(url).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function (d) { stat.cams = expandStatic(d, proxyBase); stat.promise = null; return stat.cams; })
+      .then(function (d) { stat.cams = expandStatic(d); stat.promise = null; return stat.cams; })
       .catch(function (e) { stat.promise = null; throw e; });
     return stat.promise;
   }
@@ -485,7 +484,7 @@
   function load(st, force) {
     st.loading = true;
     var pw = fetchCams(st.opts.workerUrl, force).then(function (j) { return { j: j }; }, function (e) { return { err: e }; });
-    var ps = fetchStatic(st.opts.dataUrl || STATIC_URL, st.opts.proxyBase || relBases()[0]).then(function (c) { return { cams: c }; }, function (e) { return { err: e }; });
+    var ps = fetchStatic(st.opts.dataUrl || STATIC_URL).then(function (c) { return { cams: c }; }, function (e) { return { err: e }; });
     return Promise.all([pw, ps]).then(function (r) {
       st.loading = false; if (!st.on) return;
       var wj = r[0].j, sc = r[1].cams, cams = [], seen = new Set();
