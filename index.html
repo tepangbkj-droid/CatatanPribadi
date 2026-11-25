@@ -2056,7 +2056,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.18.1';
+const APP_VERSION = '2.18.3';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -6213,6 +6213,42 @@ async function ovpQuery(q){
   }
   throw new Error(lastErr || 'gagal');
 }
+// Cache titik lampu/CCTV di localStorage (TTL 2 jam): pengganti Cache API yang tidak aktif di *.workers.dev.
+const OVP_LS_KEY = 'ovp_cache_v1', OVP_LS_TTL = 2*60*60*1000, OVP_LS_MAX = 6;
+function ovpLsRead(){
+  try{ const o = JSON.parse(localStorage.getItem(OVP_LS_KEY) || 'null'); if(o && Array.isArray(o.cells)) return o.cells.filter(c=>c && Date.now() - c.t < OVP_LS_TTL); }catch(err){}
+  return [];
+}
+function ovpLsWrite(cells){
+  try{ localStorage.setItem(OVP_LS_KEY, JSON.stringify({ cells })); }
+  catch(err){ if(cells.length > 1) ovpLsWrite(cells.slice(1)); }          // kuota penuh: buang yang tertua
+}
+function ovpFromLs(s, w, n, e){                                             // true = kotak ini dilayani dari localStorage (tanpa Worker)
+  const c = ovpLsRead().find(c=>s >= c.s && w >= c.w && n <= c.n && e <= c.e);
+  if(!c) return false;
+  c.items.forEach(it=>ovp.items.set(it[0], { id:it[0], lat:it[1], lng:it[2], tags:it[3] || {} }));
+  ovp.cells.push({ s:c.s, w:c.w, n:c.n, e:c.e, t:Date.now() });
+  if(ovp.cells.length > 24) ovp.cells.shift();
+  return true;
+}
+function ovpToLs(S, W, N, E, elements){
+  const items = [];
+  elements.forEach(el=>{ if(el.type === 'node' && typeof el.lat === 'number' && el.lat >= S && el.lat <= N && el.lon >= W && el.lon <= E) items.push([el.id, el.lat, el.lon, el.tags || {}]); });
+  const keep = ovpLsRead().filter(c=>!(c.s === S && c.w === W && c.n === N && c.e === E));
+  keep.push({ s:S, w:W, n:N, e:E, t:Date.now(), items });
+  ovpLsWrite(keep.slice(-OVP_LS_MAX));
+}
+// Titik lampu/CCTV diambil lewat Worker (/api/cctv-points, di-cache 15 menit) agar browser tidak timeout.
+async function ovpFromWorker(S, W, N, E){
+  const ctl = new AbortController(), to = setTimeout(()=>ctl.abort(), 25000);   // >= 15 dtk
+  try{
+    const r = await fetch(`${GPS_WORKER_URL.replace(/\/$/, '')}/api/cctv-points?bbox=${[S, W, N, E].map(v=>v.toFixed(5)).join(',')}`, { signal:ctl.signal });
+    const j = await r.json().catch(()=>null);
+    if(!r.ok || !j || !Array.isArray(j.elements)) throw new Error((j && j.error) || ('HTTP ' + r.status));
+    return j;
+  }catch(err){ throw new Error(err && err.name === 'AbortError' ? 'waktu habis' : ((err && err.message) || 'koneksi gagal')); }
+  finally{ clearTimeout(to); }
+}
 async function ovpLoadBox(s, w, n, e){
   if((n - s) > 0.06 || (e - w) > 0.06) return false;       // area terlalu luas
   const now = Date.now();
@@ -6220,18 +6256,20 @@ async function ovpLoadBox(s, w, n, e){
   // permintaan lain sedang berjalan: tunggu dulu, lalu cek ulang (bukan ditolak)
   while(ovp.pending){ try{ await ovp.pending; }catch(err){} }
   if(ovp.cells.some(c=>Date.now() - c.t < 15*60*1000 && s >= c.s && w >= c.w && n <= c.n && e <= c.e)) return true;
+  if(ovpFromLs(s, w, n, e)) return true;                      // masih valid di localStorage (<2 jam): tidak perlu memanggil Worker
   if(Date.now() - ovp.lastErrAt < 6000) return false;
   const dy = (n - s)*0.25, dx = (e - w)*0.25;
   const S = s - dy, W = w - dx, N = n + dy, E = e + dx;
   const bb = `${S.toFixed(5)},${W.toFixed(5)},${N.toFixed(5)},${E.toFixed(5)}`;
   const q = `[out:json][timeout:20];(node["highway"="traffic_signals"](${bb});node["man_made"="surveillance"](${bb});node["highway"="speed_camera"](${bb}););out body 1500;`;
-  const job = ovpQuery(q);
+  const job = ovpFromWorker(S, W, N, E).catch(()=>ovpQuery(q));   // Worker dulu; bila gagal, langsung ke Overpass
   ovp.pending = job;
   try{
     const j = await job;
     j.elements.forEach(el=>{ if(el.type === 'node' && typeof el.lat === 'number') ovp.items.set(el.id, { id:el.id, lat:el.lat, lng:el.lon, tags:el.tags || {} }); });
     ovp.cells.push({ s:S, w:W, n:N, e:E, t:Date.now() });
     if(ovp.cells.length > 24) ovp.cells.shift();
+    ovpToLs(S, W, N, E, j.elements);
     ovp.lastErr = '';
     return true;
   }catch(err){ ovp.lastErrAt = Date.now(); ovp.lastErr = (err && err.message) || 'gagal'; return false; }
