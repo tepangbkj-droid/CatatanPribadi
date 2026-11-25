@@ -9,6 +9,9 @@
  *   });
  *   CctvPublic.toggle(map)   CctvPublic.isOn(map)   CctvPublic.refresh(map)   CctvPublic.closePlayer()   CctvPublic.detach(map)
  *
+ * Sumber data: (1) Worker GET /api/cctv  +  (2) dataset statis cctv-data.json (±23 ribu titik ATCS se-Indonesia, dibuat dengan tools/build-cctv-data.py).
+ *   Marker dikelompokkan (cluster) per sel grid dan hanya yang berada di layar yang digambar. Tipe tambahan: iframe (YouTube/embed), image (snapshot/MJPEG), video (mp4), auto (tebak).
+ *
  * Perilaku:
  *   - Marker digambar dari JSON, tetapi PEMUTAR baru dibuat saat marker diklik (lazy). Hls.js baru diunduh saat kamera HLS pertama dibuka.
  *   - sourceType "windy"  -> <iframe> ke playerUrl
@@ -29,9 +32,16 @@
   var FETCH_TIMEOUT = 15000;
   var START_TIMEOUT = 12000;     // per kandidat stream
   var KEY_ON = 'cctv_public_on_v1';
+  var STATIC_URL = 'cctv-data.json';              // dataset statis ~23 ribu titik (dibuat tools/build-cctv-data.py)
+  // Sebagian kamera di dataset memakai alamat relatif "/api/proxy/cctv/..." milik situs ATCS Indonesia.
+  // Awalan ini ditambahkan agar jadi URL penuh. Ganti bila proxy-nya berada di host lain (atau lewat opsi attach({proxyBase})).
+  var PROXY_BASE = 'https://atcsindonesia.info';
+  var MAX_SINGLE = 2500;                         // batas marker tunggal di layar
+  var CLUSTER_PX = 56;                           // ukuran sel pengelompokan (piksel)
 
   var states = new Map();        // map -> state
   var shared = { data: null, at: 0, promise: null };
+  var stat = { cams: null, promise: null };   // dataset statis (diunduh sekali)
   var active = null;             // pemutar yang sedang aktif { destroy() }
 
   /* ---------- util ---------- */
@@ -50,7 +60,10 @@
       '.cpv-btn{display:flex;align-items:center;justify-content:center;gap:6px;min-width:44px;height:44px;padding:0 12px;border-radius:12px;border:2px solid transparent;background:rgba(255,255,255,.97);box-shadow:0 4px 14px rgba(0,0,0,.28);font:600 14px/1 system-ui,sans-serif;color:#1f2937;cursor:pointer}',
       '.cpv-btn[aria-pressed="true"]{border-color:#dc2626;background:#fee2e2;color:#7f1d1d}',
       '.cpv-ico{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 2px 7px rgba(0,0,0,.4);border:2px solid #fff;background:#fff}',
-      '.cpv-ico.hls{background:#fee2e2;border-color:#dc2626}.cpv-ico.windy{background:#e0f2fe;border-color:#0284c7}.cpv-ico.portal{background:#f1f5f9;border-color:#64748b}',
+      '.cpv-ico.hls,.cpv-ico.image,.cpv-ico.video,.cpv-ico.iframe,.cpv-ico.auto{background:#fee2e2;border-color:#dc2626}.cpv-ico.off{background:#e5e7eb;border-color:#9ca3af;opacity:.7;filter:grayscale(1)}',
+      '.cpv-cl{display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(220,38,38,.9);color:#fff;font:700 12px system-ui,sans-serif;border:3px solid rgba(255,255,255,.95);box-shadow:0 2px 8px rgba(0,0,0,.45)}',
+      '.cpv-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}',
+      '.cpv-warn{font-size:11px;color:#92400e;background:#fef3c7;border-radius:8px;padding:6px 8px;margin-top:6px}.cpv-ico.windy{background:#e0f2fe;border-color:#0284c7}.cpv-ico.portal{background:#f1f5f9;border-color:#64748b}',
       '.cpv-pop .leaflet-popup-content{margin:10px;width:min(320px,calc(100vw - 80px))!important}',
       '.cpv-box{font:14px/1.35 system-ui,sans-serif;color:#111827}',
       '.cpv-title{font-weight:700;margin:0 24px 2px 0}.cpv-sub{font-size:12px;color:#4b5563;margin-bottom:8px}',
@@ -188,12 +201,40 @@
     };
   }
 
+
+  function mountImage(cam, stage, onFail) {
+    var url = cam.streamUrl, dead = false, timer = null;
+    var snap = /\.(jpe?g|png)(\?|$)|\/img\?/i.test(url);            // snapshot: segarkan berkala; selain itu MJPEG (mengalir sendiri)
+    var img = el('img'); img.alt = 'Siaran ' + cam.title; img.referrerPolicy = 'no-referrer'; img.decoding = 'async';
+    var gotFrame = false;
+    function setSrc() { img.src = snap ? url + (url.indexOf('?') < 0 ? '?' : '&') + '_t=' + Date.now() : url; }
+    img.addEventListener('load', function () { if (dead) return; gotFrame = true; var m = stage.querySelector('.cpv-msg'); if (m) m.remove(); });
+    img.addEventListener('error', function () {
+      if (dead) return; clearInterval(timer); timer = null;
+      if (gotFrame) return;                                        // satu kali gagal saat menyegarkan: tetap tampilkan frame terakhir
+      img.remove(); message(stage, 'Gambar kamera tidak dapat dimuat', 'Kamera offline atau server memblokir pemakaian dari aplikasi ini.');
+      if (onFail) onFail();
+    });
+    stage.appendChild(img); message(stage, 'Menghubungkan ke kamera…', '', true); setSrc();
+    if (snap) timer = setInterval(function () { if (!document.hidden) setSrc(); }, 5000);
+    return function destroy() { dead = true; clearInterval(timer); try { img.removeAttribute('src'); } catch (e) {} img.remove(); };
+  }
+
+  function mountVideo(cam, stage) {
+    var v = el('video'); v.muted = true; v.autoplay = true; v.controls = true; v.loop = true; v.playsInline = true; v.setAttribute('playsinline', '');
+    v.setAttribute('aria-label', 'Siaran ' + cam.title);
+    v.addEventListener('playing', function () { var m = stage.querySelector('.cpv-msg'); if (m) m.remove(); });
+    v.addEventListener('error', function () { message(stage, 'Video tidak bisa diputar', 'Format tidak didukung atau server memblokir pemakaian dari aplikasi ini.'); });
+    stage.appendChild(v); message(stage, 'Menghubungkan ke kamera…', '', true); v.src = cam.streamUrl;
+    return function destroy() { try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {} v.remove(); };
+  }
+
   // Isi popup: dipanggil saat popup DIBUKA. Mengembalikan fungsi pembersih.
   function mount(cam, box) {
     closePlayer();
     box.innerHTML = '';
     box.appendChild(el('div', 'cpv-title', esc(cam.title)));
-    box.appendChild(el('div', 'cpv-sub', esc(cam.provider || '') + (cam.approx ? ' • lokasi perkiraan' : '')));
+    box.appendChild(el('div', 'cpv-sub', esc([cam.provider, cam.region].filter(Boolean).join(' • ')) + (cam.approx ? ' • lokasi perkiraan' : '')));
     var disposers = [];
     var cleaned = false;
     var stage = null;
@@ -222,10 +263,27 @@
         }
       }));
       rowHolder = actions(cam, extra); box.appendChild(rowHolder);
+    } else if (cam.sourceType === 'iframe' && https(cam.embedUrl)) {
+      stage = el('div', 'cpv-stage'); box.appendChild(stage);
+      disposers.push(mountIframe(stage, cam.embedUrl, cam.title));
+      box.appendChild(actions(cam));
+    } else if ((cam.sourceType === 'image' || cam.sourceType === 'auto') && https(cam.streamUrl)) {
+      stage = el('div', 'cpv-stage'); box.appendChild(stage);
+      // "auto" = format tak dikenal: coba sebagai gambar/MJPEG dulu, bila gagal coba sebagai HLS
+      disposers.push(mountImage(cam, stage, cam.sourceType === 'auto' ? function () {
+        disposers.push(mountHls({ title: cam.title, streamUrls: [cam.streamUrl] }, stage, function () {}));
+      } : null));
+      box.appendChild(actions(cam));
+    } else if (cam.sourceType === 'video' && https(cam.streamUrl)) {
+      stage = el('div', 'cpv-stage'); box.appendChild(stage);
+      disposers.push(mountVideo(cam, stage));
+      box.appendChild(actions(cam));
     } else {
       box.appendChild(el('div', 'cpv-note', 'Titik ini hanya tersedia lewat halaman resmi pengelola.'));
       box.appendChild(actions(cam));
     }
+    if (cam.status === 'offline') box.appendChild(el('div', 'cpv-warn', '⚠ Ditandai offline pada audit terakhir.' + (cam.note ? ' ' + esc(cam.note) : '')));
+    if (cam.needsHeaders) box.appendChild(el('div', 'cpv-warn', 'Server kamera ini meminta header khusus; mungkin tidak bisa diputar langsung dari browser.'));
 
     var self = {
       destroy: function () {
@@ -238,51 +296,123 @@
     return self;
   }
 
-  /* ---------- marker & layer ---------- */
-  var EMO = { hls: '🔴', windy: '🌐', portal: '🔗' };
+  /* ---------- dataset statis (cctv-data.json) ---------- */
+  function expandStatic(d, proxyBase) {
+    var S = d.S, n = d.count, out = new Array(n), TYPE = { h: 'hls', y: 'iframe', e: 'iframe', i: 'image', v: 'video', a: 'auto', p: 'portal' };
+    for (var i = 0; i < n; i++) {
+      var k = d.k.charAt(i), f = d.f[i], u = d.u[i] || '', type = TYPE[k] || 'portal';
+      if (u && u.charAt(0) === '/') u = proxyBase + u;
+      var pu = d.pu[i] >= 0 ? S[d.pu[i]] : null, reg = [d.ci[i] >= 0 ? S[d.ci[i]] : '', d.pr[i] >= 0 ? S[d.pr[i]] : ''].filter(Boolean);
+      if (reg.length === 2 && reg[0] === reg[1]) reg.pop();
+      var st = d.s.charAt(i);
+      out[i] = {
+        id: 's:' + d.i[i], title: d.t[i], lat: d.la[i], lng: d.ln[i], sourceType: type,
+        streamUrl: u, streamUrls: type === 'hls' ? [u] : [], embedUrl: type === 'iframe' ? u : null,
+        portalUrl: https(pu), provider: d.so[i] >= 0 ? S[d.so[i]] : '', region: reg.join(', '),
+        approx: !!(f & 1), needsHeaders: !!(f & 2), status: st === '1' ? 'offline' : st === '0' ? 'live' : '', note: d.n[i] >= 0 ? S[d.n[i]] : ''
+      };
+    }
+    return out;
+  }
+  function fetchStatic(url, proxyBase) {
+    if (stat.cams) return Promise.resolve(stat.cams);
+    if (stat.promise) return stat.promise;
+    stat.promise = fetch(url).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (d) { stat.cams = expandStatic(d, proxyBase); stat.promise = null; return stat.cams; })
+      .catch(function (e) { stat.promise = null; throw e; });
+    return stat.promise;
+  }
+
+  /* ---------- marker & layer (clustering sederhana per sel grid + hanya yang terlihat di layar) ---------- */
+  var EMO = { hls: '🔴', windy: '🌐', portal: '🔗', image: '📷', video: '🎞️', iframe: '▶️', auto: '📹' };
   var iconCache = {};
-  function icon(type) {
-    if (iconCache[type]) return iconCache[type];
-    return (iconCache[type] = L.divIcon({ className: '', iconSize: [28, 28], iconAnchor: [14, 14], popupAnchor: [0, -12], html: '<div class="cpv-ico ' + esc(type) + '">' + (EMO[type] || '📹') + '</div>' }));
+  function icon(type, off) {
+    var key = type + (off ? '!' : '');
+    if (iconCache[key]) return iconCache[key];
+    return (iconCache[key] = L.divIcon({ className: '', iconSize: [28, 28], iconAnchor: [14, 14], popupAnchor: [0, -12], html: '<div class="cpv-ico ' + esc(type) + (off ? ' off' : '') + '">' + (EMO[type] || '📹') + '</div>' }));
+  }
+  function clusterIcon(n) {
+    var size = n < 100 ? 36 : n < 1000 ? 42 : 50, label = n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'k' : String(n);
+    return L.divIcon({ className: '', iconSize: [size, size], iconAnchor: [size / 2, size / 2], html: '<div class="cpv-cl" style="width:' + size + 'px;height:' + size + 'px">' + label + '</div>' });
+  }
+
+  function makeMarker(cam) {
+    var box = el('div', 'cpv-box');
+    var m = L.marker([cam.lat, cam.lng], { icon: icon(cam.sourceType, cam.status === 'offline'), keyboard: true, title: cam.title, alt: 'CCTV ' + cam.title, riseOnHover: true });
+    m.bindPopup(box, { className: 'cpv-pop', maxWidth: 340, autoPanPadding: [20, 70] });
+    var handle = null;
+    m.on('popupopen', function () { handle = mount(cam, box); });
+    m.on('popupclose', function () { if (handle) { handle.destroy(); if (active === handle) active = null; handle = null; } });
+    return m;
   }
 
   function draw(st) {
-    st.group.clearLayers();
-    var list = (shared.data && shared.data.cameras) || [];
-    list.forEach(function (cam) {
-      var lat = Number(cam.lat), lng = Number(cam.lng);
-      if (!isFinite(lat) || !isFinite(lng)) return;
-      var box = el('div', 'cpv-box');
-      var m = L.marker([lat, lng], { icon: icon(cam.sourceType), keyboard: true, title: cam.title, alt: 'CCTV ' + cam.title, riseOnHover: true });
-      m.bindPopup(box, { className: 'cpv-pop', maxWidth: 340, autoPanPadding: [20, 70] });
-      var handle = null;
-      m.on('popupopen', function () { handle = mount(cam, box); });
-      m.on('popupclose', function () { if (handle) { handle.destroy(); if (active === handle) active = null; handle = null; } });
-      m.addTo(st.group);
+    var list = st.cams || [], map = st.map;
+    if (!st.on || !list.length) return;
+    var z = map.getZoom(), b = map.getBounds().pad(0.15);
+    var s = b.getSouth(), n = b.getNorth(), w = b.getWest(), e = b.getEast();
+    var cell = z >= 16 ? 0 : CLUSTER_PX * 360 / (256 * Math.pow(2, z));
+    var buckets = new Map(), singles = [], clusters = [];
+    for (var i = 0; i < list.length; i++) {
+      var c = list[i];
+      if (c.lat < s || c.lat > n || c.lng < w || c.lng > e) continue;
+      if (!cell) { singles.push(c); continue; }
+      var key = Math.floor(c.lng / cell) + ':' + Math.floor(c.lat / cell), g = buckets.get(key);
+      if (!g) buckets.set(key, { n: 1, first: c, sla: c.lat, sln: c.lng, a: c.lat, b: c.lat, c: c.lng, d: c.lng });
+      else { g.n++; g.sla += c.lat; g.sln += c.lng; if (c.lat < g.a) g.a = c.lat; if (c.lat > g.b) g.b = c.lat; if (c.lng < g.c) g.c = c.lng; if (c.lng > g.d) g.d = c.lng; }
+    }
+    buckets.forEach(function (g) { if (g.n === 1) singles.push(g.first); else clusters.push(g); });
+    if (singles.length > MAX_SINGLE) singles.length = MAX_SINGLE;
+
+    var want = new Set(); singles.forEach(function (c) { want.add(c.id); });
+    st.markers.forEach(function (m, id) { if (!want.has(id) && !m.isPopupOpen()) { st.group.removeLayer(m); st.markers.delete(id); } });   // marker dengan popup terbuka tidak dibuang
+    singles.forEach(function (c) { if (!st.markers.has(c.id)) { var m = makeMarker(c); m.addTo(st.group); st.markers.set(c.id, m); } });
+
+    st.clusterGroup.clearLayers();
+    clusters.forEach(function (g) {
+      var m = L.marker([g.sla / g.n, g.sln / g.n], { icon: clusterIcon(g.n), keyboard: false, title: g.n + ' kamera' });
+      m.on('click', function () {
+        if (g.b - g.a < 1e-4 && g.d - g.c < 1e-4) map.setView([g.a, g.c], Math.min(map.getMaxZoom() || 18, z + 3));
+        else map.fitBounds([[g.a, g.c], [g.b, g.d]], { padding: [40, 40], maxZoom: 18 });
+      });
+      m.addTo(st.clusterGroup);
     });
   }
+  function scheduleDraw(st) { clearTimeout(st.drawT); st.drawT = setTimeout(function () { draw(st); }, 120); }
 
   function say(st, msg, err) { try { if (st.opts.onStatus) st.opts.onStatus(msg, !!err); } catch (e) {} }
   function sync(st) { if (st.btn) st.btn.setAttribute('aria-pressed', st.on ? 'true' : 'false'); }
+  function fmt(n) { try { return n.toLocaleString('id-ID'); } catch (e) { return String(n); } }
 
   function load(st, force) {
     st.loading = true;
-    return fetchCams(st.opts.workerUrl, force).then(function (j) {
+    var pw = fetchCams(st.opts.workerUrl, force).then(function (j) { return { j: j }; }, function (e) { return { err: e }; });
+    var ps = fetchStatic(st.opts.dataUrl || STATIC_URL, st.opts.proxyBase || PROXY_BASE).then(function (c) { return { cams: c }; }, function (e) { return { err: e }; });
+    return Promise.all([pw, ps]).then(function (r) {
       st.loading = false; if (!st.on) return;
+      var wj = r[0].j, sc = r[1].cams, cams = [], seen = new Set();
+      // Worker (Windy/JakCCTV/statis Worker) lebih dulu; titik dataset statis dengan stream sama dilewati agar tidak dobel.
+      ((wj && wj.cameras) || []).forEach(function (c) { cams.push(c); [c.streamUrl, c.playerUrl].forEach(function (u) { if (u) seen.add(u); }); });
+      (sc || []).forEach(function (c) { if (!(c.streamUrl && seen.has(c.streamUrl))) cams.push(c); });
+      if (!cams.length) { say(st, 'CCTV gagal dimuat: ' + ((r[1].err || r[0].err || {}).message || 'data kosong'), true); return; }
+      st.cams = cams; st.markers.forEach(function (m) { st.group.removeLayer(m); }); st.markers.clear();
       draw(st);
-      var w = j.sources && j.sources.windy;
-      var msg = 'CCTV publik: ' + j.count + ' titik';
-      if (w && w.configured === false) msg += ' (Windy belum aktif di server)';
+      var live = 0; cams.forEach(function (c) { if (c.status !== 'offline') live++; });
+      var msg = 'CCTV publik: ' + fmt(cams.length) + ' titik (' + fmt(live) + ' live)';
+      var w = wj && wj.sources && wj.sources.windy;
+      if (r[1].err) msg += ' — dataset statis gagal dimuat';
+      else if (r[0].err) msg += ' — server Worker tidak terjangkau';
+      else if (w && w.configured === false) msg += ' (Windy belum aktif di server)';
       else if (w && w.error) msg += ' (Windy: ' + w.error + ')';
-      say(st, msg, !!(w && w.error && !w.count));
-    }).catch(function (e) { st.loading = false; say(st, 'CCTV gagal dimuat: ' + (e.message || e), true); });
+      say(st, msg, !!(r[1].err && r[0].err));
+    });
   }
 
   function setOn(map, on) {
     var st = states.get(map); if (!st) return;
     st.on = !!on; lsSet(KEY_ON, on ? '1' : '0'); sync(st);
-    if (on) { st.group.addTo(map); load(st, false); }
-    else { closePlayer(); map.removeLayer(st.group); st.group.clearLayers(); say(st, 'CCTV publik: sembunyi', false); }
+    if (on) { st.group.addTo(map); st.clusterGroup.addTo(map); map.on('moveend', st.onMove); load(st, false); }
+    else { closePlayer(); map.off('moveend', st.onMove); map.removeLayer(st.group); map.removeLayer(st.clusterGroup); st.group.clearLayers(); st.clusterGroup.clearLayers(); st.markers.clear(); say(st, 'CCTV publik: sembunyi', false); }
   }
 
   function attach(map, opts) {
@@ -290,7 +420,8 @@
     if (!map || !opts.workerUrl) { console.warn('[cctv] workerUrl wajib diisi'); return null; }
     if (states.has(map)) return states.get(map);
     injectCss();
-    var st = { map: map, opts: opts, group: L.layerGroup(), on: false, btn: null, loading: false };
+    var st = { map: map, opts: opts, group: L.layerGroup(), clusterGroup: L.layerGroup(), markers: new Map(), cams: null, on: false, btn: null, loading: false, drawT: null };
+    st.onMove = function () { scheduleDraw(st); };
     states.set(map, st);
     if (opts.control !== false) {
       var Ctl = L.Control.extend({
@@ -308,7 +439,7 @@
     return st;
   }
 
-  function detach(map) { var st = states.get(map); if (!st) return; closePlayer(); map.removeLayer(st.group); st.group.clearLayers(); states.delete(map); }
+  function detach(map) { var st = states.get(map); if (!st) return; closePlayer(); map.off('moveend', st.onMove); map.removeLayer(st.group); map.removeLayer(st.clusterGroup); st.group.clearLayers(); st.clusterGroup.clearLayers(); st.markers.clear(); states.delete(map); }
 
   global.CctvPublic = {
     attach: attach, detach: detach, closePlayer: closePlayer,
