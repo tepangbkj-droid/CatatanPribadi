@@ -1609,7 +1609,7 @@
     </div>
     <div class="field">
       <label>Nama kategori</label>
-      <input type="text" id="catName" placeholder="mis. Makan, Transport, Tabungan">
+      <input type="text" id="catFormName" placeholder="mis. Makan, Transport, Tabungan">
     </div>
     <div class="field">
       <label>Ikon</label>
@@ -2056,7 +2056,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.18.0';
+const APP_VERSION = '2.18.1';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -7729,7 +7729,7 @@ document.getElementById('btnFab').addEventListener('click', ()=>{
 });
 
 function openAddCategoryModal(){
-  document.getElementById('catName').value = '';
+  document.getElementById('catFormName').value = '';
   document.getElementById('catAlloc').value = '';
   selectedCatIcon = CATEGORY_ICONS[0];
   selectedCatColorIdx = categories.length % CATEGORY_COLORS.length;
@@ -7743,7 +7743,7 @@ function openAddCategoryModal(){
 document.getElementById('btnAddCategory').addEventListener('click', openAddCategoryModal);
 
 document.getElementById('btnSaveCategory').addEventListener('click', async ()=>{
-  const name = document.getElementById('catName').value.trim();
+  const name = document.getElementById('catFormName').value.trim();
   const alloc = moneyValue(document.getElementById('catAlloc'));
   if(!name){ showToast('Nama kategori wajib diisi', true); return; }
   if(!uid){ showToast('Belum terhubung ke Firebase, coba lagi sebentar.', true); return; }
