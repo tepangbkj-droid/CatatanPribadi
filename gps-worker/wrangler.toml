@@ -30,10 +30,11 @@ IMEI = "868720062744036"
 # ---- Proxy CCTV (/api/proxy-cctv, lihat entry.js) ----
 # Daftar host yang BOLEH diproxy: akhiran domain (subdomain & CDN-nya ikut), IP ditulis persis. Kosong = proxy menolak semua.
 # Disusun dari 151 domain stream di data CCTV (jasamarga.com, atcsindonesia.com, balitower.co.id, *.go.id, dst).
+# Termasuk pelindung.bandung.go.id (Bandung, port 3443), transcode.baliprov.go.id (Bali), cctv.asahankab.go.id (Asahan).
 # Segmen/CDN di host lain akan ditolak dengan pesan "host tidak ada di daftar CCTV_PROXY_HOSTS: <host>" -> tambahkan host itu di sini.
 # Proxy juga hanya melayani permintaan yang Origin/Referer-nya sama dengan ALLOW_ORIGIN (di atas).
 CCTV_PROXY_HOSTS = """\
-  atcsindonesia.com,atcsindonesia.info,balitower.co.id,jasamarga.com,acehtengahkab.go.id,app-intracs.co.id,\
+  atcsindonesia.com,atcsindonesia.info,pelindung.bandung.go.id,transcode.baliprov.go.id,cctv.asahankab.go.id,balitower.co.id,jasamarga.com,acehtengahkab.go.id,app-intracs.co.id,\
   badilag.net,balangankab.go.id,bandaacehkota.info,bandung.go.id,bandungkab.go.id,\
   banggaikab.go.id,bangkalankab.go.id,banjarbarukota.go.id,banjarkota.go.id,\
   banjarmasinkota.go.id,bantenprov.go.id,bantulkab.go.id,banyuasinkab.go.id,banyumaskab.go.id,\
