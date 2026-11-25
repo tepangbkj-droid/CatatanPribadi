@@ -1,407 +1,367 @@
-/**
- * entry.js — Router pembungkus untuk Worker GPS Pelacak Motor + Proxy CCTV + Overpass
- *
- * Rute tambahan yang ditangani di sini:
- *   GET  /api/proxy/cctv?url=...   → Proxy HLS (.m3u8/.ts/.m4s) + injeksi header Referer/Origin
- *   GET  /api/cctv-points?...      → Titik lampu merah & kamera pengawas dari OSM Overpass
- *
- * Semua rute lain diteruskan langsung ke index.js.
- */
+// =====================================================================================
+// entry.js — pintu masuk Worker (wrangler.toml: main = "entry.js").
+// Menambah dua endpoint publik, selebihnya diteruskan apa adanya ke index.js (tidak diubah):
+//
+//   GET /api/proxy/cctv/<prefix>/<path>   (alias lama: /api/proxy-cctv?url=)
+//       Proxy HLS untuk alamat relatif milik data ATCS. <prefix> dipetakan ke upstream aslinya SEBELUM fetch:
+//         /api/proxy/cctv/bali/...    -> https://transcode.baliprov.go.id/...   (prefix "/bali" dibuang)
+//         /api/proxy/cctv/asahan/...  -> https://cctv.asahankab.go.id/...       (prefix "/asahan" dibuang)
+//         prefix lain                 -> https://atcsindonesia.com/api/proxy/cctv/<prefix>/... (cadangan: atcsindonesia.info)
+//       Pemetaan bisa ditambah lewat variabel CCTV_PREFIX_MAP (JSON {"prefix":"https://host"}).
+//   GET /api/proxy/cctv?url=<URL penuh, atau path relatif "/api/...">
+//       Proxy URL langsung yang tidak punya header CORS / memakai port non-standar (mis. pelindung.bandung.go.id:3443).
+//   Keduanya: menyuntikkan Referer + Origin, menulis ulang playlist .m3u8 (segmen .ts/.m4s, sub-playlist, #EXT-X-KEY/MAP/MEDIA)
+//   agar ikut lewat proxy, menolak respons text/html (halaman error/blokir) dengan status 502, dan selalu menyertakan header CORS.
+//   GET /api/cctv-points?bbox=S,W,N,E
+//       Titik lampu lalu lintas & kamera pengawas (OpenStreetMap/Overpass) untuk satu kotak peta,
+//       di-cache 15 menit (Cache API + memori isolate) supaya browser tidak timeout.
+//
+// Variabel (wrangler.toml [vars]):
+//   ALLOW_ORIGIN     WAJIB untuk proxy. Origin aplikasi (boleh beberapa, pisah koma). /api/proxy-cctv hanya melayani permintaan
+//                    yang header Origin atau Referer-nya cocok; permintaan langsung dari luar (tanpa keduanya) ditolak 403.
+//   CCTV_PROXY_HOSTS WAJIB untuk proxy. Daftar host yang BOLEH diproxy (akhiran domain, subdomain ikut; boleh IP persis).
+//                    Kosong = proxy menolak semuanya. Pengalihan (redirect) ke host di luar daftar juga ditolak.
+// Catatan keamanan: pemeriksaan Origin/Referer menahan pemakaian dari situs lain lewat browser, tetapi bukan autentikasi:
+// klien non-browser bisa memalsukan header. Batas sebenarnya adalah daftar CCTV_PROXY_HOSTS + kuota Worker.
+//
+// CATATAN: Cache API (caches.default) TIDAK aktif di domain *.workers.dev; di sana yang bekerja hanya
+// cache memori isolate (lebih pendek umurnya). Pasang Custom Domain/Route agar cache 15 menit penuh bekerja.
+// =====================================================================================
+import base from "./index.js";
 
-import mainWorker from './index.js';
+const REFERER = "https://atcsindonesia.com/";
+const ORIGIN = "https://atcsindonesia.com";
+const UA = "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36";
+// Referer/Origin yang dikirim ke server kamera: bawaan atcsindonesia.com; untuk host atcsindonesia.info/.com dipakai origin host itu
+// sendiri (jalur /api/proxy/... hanya menerima Referer dari situsnya). Bisa dipaksa lewat variabel CCTV_REFERER.
+function refererFor(env, target) {
+  if (env.CCTV_REFERER) { try { const o = new URL(env.CCTV_REFERER); return { referer: o.origin + "/", origin: o.origin }; } catch (err) { /* abaikan */ } }
+  if (/(^|\.)atcsindonesia\.(info|com)$/i.test(target.hostname)) return { referer: target.origin + "/", origin: target.origin };
+  return { referer: REFERER, origin: ORIGIN };
+}
+const UPSTREAM_TIMEOUT_MS = 15000;
+const SNIFF_MAX_BYTES = 3 * 1024 * 1024;
 
-const DEFAULT_ALLOWED_HOSTS = [
-  'balitower.co.id',
-  'atcsindonesia.com',
-  'jakcctv.jakarta.go.id',
-  'jakarta.go.id',
-  'bandung.go.id',
-  'surabaya.go.id',
-  'semarangkota.go.id',
-  'jogjakota.go.id',
-  'depok.go.id',
-  'bekasikota.go.id',
-  'tangerangkota.go.id',
-  'bogorkota.go.id',
-  'jasamarga.com',
-  'binamarga.pu.go.id',
-  'pu.go.id',
-  'dephub.go.id',
-  'molecool.id',
-];
-
-const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
-const OVERPASS_ENDPOINTS = [
-  'https://overpass-api.de/api/interpreter',
-  'https://overpass.kumi.systems/api/interpreter',
-];
-const OVERPASS_MEM = new Map();
-const MAX_OVERPASS_MEM = 80;
-
-function corsHeaders(env, origin) {
-  const allowed = (env && env.ALLOW_ORIGIN) || '*';
+// ---------- CORS & asal permintaan ----------
+function allowedOrigins(env) {
+  return String(env.ALLOW_ORIGIN || "").split(",").map((x) => x.trim().replace(/\/+$/, "")).filter(Boolean);
+}
+function corsHeaders(env, req) {
+  const list = allowedOrigins(env);
+  const o = req && req.headers.get("origin");
   return {
-    'Access-Control-Allow-Origin': allowed === '*' ? '*' : (origin || allowed),
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Range',
-    'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Content-Type',
+    "access-control-allow-origin": list.length ? (o && list.includes(o) ? o : list[0]) : "*",
+    "access-control-allow-methods": "GET, OPTIONS",
+    "access-control-allow-headers": "range, content-type",
+    "access-control-expose-headers": "content-length, content-range, accept-ranges, x-cctv-cache, x-cctv-upstream",
+    "access-control-max-age": "86400",
+    vary: "Origin",
   };
 }
-
-function jsonResp(data, status = 200, extra = {}) {
-  return new Response(JSON.stringify(data), {
+// Longgar (dipakai /api/cctv-points): hanya menolak Origin yang jelas salah.
+function originForbidden(env, req) {
+  const list = allowedOrigins(env), o = req.headers.get("origin");
+  return !!(list.length && o && !list.includes(o));
+}
+// Ketat (dipakai /api/proxy-cctv): Origin atau Referer WAJIB ada dan cocok dengan ALLOW_ORIGIN.
+function appCheck(env, req) {
+  const list = allowedOrigins(env);
+  if (!list.length) return { status: 500, error: "ALLOW_ORIGIN belum diisi di wrangler.toml; proxy dinonaktifkan" };
+  const o = req.headers.get("origin");
+  let src = null;
+  if (o && o !== "null") src = o;
+  else {
+    const r = req.headers.get("referer");
+    if (r) { try { src = new URL(r).origin; } catch (e) { src = null; } }
+  }
+  if (!src) return { status: 403, error: "akses langsung ditolak: permintaan harus datang dari aplikasi (Origin/Referer kosong)" };
+  if (!list.includes(src)) return { status: 403, error: "asal permintaan tidak diizinkan" };
+  return null;
+}
+function jsonRes(obj, status, env, req, extra) {
+  return new Response(JSON.stringify(obj), {
     status,
-    headers: { 'Content-Type': 'application/json; charset=utf-8', ...extra },
+    headers: { ...corsHeaders(env, req), "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...(extra || {}) },
   });
 }
 
-function getAllowedHosts(env) {
-  const raw = env && env.CCTV_PROXY_HOSTS;
-  if (!raw || !String(raw).trim()) return DEFAULT_ALLOWED_HOSTS;
-  const parsed = String(raw).split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
-  return parsed.length ? parsed : DEFAULT_ALLOWED_HOSTS;
+// ---------- keamanan proxy ----------
+function hostBlocked(hostname) {
+  const h = String(hostname || "").toLowerCase().replace(/^\[|\]$/g, "");
+  if (!h) return true;
+  if (h === "localhost" || h.endsWith(".localhost") || h.endsWith(".local") || h.endsWith(".internal") || h.endsWith(".lan")) return true;
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(h)) {
+    const [a, b] = h.split(".").map(Number);
+    return a === 0 || a === 10 || a === 127 || a >= 224 || (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+  }
+  if (h.includes(":")) return /^(::1?$|f[cd][0-9a-f]{2}:|fe80:|::ffff:)/.test(h);
+  return false;
+}
+// Cadangan bila CCTV_PROXY_HOSTS di wrangler.toml kosong. (Isi wrangler.toml, bila ada, yang dipakai.)
+const DEFAULT_PROXY_HOSTS = [
+  "atcsindonesia.com", "atcsindonesia.info", "balitower.co.id", "jasamarga.com",
+  "pelindung.bandung.go.id", "transcode.baliprov.go.id", "cctv.asahankab.go.id",
+];
+function proxyHostList(env) {
+  const l = String(env.CCTV_PROXY_HOSTS || "").split(",").map((x) => x.trim().toLowerCase().replace(/^\*\./, "")).filter(Boolean);
+  return l.length ? l : DEFAULT_PROXY_HOSTS;
 }
 
-function isHostAllowed(hostname, allowedList) {
+// ---------- pemetaan upstream untuk alamat relatif /api/proxy/cctv/<prefix>/... ----------
+const PREFIX_UPSTREAMS = {
+  bali: "https://transcode.baliprov.go.id",
+  asahan: "https://cctv.asahankab.go.id",
+};
+const DEFAULT_UPSTREAMS = ["https://atcsindonesia.com", "https://atcsindonesia.info"];
+function prefixMap(env) {
+  const m = { ...PREFIX_UPSTREAMS };
+  if (env.CCTV_PREFIX_MAP) { try { Object.assign(m, JSON.parse(env.CCTV_PREFIX_MAP)); } catch (e) { /* JSON salah: abaikan */ } }
+  return m;
+}
+function defaultUpstreams(env) {
+  const l = String(env.CCTV_DEFAULT_UPSTREAMS || "").split(",").map((x) => x.trim().replace(/\/+$/, "")).filter(Boolean);
+  return l.length ? l : DEFAULT_UPSTREAMS;
+}
+// pathQuery = "/api/proxy/cctv/<prefix>/<sisa>?query" (atau path relatif lain). Hasil: daftar URL upstream yang dicoba berurutan.
+function upstreamCandidates(env, pathQuery) {
+  const m = pathQuery.match(/^\/api\/proxy\/cctv\/([^\/?#]+)(\/[^?#]*)?(\?[^#]*)?/);
+  if (m) {
+    const base = prefixMap(env)[decodeURIComponent(m[1]).toLowerCase()];
+    if (base) return [new URL((m[2] || "/") + (m[3] || ""), base)];            // prefix dibuang
+  }
+  return defaultUpstreams(env).map((b) => new URL(pathQuery, b));
+}
+function hostAllowed(env, hostname) {
+  const list = proxyHostList(env);
+  if (!list.length) return false;                       // tanpa daftar = tolak semua
   const h = hostname.toLowerCase();
-  return allowedList.some((allowed) => h === allowed || h.endsWith('.' + allowed));
+  return list.some((d) => h === d || h.endsWith("." + d));
+}
+class ProxyError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
+
+// Ikuti pengalihan satu per satu (maks 3) dan periksa ulang tiap host, supaya whitelist tidak bisa dilewati lewat redirect.
+async function fetchUpstream(startUrl, headers, signal, env) {
+  let url = startUrl;
+  for (let hop = 0; hop <= 3; hop++) {
+    const res = await fetch(url.href, { method: "GET", headers, redirect: "manual", signal });
+    const loc = res.status >= 300 && res.status < 400 ? res.headers.get("location") : null;
+    if (!loc) return { res, url };
+    try { await res.body.cancel(); } catch (e) { /* abaikan */ }
+    let next;
+    try { next = new URL(loc, url); } catch (e) { throw new ProxyError(502, "alamat pengalihan tidak valid"); }
+    if (!/^https?:$/.test(next.protocol) || hostBlocked(next.hostname) || !hostAllowed(env, next.hostname)) {
+      throw new ProxyError(403, "pengalihan ke host yang tidak diizinkan: " + next.hostname);
+    }
+    url = next;
+  }
+  throw new ProxyError(508, "terlalu banyak pengalihan");
 }
 
-function guessUpstreamHeaders(targetUrl) {
-  const u = new URL(targetUrl);
-  const host = u.hostname.toLowerCase();
-  const h = {
-    'User-Agent': UA,
-    'Accept': '*/*',
-    'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
-    'Connection': 'keep-alive',
+// ---------- penulisan ulang playlist HLS ----------
+function rewriteM3u8(text, baseUrl, selfBase) {
+  const prox = (raw) => {
+    if (/^data:/i.test(raw)) return raw;
+    try { return selfBase + "/api/proxy/cctv?url=" + encodeURIComponent(new URL(raw, baseUrl).href); }
+    catch (e) { return raw; }
   };
-
-  if (host.includes('atcsindonesia.com')) {
-    h['Referer'] = 'https://atcsindonesia.com/';
-    h['Origin'] = 'https://atcsindonesia.com';
-  } else if (host.includes('balitower.co.id') || host.includes('jakarta.go.id')) {
-    h['Referer'] = 'https://jakcctv.jakarta.go.id/';
-    h['Origin'] = 'https://jakcctv.jakarta.go.id';
-  } else if (host.includes('bandung.go.id')) {
-    h['Referer'] = 'https://pelindung.bandung.go.id/';
-    h['Origin'] = 'https://pelindung.bandung.go.id';
-  } else if (host.includes('jasamarga.com')) {
-    h['Referer'] = 'https://travoy.jasamarga.com/';
-    h['Origin'] = 'https://travoy.jasamarga.com';
-  } else {
-    h['Referer'] = `${u.protocol}//${u.host}/`;
-    h['Origin'] = `${u.protocol}//${u.host}`;
-  }
-  return h;
+  return text.split(/\r?\n/).map((line) => {
+    const t = line.trim();
+    if (!t) return line;
+    if (t.charAt(0) === "#") return line.replace(/URI="([^"]+)"/g, (m, uri) => 'URI="' + prox(uri) + '"');
+    return prox(t);
+  }).join("\n");
 }
 
-function resolveRelativeUrl(baseUrl, line) {
+const MEDIA_EXT = /\.(ts|m4s|mp4|m4a|aac|jpe?g|png|webp|gif|key|vtt|flv)$/i;
+
+async function handleProxy(req, env) {
+  const gate = appCheck(env, req);
+  if (gate) return jsonRes({ ok: false, error: gate.error }, gate.status, env, req);
+  const self = new URL(req.url);
+
+  // 1) tentukan kandidat upstream
+  let cands;
   try {
-    return new URL(line, baseUrl).toString();
-  } catch {
-    return line;
-  }
-}
-
-function rewriteM3u8(body, baseUrl, proxyPrefix) {
-  return body
-    .split(/\r?\n/)
-    .map((line) => {
-      const trimmed = line.trim();
-      if (!trimmed) return line;
-      if (trimmed.startsWith('#')) {
-        return line.replace(/URI=(["'])([^"']+)\1/gi, (_m, q, uri) => {
-          const abs = resolveRelativeUrl(baseUrl, uri);
-          return `URI=${q}${proxyPrefix}${encodeURIComponent(abs)}${q}`;
-        });
-      }
-      const abs = resolveRelativeUrl(baseUrl, trimmed);
-      return `${proxyPrefix}${encodeURIComponent(abs)}`;
-    })
-    .join('\n');
-}
-
-async function handleProxy(request, url, env, cors) {
-  if (request.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: cors });
-  }
-  if (request.method !== 'GET' && request.method !== 'HEAD') {
-    return jsonResp({ ok: false, error: 'Method tidak didukung' }, 405, cors);
-  }
-
-  let targetRaw = url.searchParams.get('url');
-  if (!targetRaw && url.pathname.startsWith('/api/proxy/cctv/')) {
-    const rest = url.pathname.slice('/api/proxy/cctv/'.length);
-    if (rest) {
-      targetRaw = `https://atcsindonesia.com/${rest}${url.search || ''}`;
+    if (self.pathname.startsWith("/api/proxy/cctv/")) cands = upstreamCandidates(env, self.pathname + self.search);
+    else {
+      const raw = self.searchParams.get("url") || "";
+      if (!raw || raw.length > 2000) return jsonRes({ ok: false, error: "parameter url kosong atau terlalu panjang" }, 400, env, req);
+      cands = raw.charAt(0) === "/" ? upstreamCandidates(env, raw) : [new URL(raw)];
     }
-  }
-  if (!targetRaw) {
-    return jsonResp({ ok: false, error: 'Parameter ?url= wajib diisi' }, 400, cors);
-  }
+  } catch (e) { return jsonRes({ ok: false, error: "alamat tidak valid" }, 400, env, req); }
 
-  let targetUrl;
-  try {
-    targetUrl = new URL(targetRaw);
-  } catch {
-    return jsonResp({ ok: false, error: 'URL tidak valid' }, 400, cors);
-  }
-
-  if (targetUrl.protocol !== 'http:' && targetUrl.protocol !== 'https:') {
-    return jsonResp({ ok: false, error: 'Hanya protokol http/https yang didukung' }, 400, cors);
-  }
-
-  const allowed = getAllowedHosts(env);
-  const isSegment = /\.(ts|m4s|mp4|aac|key)(\?|$)/i.test(targetUrl.pathname);
-  if (!isSegment && !isHostAllowed(targetUrl.hostname, allowed)) {
-    return jsonResp(
-      { ok: false, error: `Host ${targetUrl.hostname} tidak ada di CCTV_PROXY_HOSTS` },
-      403,
-      cors
-    );
-  }
-
-  const upstreamHeaders = guessUpstreamHeaders(targetUrl.toString());
-  const range = request.headers.get('Range');
-  if (range) upstreamHeaders['Range'] = range;
-
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 14000);
-  let upstream;
-  try {
-    upstream = await fetch(targetUrl.toString(), {
-      method: request.method,
-      headers: upstreamHeaders,
-      redirect: 'follow',
-      signal: ctrl.signal,
+  // 2) coba tiap kandidat (atcsindonesia.com lalu .info bila 404/gagal); semua divalidasi: skema, host privat, whitelist
+  let res = null, finalU = null, lastErr = null;
+  for (const target of cands) {
+    if (!/^https?:$/.test(target.protocol)) { lastErr = new ProxyError(400, "hanya http/https"); continue; }
+    if (target.host === self.host) { lastErr = new ProxyError(400, "tidak boleh memproxy dirinya sendiri"); continue; }
+    if (hostBlocked(target.hostname)) { lastErr = new ProxyError(403, "host diblokir: " + target.hostname); continue; }
+    if (!hostAllowed(env, target.hostname)) { lastErr = new ProxyError(403, "host tidak ada di daftar CCTV_PROXY_HOSTS: " + target.hostname); continue; }
+    const ref = refererFor(env, target);
+    const headers = new Headers({
+      "user-agent": UA, referer: ref.referer, origin: ref.origin,
+      accept: req.headers.get("accept") || "*/*", "accept-language": "id-ID,id;q=0.9,en;q=0.8",
     });
-  } catch (err) {
-    clearTimeout(timer);
-    const msg = err && err.name === 'AbortError'
-      ? 'Server kamera timeout (>14 detik)'
-      : `Koneksi ke server kamera gagal: ${err && err.message ? err.message : 'TLS/Network error'}`;
-    return jsonResp({ ok: false, error: msg }, 502, cors);
-  }
-  clearTimeout(timer);
-
-  if (!upstream.ok) {
-    return jsonResp(
-      { ok: false, error: `Server kamera mengembalikan HTTP ${upstream.status} (${targetUrl.hostname})` },
-      upstream.status === 404 ? 404 : 502,
-      cors
-    );
-  }
-
-  const ct = (upstream.headers.get('content-type') || '').toLowerCase();
-  const finalUrl = upstream.url || targetUrl.toString();
-  const isM3u8 =
-    ct.includes('mpegurl') ||
-    ct.includes('vnd.apple') ||
-    /\.m3u8(\?|$)/i.test(finalUrl);
-
-  const isHtmlOrJson = ct.includes('text/html') || ct.includes('application/json');
-  if (isHtmlOrJson && !isM3u8) {
-    return jsonResp(
-      { ok: false, error: `Stream diblokir WAF atau kamera offline (HTTP ${upstream.status}, ${ct.split(';')[0]})` },
-      502,
-      cors
-    );
-  }
-
-  if (isM3u8) {
-    const text = await upstream.text();
-    if (!text.includes('#EXTM3U')) {
-      return jsonResp(
-        { ok: false, error: 'Stream ATCS sedang offline (manifest #EXTM3U kosong/tidak valid)' },
-        502,
-        cors
-      );
-    }
-    const proxyPrefix = `${url.origin}/api/proxy/cctv?url=`;
-    const rewritten = rewriteM3u8(text, finalUrl, proxyPrefix);
-    return new Response(rewritten, {
-      status: 200,
-      headers: {
-        ...cors,
-        'Content-Type': 'application/vnd.apple.mpegurl; charset=utf-8',
-        'Cache-Control': 'no-store, max-age=0',
-      },
-    });
-  }
-
-  const outHeaders = new Headers(cors);
-  outHeaders.set('Content-Type', ct || 'video/mp2t');
-  const cl = upstream.headers.get('content-length');
-  if (cl) outHeaders.set('Content-Length', cl);
-  const cr = upstream.headers.get('content-range');
-  if (cr) outHeaders.set('Content-Range', cr);
-  outHeaders.set('Cache-Control', 'public, max-age=5');
-
-  return new Response(upstream.body, {
-    status: upstream.status,
-    headers: outHeaders,
-  });
-}
-
-function snapGrid(val, step = 0.05) {
-  return Math.round(val / step) * step;
-}
-
-async function fetchOverpass(query) {
-  let lastErr = null;
-  for (const ep of OVERPASS_ENDPOINTS) {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 14000);
+    const range = req.headers.get("range"); if (range) headers.set("range", range);
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), UPSTREAM_TIMEOUT_MS);
     try {
-      const res = await fetch(ep, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-          'User-Agent': 'GPS-Tracker-Worker/1.0',
-        },
-        body: `data=${encodeURIComponent(query)}`,
-        signal: ctrl.signal,
-      });
-      clearTimeout(timer);
-      if (!res.ok) {
-        lastErr = new Error(`HTTP ${res.status}`);
-        continue;
-      }
-      return await res.json();
+      const r = await fetchUpstream(target, headers, ctl.signal, env);
+      if (r.res.ok || r.res.status === 206) { res = r.res; finalU = r.url; break; }
+      lastErr = new ProxyError(r.res.status, "server kamera membalas HTTP " + r.res.status + " (" + target.host + ")");
+      try { await r.res.body.cancel(); } catch (e) { /* abaikan */ }
     } catch (e) {
-      clearTimeout(timer);
-      lastErr = e;
-    }
+      lastErr = e instanceof ProxyError ? e
+        : new ProxyError(504, (e && e.name === "AbortError" ? "server kamera tidak merespons (waktu habis): " : "server kamera tidak dapat dijangkau: ") + target.host);
+    } finally { clearTimeout(timer); }
   }
-  throw lastErr || new Error('Semua mirror Overpass gagal');
+  if (!res) {
+    const st = lastErr && lastErr.status >= 400 && lastErr.status < 600 ? lastErr.status : 502;
+    return jsonRes({ ok: false, error: (lastErr && lastErr.message) || "gagal memproxy" }, st, env, req, { "x-cctv-upstream": String(st) });
+  }
+
+  const finalUrl = finalU.href;
+  const finalPath = new URL(finalUrl).pathname;
+  const ct = (res.headers.get("content-type") || "").toLowerCase();
+  const out = { ...corsHeaders(env, req), "x-cctv-upstream": String(res.status) };
+
+  // Halaman HTML (halaman error/blokir/login) bukan stream: tolak dengan status yang jelas.
+  if (/text\/html/.test(ct)) {
+    try { await res.body.cancel(); } catch (e) { /* abaikan */ }
+    return jsonRes({ ok: false, error: "server kamera mengembalikan halaman HTML (diblokir atau error), bukan stream: " + finalU.host }, 502, env, req, { "x-cctv-upstream": String(res.status) });
+  }
+
+  const looksM3u8 = /\.m3u8?$/i.test(finalPath) || /mpegurl/.test(ct);
+  const isPlainMedia = MEDIA_EXT.test(finalPath) || /^(image|video|audio)\//.test(ct);
+
+  // Media biasa (segmen, gambar, mp4): alirkan langsung tanpa membaca isinya.
+  if (!looksM3u8 && isPlainMedia) {
+    ["content-type", "content-length", "content-range", "accept-ranges"].forEach((k) => { const v = res.headers.get(k); if (v) out[k] = v; });
+    out["cache-control"] = /\.(ts|m4s)$/i.test(finalPath) ? "public, max-age=30" : "no-store";
+    return new Response(res.body, { status: res.status, headers: out });
+  }
+
+  // Playlist, atau tipe tak jelas (alamat tanpa ekstensi): baca dan cek apakah isinya playlist HLS.
+  const len = Number(res.headers.get("content-length") || 0);
+  if (!looksM3u8 && len > SNIFF_MAX_BYTES) {
+    ["content-type", "content-length", "content-range", "accept-ranges"].forEach((k) => { const v = res.headers.get(k); if (v) out[k] = v; });
+    out["cache-control"] = "no-store";
+    return new Response(res.body, { status: res.status, headers: out });
+  }
+  const buf = await res.arrayBuffer();
+  const head = new TextDecoder().decode(buf.slice(0, 16)).replace(/^\uFEFF/, "").trimStart();
+  if (looksM3u8 || head.startsWith("#EXTM3U")) {
+    const text = new TextDecoder().decode(buf);
+    if (!text.trimStart().replace(/^\uFEFF/, "").startsWith("#EXTM3U")) return jsonRes({ ok: false, error: "isi bukan playlist HLS yang valid" }, 502, env, req);
+    out["content-type"] = "application/vnd.apple.mpegurl";
+    out["cache-control"] = "no-store";
+    return new Response(rewriteM3u8(text, finalUrl, self.origin), { status: 200, headers: out });
+  }
+  if (/text\/html|json|xml|javascript/.test(ct)) return jsonRes({ ok: false, error: "tipe respons tidak didukung proxy (" + (ct.split(";")[0] || "?") + ")" }, 415, env, req);
+  if (ct) out["content-type"] = ct;
+  out["cache-control"] = "no-store";
+  return new Response(buf, { status: res.status, headers: out });
 }
 
-async function handleCctvPoints(request, url, cors) {
-  if (request.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: cors });
+// ---------- /api/cctv-points (Overpass + cache 15 menit) ----------
+const OVP_URLS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://overpass.private.coffee/api/interpreter",
+];
+const POINTS_TTL_S = 15 * 60;
+const POINTS_STALE_S = 24 * 3600;
+const GRID = 0.05;                    // kotak diratakan ke grid 0,05° supaya banyak pengguna berbagi cache yang sama
+const MAX_SPAN = 0.3;
+const memCache = new Map();           // cadangan bila Cache API tidak aktif (workers.dev)
+const MEM_MAX = 80;
+
+function memGet(key, maxAgeMs) { const v = memCache.get(key); return v && Date.now() - v.t < maxAgeMs ? v.body : null; }
+function memSet(key, body) { memCache.set(key, { t: Date.now(), body }); while (memCache.size > MEM_MAX) memCache.delete(memCache.keys().next().value); }
+
+async function queryOverpass(q) {
+  let lastErr = "";
+  for (const url of OVP_URLS) {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 14000);
+    try {
+      const r = await fetch(url, {
+        method: "POST", body: "data=" + encodeURIComponent(q), signal: ctl.signal,
+        headers: { "content-type": "application/x-www-form-urlencoded", "user-agent": "BukuKasGPS/1.0 (peta CCTV; cache Worker)" },
+      });
+      if (!r.ok) { lastErr = "HTTP " + r.status; continue; }
+      const j = await r.json();
+      if (j && Array.isArray(j.elements)) return j;
+      lastErr = "respons kosong";
+    } catch (e) { lastErr = e && e.name === "AbortError" ? "waktu habis" : "koneksi gagal"; }
+    finally { clearTimeout(timer); }
   }
-  const lat = parseFloat(url.searchParams.get('lat'));
-  const lon = parseFloat(url.searchParams.get('lon'));
-  let radius = parseInt(url.searchParams.get('radius') || '3500', 10);
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-    return jsonResp({ ok: false, error: 'Parameter lat & lon wajib diisi' }, 400, cors);
+  throw new Error(lastErr || "gagal");
+}
+
+async function handlePoints(req, env, ctx) {
+  if (originForbidden(env, req)) return jsonRes({ ok: false, error: "forbidden origin" }, 403, env, req);
+  const u = new URL(req.url);
+  const p = (u.searchParams.get("bbox") || "").split(",").map(Number);
+  if (p.length !== 4 || p.some((v) => !Number.isFinite(v))) return jsonRes({ ok: false, error: "bbox harus S,W,N,E" }, 400, env, req);
+  let [s, w, n, e] = p;
+  if (s >= n || w >= e || s < -90 || n > 90 || w < -180 || e > 180 || n - s > MAX_SPAN || e - w > MAX_SPAN) {
+    return jsonRes({ ok: false, error: "bbox tidak valid atau terlalu luas (maks " + MAX_SPAN + "°)" }, 400, env, req);
   }
-  if (!Number.isFinite(radius) || radius < 500) radius = 500;
-  if (radius > 8000) radius = 8000;
+  const f = (v) => Number(v.toFixed(5));
+  const S = f(Math.floor(s / GRID) * GRID), W = f(Math.floor(w / GRID) * GRID), N = f(Math.ceil(n / GRID) * GRID), E = f(Math.ceil(e / GRID) * GRID);
+  const id = [S, W, N, E].join("_");
+  const freshReq = new Request("https://cctv-cache.invalid/points/" + id);
+  const staleReq = new Request("https://cctv-cache.invalid/points-stale/" + id);
+  const jh = (extra) => ({ ...corsHeaders(env, req), "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=60", ...extra });
 
-  const sLat = snapGrid(lat, 0.05);
-  const sLon = snapGrid(lon, 0.05);
-  const sRad = Math.round(radius / 500) * 500;
-  const cacheKey = `${sLat.toFixed(2)},${sLon.toFixed(2)},${sRad}`;
+  let cache = null; try { cache = caches.default; } catch (err) { cache = null; }
 
-  const memHit = OVERPASS_MEM.get(cacheKey);
-  if (memHit && Date.now() - memHit.ts < 6 * 3600 * 1000) {
-    return jsonResp(memHit.data, 200, { ...cors, 'X-Cache': 'MEM' });
+  const mem = memGet("f:" + id, POINTS_TTL_S * 1000);
+  if (mem) return new Response(mem, { status: 200, headers: jh({ "x-cctv-cache": "MEM" }) });
+  if (cache) {
+    try {
+      const hit = await cache.match(freshReq);
+      if (hit) { const body = await hit.text(); memSet("f:" + id, body); return new Response(body, { status: 200, headers: jh({ "x-cctv-cache": "HIT" }) }); }
+    } catch (err) { /* cache rusak: ambil baru */ }
   }
 
-  const cache = caches.default;
-  const cacheReq = new Request(`https://cctv-overpass.cache/${cacheKey}`);
-  const edgeHit = await cache.match(cacheReq);
-  if (edgeHit) {
-    const body = await edgeHit.text();
-    return new Response(body, {
-      status: 200,
-      headers: { ...cors, 'Content-Type': 'application/json; charset=utf-8', 'X-Cache': 'EDGE' },
-    });
-  }
-
-  const q = `[out:json][timeout:12];(node["highway"="traffic_signals"](around:${sRad},${sLat},${sLon});node["man_made"="surveillance"](around:${sRad},${sLat},${sLon});node["amenity"="speed_camera"](around:${sRad},${sLat},${sLon}););out body 120;`;
-
-  let raw;
+  const bb = S + "," + W + "," + N + "," + E;
+  const q = '[out:json][timeout:25];(node["highway"="traffic_signals"](' + bb + ');node["man_made"="surveillance"](' + bb + ');node["highway"="speed_camera"](' + bb + '););out body 3000;';
   try {
-    raw = await fetchOverpass(q);
+    const j = await queryOverpass(q);
+    const body = JSON.stringify({ ok: true, bbox: [S, W, N, E], count: j.elements.length, cachedAt: Date.now(), elements: j.elements });
+    memSet("f:" + id, body); memSet("s:" + id, body);
+    if (cache) {
+      const put = Promise.all([
+        cache.put(freshReq, new Response(body, { headers: { "content-type": "application/json", "cache-control": "public, max-age=" + POINTS_TTL_S } })),
+        cache.put(staleReq, new Response(body, { headers: { "content-type": "application/json", "cache-control": "public, max-age=" + POINTS_STALE_S } })),
+      ]).catch(() => {});
+      if (ctx && ctx.waitUntil) ctx.waitUntil(put);
+    }
+    return new Response(body, { status: 200, headers: jh({ "x-cctv-cache": "MISS" }) });
   } catch (err) {
-    return jsonResp(
-      { ok: false, error: `Overpass gagal: ${err && err.message ? err.message : 'timeout'}`, points: [] },
-      502,
-      cors
-    );
+    // Overpass gagal: sajikan data lama (maks 24 jam) bila ada, lebih baik daripada banner error.
+    let stale = memGet("s:" + id, POINTS_STALE_S * 1000);
+    if (!stale && cache) { try { const hit = await cache.match(staleReq); if (hit) stale = await hit.text(); } catch (e2) { /* abaikan */ } }
+    if (stale) return new Response(stale, { status: 200, headers: jh({ "x-cctv-cache": "STALE" }) });
+    return jsonRes({ ok: false, error: "Overpass: " + ((err && err.message) || "gagal") }, 502, env, req);
   }
-
-  const seen = new Set();
-  const points = [];
-  for (const el of raw.elements || []) {
-    if (typeof el.lat !== 'number' || typeof el.lon !== 'number') continue;
-    const key = `${el.lat.toFixed(4)},${el.lon.toFixed(4)}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const tags = el.tags || {};
-    const kind =
-      tags.man_made === 'surveillance'
-        ? 'cctv'
-        : tags.amenity === 'speed_camera'
-        ? 'etle'
-        : 'atcs';
-    points.push({
-      id: el.id,
-      lat: el.lat,
-      lon: el.lon,
-      kind,
-      name:
-        tags.name ||
-        tags['name:id'] ||
-        tags.operator ||
-        (kind === 'cctv' ? 'Kamera Pengawas' : kind === 'etle' ? 'Kamera ETLE' : 'Simpang ATCS'),
-    });
-  }
-
-  const payload = { ok: true, count: points.length, points };
-  const bodyStr = JSON.stringify(payload);
-
-  if (OVERPASS_MEM.size >= MAX_OVERPASS_MEM) {
-    const firstKey = OVERPASS_MEM.keys().next().value;
-    OVERPASS_MEM.delete(firstKey);
-  }
-  OVERPASS_MEM.set(cacheKey, { ts: Date.now(), data: payload });
-
-  try {
-    await cache.put(
-      cacheReq,
-      new Response(bodyStr, {
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Cache-Control': 'public, max-age=21600',
-        },
-      })
-    );
-  } catch {}
-
-  return new Response(bodyStr, {
-    status: 200,
-    headers: { ...cors, 'Content-Type': 'application/json; charset=utf-8', 'X-Cache': 'MISS' },
-  });
 }
 
 export default {
-  async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-    const origin = request.headers.get('Origin') || '';
-    const cors = corsHeaders(env, origin);
-
-    if (
-      url.pathname === '/api/proxy-cctv' ||
-      url.pathname === '/api/proxy/cctv' ||
-      url.pathname.startsWith('/api/proxy/cctv/')
-    ) {
-      return handleProxy(request, url, env, cors);
+  async fetch(req, env, ctx) {
+    const path = new URL(req.url).pathname;
+    const isProxy = path === "/api/proxy-cctv" || path === "/api/proxy/cctv" || path.startsWith("/api/proxy/cctv/");
+    if (isProxy || path === "/api/cctv-points") {
+      if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(env, req) });
+      if (req.method !== "GET") return jsonRes({ ok: false, error: "method tidak didukung" }, 405, env, req);
+      try { return isProxy ? await handleProxy(req, env) : await handlePoints(req, env, ctx); }
+      catch (e) { return jsonRes({ ok: false, error: "gagal: " + ((e && e.message) || e) }, 502, env, req); }
     }
-
-    if (url.pathname === '/api/cctv-points') {
-      return handleCctvPoints(request, url, cors);
-    }
-
-    return mainWorker.fetch(request, env, ctx);
+    return base.fetch(req, env, ctx);
   },
-
   async scheduled(event, env, ctx) {
-    if (typeof mainWorker.scheduled === 'function') {
-      return mainWorker.scheduled(event, env, ctx);
-    }
+    return base.scheduled(event, env, ctx);
   },
 };
