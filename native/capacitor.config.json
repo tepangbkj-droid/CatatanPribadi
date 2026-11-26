@@ -11,5 +11,13 @@
   },
   "android": {
     "useLegacyBridge": true
+  },
+  "plugins": {
+    "FirebaseAuthentication": {
+      "skipNativeAuth": true,
+      "providers": [
+        "google.com"
+      ]
+    }
   }
 }
