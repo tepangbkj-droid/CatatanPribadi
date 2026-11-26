@@ -12,6 +12,8 @@
 //       Pemetaan bisa ditambah lewat variabel CCTV_PREFIX_MAP (JSON {"prefix":"https://host"}).
 //   GET /api/proxy/cctv?url=<URL penuh, atau path relatif "/api/...">
 //       Proxy URL langsung yang tidak punya header CORS / memakai port non-standar (mis. pelindung.bandung.go.id:3443).
+//   Bila upstream membalas JSON (mis. ATCS "balitower-m/<id>"), Worker mencari alamat media di dalamnya (.m3u8 / gambar),
+//   mengikutinya (maks 2 lompatan, tetap lewat whitelist host), dan mengalirkan hasilnya. Tanpa alamat media: HTTP 502 + isi pesan upstream.
 //   Keduanya: menyuntikkan Referer + Origin, menulis ulang playlist .m3u8 (segmen .ts/.m4s, sub-playlist, #EXT-X-KEY/MAP/MEDIA)
 //   agar ikut lewat proxy, menolak respons text/html (halaman error/blokir) dengan status 502, dan selalu menyertakan header CORS.
 //   GET /api/cctv-points?bbox=S,W,N,E
@@ -306,6 +308,66 @@ function requestedAssetPath(self) {
   try { return new URL(raw).pathname; } catch (e) { return raw.split(/[?#]/)[0]; }
 }
 
+// Cari alamat media di dalam respons JSON, mis. {"url":".../index.m3u8"}. Mengembalikan { url, msg } (url kosong = tidak ada).
+function jsonMediaUrl(text, baseUrl) {
+  let obj;
+  try { obj = JSON.parse(text); } catch (e) { return { url: "", msg: String(text).slice(0, 160) }; }
+  const found = [];
+  let msg = "", nodes = 0;
+  const KEYS = /^(url|stream|streamurl|stream_url|hls|m3u8|link|src|source|image|snapshot|thumbnail|thumb|file|play|playurl)$/i;
+  (function walk(v, key, depth) {
+    if (nodes++ > 300 || depth > 5) return;
+    if (typeof v === "string") {
+      const s = v.trim();
+      if (/^(error|message|msg|detail)$/i.test(key || "") && !msg) msg = s;
+      const rel = s.charAt(0) === "/" && /\.(m3u8|jpe?g|png|webp|mjpe?g)(\?|$)/i.test(s);
+      if (!/^https?:\/\//i.test(s) && !rel) return;
+      let score = 1;
+      if (/\.m3u8(\?|$)/i.test(s)) score = 4;
+      else if (/\.(jpe?g|png|webp)(\?|$)/i.test(s) || /snapshot|image|thumb/i.test(s)) score = 3;
+      else if (KEYS.test(key || "")) score = 2;
+      try { const abs = new URL(s, baseUrl).href; if (abs !== baseUrl) found.push({ score, url: abs }); } catch (e) { /* abaikan */ }
+    } else if (Array.isArray(v)) v.forEach((x) => walk(x, key, depth + 1));
+    else if (v && typeof v === "object") Object.keys(v).forEach((k) => walk(v[k], k, depth + 1));
+  })(obj, "", 0);
+  found.sort((a, b) => b.score - a.score);
+  return { url: found.length ? found[0].url : "", msg };
+}
+
+// Coba tiap kandidat upstream dengan profil Referer/Origin berurutan. Hasil: { res, finalU, usedRef } atau { err }.
+async function fetchFirst(req, env, self, cands) {
+  let lastErr = null;
+  for (const target of cands) {
+    if (!/^https?:$/.test(target.protocol)) { lastErr = new ProxyError(400, "hanya http/https"); continue; }
+    if (target.host === self.host) { lastErr = new ProxyError(400, "tidak boleh memproxy dirinya sendiri"); continue; }
+    if (hostBlocked(target.hostname)) { lastErr = new ProxyError(403, "host diblokir: " + target.hostname); continue; }
+    if (!hostAllowed(env, target.hostname)) { lastErr = new ProxyError(403, "host tidak ada di daftar CCTV_PROXY_HOSTS: " + target.hostname); continue; }
+    for (const pf of headerProfiles(env, target)) {
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), UPSTREAM_TIMEOUT_MS);
+      let retry = false;
+      try {
+        const r = await fetchUpstream(target, upstreamHeaders(req, pf), ctl.signal, env);
+        const rct = (r.res.headers.get("content-type") || "").toLowerCase();
+        if ((r.res.ok || r.res.status === 206) && !/text\/html/.test(rct)) {
+          rememberProfile(target.hostname.toLowerCase(), pf.name);
+          return { res: r.res, finalU: r.url, usedRef: pf.name };
+        }
+        lastErr = r.res.ok
+          ? new ProxyError(502, "server kamera mengembalikan halaman HTML (diblokir atau error), bukan stream: " + r.url.host)
+          : new ProxyError(r.res.status, "server kamera membalas HTTP " + r.res.status + " (" + target.host + ")");
+        try { await r.res.body.cancel(); } catch (e) { /* abaikan */ }
+        retry = r.res.status !== 416 && r.res.status !== 429;
+      } catch (e) {
+        lastErr = e instanceof ProxyError ? e
+          : new ProxyError(504, (e && e.name === "AbortError" ? "server kamera tidak merespons (waktu habis): " : "server kamera tidak dapat dijangkau: ") + target.host);
+      } finally { clearTimeout(timer); }
+      if (!retry) break;
+    }
+  }
+  return { err: lastErr || new ProxyError(502, "gagal memproxy") };
+}
+
 async function handleProxy(req, env) {
   const self = new URL(req.url);
   const gate = appCheck(env, req, requestedAssetPath(self));
@@ -323,78 +385,57 @@ async function handleProxy(req, env) {
   } catch (e) { return jsonRes({ ok: false, error: "alamat tidak valid" }, 400, env, req); }
   if (!cands.length) return jsonRes({ ok: false, error: "alamat tidak valid" }, 400, env, req);
 
-  // 2) tiap kandidat: skema, host privat, whitelist; lalu tiap profil Referer/Origin dicoba berurutan
-  //    (HTTP non-OK atau halaman HTML => profil berikutnya; kegagalan jaringan/timeout => kandidat berikutnya).
-  let res = null, finalU = null, lastErr = null, usedRef = "";
-  for (const target of cands) {
-    if (!/^https?:$/.test(target.protocol)) { lastErr = new ProxyError(400, "hanya http/https"); continue; }
-    if (target.host === self.host) { lastErr = new ProxyError(400, "tidak boleh memproxy dirinya sendiri"); continue; }
-    if (hostBlocked(target.hostname)) { lastErr = new ProxyError(403, "host diblokir: " + target.hostname); continue; }
-    if (!hostAllowed(env, target.hostname)) { lastErr = new ProxyError(403, "host tidak ada di daftar CCTV_PROXY_HOSTS: " + target.hostname); continue; }
-    for (const pf of headerProfiles(env, target)) {
-      const ctl = new AbortController();
-      const timer = setTimeout(() => ctl.abort(), UPSTREAM_TIMEOUT_MS);
-      let retry = false;
-      try {
-        const r = await fetchUpstream(target, upstreamHeaders(req, pf), ctl.signal, env);
-        const rct = (r.res.headers.get("content-type") || "").toLowerCase();
-        if ((r.res.ok || r.res.status === 206) && !/text\/html/.test(rct)) { res = r.res; finalU = r.url; usedRef = pf.name; rememberProfile(target.hostname.toLowerCase(), pf.name); break; }
-        lastErr = r.res.ok
-          ? new ProxyError(502, "server kamera mengembalikan halaman HTML (diblokir atau error), bukan stream: " + r.url.host)
-          : new ProxyError(r.res.status, "server kamera membalas HTTP " + r.res.status + " (" + target.host + ")");
-        try { await r.res.body.cancel(); } catch (e) { /* abaikan */ }
-        retry = r.res.status !== 416 && r.res.status !== 429;
-      } catch (e) {
-        lastErr = e instanceof ProxyError ? e
-          : new ProxyError(504, (e && e.name === "AbortError" ? "server kamera tidak merespons (waktu habis): " : "server kamera tidak dapat dijangkau: ") + target.host);
-      } finally { clearTimeout(timer); }
-      if (!retry) break;
+  // 2) ambil dari upstream; respons JSON yang memuat alamat media diikuti (maks 2 lompatan)
+  for (let depth = 0; depth < 3; depth++) {
+    const f = await fetchFirst(req, env, self, cands);
+    if (f.err) {
+      const st = f.err.status >= 400 && f.err.status < 600 ? f.err.status : 502;
+      return jsonRes({ ok: false, error: f.err.message || "gagal memproxy" }, st, env, req, { "x-cctv-upstream": String(st) });
     }
-    if (res) break;
-  }
-  if (!res) {
-    const st = lastErr && lastErr.status >= 400 && lastErr.status < 600 ? lastErr.status : 502;
-    return jsonRes({ ok: false, error: (lastErr && lastErr.message) || "gagal memproxy" }, st, env, req, { "x-cctv-upstream": String(st) });
-  }
+    const res = f.res, finalUrl = f.finalU.href, finalPath = f.finalU.pathname;
+    const ct = (res.headers.get("content-type") || "").toLowerCase();
+    const out = { ...corsHeaders(env, req), "x-cctv-upstream": String(res.status), "x-cctv-ref": f.usedRef };
 
-  const finalUrl = finalU.href;
-  const finalPath = new URL(finalUrl).pathname;
-  const ct = (res.headers.get("content-type") || "").toLowerCase();
-  const out = { ...corsHeaders(env, req), "x-cctv-upstream": String(res.status), "x-cctv-ref": usedRef };
+    const looksM3u8 = /\.m3u8?$/i.test(finalPath) || /mpegurl/.test(ct);
+    const isPlainMedia = MEDIA_EXT.test(finalPath) || /^(image|video|audio)\//.test(ct);
 
-  const looksM3u8 = /\.m3u8?$/i.test(finalPath) || /mpegurl/.test(ct);
-  const isPlainMedia = MEDIA_EXT.test(finalPath) || /^(image|video|audio)\//.test(ct);
+    // Media biasa (segmen, gambar, mp4): alirkan langsung tanpa membaca isinya.
+    if (!looksM3u8 && isPlainMedia) {
+      ["content-type", "content-length", "content-range", "accept-ranges"].forEach((k) => { const v = res.headers.get(k); if (v) out[k] = v; });
+      if (!out["content-type"] && /\.ts$/i.test(finalPath)) out["content-type"] = "video/mp2t";
+      out["cache-control"] = /\.(ts|m4s)$/i.test(finalPath) ? "public, max-age=30" : "no-store";
+      return new Response(res.body, { status: res.status, headers: out });
+    }
 
-  // Media biasa (segmen, gambar, mp4): alirkan langsung tanpa membaca isinya.
-  if (!looksM3u8 && isPlainMedia) {
-    ["content-type", "content-length", "content-range", "accept-ranges"].forEach((k) => { const v = res.headers.get(k); if (v) out[k] = v; });
-    if (!out["content-type"] && /\.ts$/i.test(finalPath)) out["content-type"] = "video/mp2t";
-    out["cache-control"] = /\.(ts|m4s)$/i.test(finalPath) ? "public, max-age=30" : "no-store";
-    return new Response(res.body, { status: res.status, headers: out });
-  }
-
-  // Playlist, atau tipe tak jelas (alamat tanpa ekstensi): baca dan cek apakah isinya playlist HLS atau gambar.
-  const len = Number(res.headers.get("content-length") || 0);
-  if (!looksM3u8 && len > SNIFF_MAX_BYTES) {
-    ["content-type", "content-length", "content-range", "accept-ranges"].forEach((k) => { const v = res.headers.get(k); if (v) out[k] = v; });
+    // Playlist, atau tipe tak jelas (alamat tanpa ekstensi): baca dan cek apakah isinya playlist HLS, JSON, atau gambar.
+    const len = Number(res.headers.get("content-length") || 0);
+    if (!looksM3u8 && len > SNIFF_MAX_BYTES) {
+      ["content-type", "content-length", "content-range", "accept-ranges"].forEach((k) => { const v = res.headers.get(k); if (v) out[k] = v; });
+      out["cache-control"] = "no-store";
+      return new Response(res.body, { status: res.status, headers: out });
+    }
+    const buf = await res.arrayBuffer();
+    const head = new TextDecoder().decode(buf.slice(0, 16)).replace(/^\uFEFF/, "").trimStart();
+    if (looksM3u8 || head.startsWith("#EXTM3U")) {
+      const text = new TextDecoder().decode(buf);
+      if (!text.trimStart().replace(/^\uFEFF/, "").startsWith("#EXTM3U")) return jsonRes({ ok: false, error: "isi bukan playlist HLS yang valid" }, 502, env, req);
+      out["content-type"] = "application/vnd.apple.mpegurl";
+      out["cache-control"] = "no-store";
+      return new Response(rewriteM3u8(text, finalUrl, self.origin, env), { status: 200, headers: out });
+    }
+    if (/json/.test(ct) || /^[\[{]/.test(head)) {
+      const j = jsonMediaUrl(new TextDecoder().decode(buf), finalUrl);
+      if (j.url && depth < 2) { try { cands = [new URL(j.url)]; continue; } catch (e) { /* jatuh ke pesan galat */ } }
+      return jsonRes({ ok: false, error: "server kamera membalas JSON" + (j.url ? " (terlalu banyak lompatan)" : " tanpa alamat stream") + (j.msg ? ": " + j.msg.slice(0, 120) : "") + " [" + f.finalU.host + "]" }, 502, env, req, { "x-cctv-upstream": String(res.status) });
+    }
+    const imgType = sniffImage(buf);
+    if (imgType) { out["content-type"] = imgType; out["cache-control"] = "no-store"; return new Response(buf, { status: res.status, headers: out }); }
+    if (/text\/html|xml|javascript/.test(ct)) return jsonRes({ ok: false, error: "tipe respons tidak didukung proxy (" + (ct.split(";")[0] || "?") + ")" }, 415, env, req);
+    if (ct) out["content-type"] = ct;
     out["cache-control"] = "no-store";
-    return new Response(res.body, { status: res.status, headers: out });
+    return new Response(buf, { status: res.status, headers: out });
   }
-  const buf = await res.arrayBuffer();
-  const head = new TextDecoder().decode(buf.slice(0, 16)).replace(/^\uFEFF/, "").trimStart();
-  if (looksM3u8 || head.startsWith("#EXTM3U")) {
-    const text = new TextDecoder().decode(buf);
-    if (!text.trimStart().replace(/^\uFEFF/, "").startsWith("#EXTM3U")) return jsonRes({ ok: false, error: "isi bukan playlist HLS yang valid" }, 502, env, req);
-    out["content-type"] = "application/vnd.apple.mpegurl";
-    out["cache-control"] = "no-store";
-    return new Response(rewriteM3u8(text, finalUrl, self.origin, env), { status: 200, headers: out });
-  }
-  const imgType = sniffImage(buf);
-  if (imgType) { out["content-type"] = imgType; out["cache-control"] = "no-store"; return new Response(buf, { status: res.status, headers: out }); }
-  if (/text\/html|json|xml|javascript/.test(ct)) return jsonRes({ ok: false, error: "tipe respons tidak didukung proxy (" + (ct.split(";")[0] || "?") + ")" }, 415, env, req);
-  if (ct) out["content-type"] = ct;
-  out["cache-control"] = "no-store";
-  return new Response(buf, { status: res.status, headers: out });
+  return jsonRes({ ok: false, error: "terlalu banyak lompatan respons JSON" }, 508, env, req);
 }
 
 // ---------- /api/cctv-points (Overpass + cache 15 menit) ----------
