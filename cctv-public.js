@@ -29,7 +29,7 @@
 
   var HLS_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.8/hls.min.js';
   var DATA_TTL = 5 * 60e3;       // data kamera di-cache di browser 5 menit (Worker juga meng-cache)
-  var FETCH_TIMEOUT = 20000;
+  var FETCH_TIMEOUT = 18000;     // timeout fetch data titik CCTV/lampu dari Worker (ms)
   var START_TIMEOUT = 12000;     // per kandidat stream
   var KEY_ON = 'cctv_public_on_v1';
   var STOP_AFTER_MS = 180000;                    // pemutaran berhenti otomatis setelah 3 menit (hemat kuota Worker)
@@ -74,6 +74,17 @@
     if (u.charAt(0) === '/') return WORKER + '/api/proxy/cctv?url=' + encodeURIComponent(u);
     if (!/^https?:\/\//i.test(u) || directOk(u)) return u;
     return WORKER + '/api/proxy/cctv?url=' + encodeURIComponent(u);
+  }
+  // Sumber anti-hotlink: gambar/stream-nya harus lewat proxy Worker dan tanpa Referer dari aplikasi.
+  var HOTLINK_RE = /balitower|jakcctv|atcsindonesia|binamarga/i;
+  function isHotlink(u) { return !!u && HOTLINK_RE.test(String(u)); }
+  // Selalu lewat Worker (tanpa pengecualian DIRECT_OK_HOSTS), termasuk URL http:// dan path relatif.
+  function forceProxy(u) {
+    if (!WORKER || typeof u !== 'string' || !u) return u;
+    if (u.indexOf(WORKER + '/api/proxy/cctv') === 0) return u;
+    if (u.indexOf('/api/proxy/cctv/') === 0) return WORKER + u;
+    if (u.charAt(0) === '/' || /^https?:\/\//i.test(u)) return WORKER + '/api/proxy/cctv?url=' + encodeURIComponent(u);
+    return u;
   }
   function searchUrl(t) { return 'https://www.google.com/search?q=' + encodeURIComponent('live cctv ' + t); }
 
@@ -247,7 +258,7 @@
           return { ok: false, reason: msg };
         }, function () { return { ok: false, reason: 'HTTP ' + r.status }; });
       }
-      if (/^image\/|multipart\//.test(ct)) { clearTimeout(t); try { r.body.cancel(); } catch (e) {} return { ok: true, kind: 'image' }; }
+      if (/^image\/|multipart\//.test(ct)) { clearTimeout(t); try { r.body.cancel(); } catch (e) {} return { ok: true, kind: 'image', snap: !/multipart\//.test(ct) }; }
       return r.text().then(function (txt) {
         clearTimeout(t);
         if (txt.replace(/^\uFEFF/, '').trimStart().indexOf('#EXTM3U') === 0) return { ok: true, kind: 'hls' };
@@ -268,14 +279,20 @@
   }
 
   function mountImage(cam, stage, onFail) {
-    var raw = cam.streamUrl, url = proxify(raw), dead = false, timer = null;
-    var snap = /\.(jpe?g|png)(\?|$)|\/img\?/i.test(raw);            // snapshot: segarkan berkala; selain itu MJPEG (mengalir sendiri)
-    var img = el('img'); img.alt = 'Siaran ' + cam.title; img.referrerPolicy = url !== raw ? 'origin' : 'no-referrer';   // lewat proxy: kirim origin saja agar lolos pemeriksaan Referer Worker img.decoding = 'async';
+    var raw = cam.streamUrl, dead = false, timer = null, retried = false;
+    var hot = isHotlink(raw) || isHotlink(cam.relPath);                  // balitower / jakcctv / atcsindonesia / binamarga
+    var url = hot ? forceProxy(raw) : proxify(raw);                      // domain anti-hotlink: URL proxy didahulukan
+    var snap = /\.(jpe?g|png|webp)(\?|$)|\/img\?/i.test(raw) || !!(cam.resolved && cam.resolved.snap);   // snapshot: segarkan berkala; selain itu MJPEG
+    var img = el('img'); img.alt = 'Siaran ' + cam.title;
+    img.referrerPolicy = hot ? 'no-referrer' : (url !== raw ? 'origin' : 'no-referrer');   // hotlink: tanpa Referer (Worker mengizinkan aset media tanpa Origin/Referer)
+    img.decoding = 'async';
     var gotFrame = false;
     function setSrc() { img.src = snap ? url + (url.indexOf('?') < 0 ? '?' : '&') + '_t=' + Date.now() : url; }
     img.addEventListener('load', function () { if (dead) return; gotFrame = true; var m = stage.querySelector('.cpv-msg'); if (m) m.remove(); });
     img.addEventListener('error', function () {
-      if (dead) return; clearInterval(timer); timer = null;
+      if (dead) return;
+      if (!gotFrame && hot && !retried) { retried = true; img.referrerPolicy = 'origin'; setSrc(); return; }   // Worker lama: coba lagi dengan origin
+      clearInterval(timer); timer = null;
       if (gotFrame) return;                                        // satu kali gagal saat menyegarkan: tetap tampilkan frame terakhir
       img.remove(); message(stage, 'Gambar kamera tidak dapat dimuat', 'Kamera offline atau server memblokir pemakaian dari aplikasi ini.');
       if (onFail) onFail();
