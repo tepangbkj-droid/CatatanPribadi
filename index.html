@@ -1331,6 +1331,7 @@
           </div>
         </div>
         <div class="fin-list" id="locList"></div>
+        <div class="nb-dock hidden" id="locCamDock"></div>
       </div>
 
       <div class="loc-pane hidden" id="locPane-riwayat">
@@ -1427,16 +1428,19 @@
           <div class="nv-sheet" id="nvSheet">
             <button type="button" class="nv-grip" id="nvGrip" aria-label="Tampilkan detail rute"><i></i></button>
             <div class="nv-meta" id="nvMeta"></div>
+            <div class="nv-ahead hidden" id="nvAhead"></div>
             <div class="nv-alts" id="nvAlts"></div>
             <div class="rd-btns nv-btns">
               <button class="btn btn-primary" id="nvGo">▶ Mulai</button>
               <button class="btn btn-ghost" id="nvVoice">🔊 Suara: hidup</button>
+              <button class="btn btn-ghost" id="nvMode">🏍️ Motor</button>
               <button class="btn btn-ghost" id="nvRecenter">🎯 Ikuti posisi</button>
               <button class="btn btn-ghost" id="nvFull">⛶ Layar penuh</button>
               <button class="btn btn-ghost" id="nvEnd">✕ Akhiri</button>
             </div>
             <div class="nv-more">
               <details class="rd-det" open><summary>🌦️ Cuaca &amp; 📹 CCTV sepanjang rute</summary><div id="nvRoute"><div class="rd-muted">Muncul setelah rute dihitung.</div></div></details>
+              <div class="nb-dock hidden" id="nvCamDock"></div>
               <details class="rd-det"><summary>Daftar petunjuk (<span id="nvCount">0</span>)</summary><div id="nvSteps"></div></details>
               <div class="rd-muted" id="nvNote"></div>
             </div>
@@ -2056,7 +2060,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.18.5';
+const APP_VERSION = '2.18.6';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -2535,6 +2539,70 @@ const EV_ICON = { arrive:'🏠', leave:'🚪', checkin:'✅', lowbat:'🪫' };
 
 let locMembers = [], locPlaces = [], locEvents = [], locTrips = [];
 let locMap = null, locMarkers = {}, locMapFitted = false;
+let locRecent = [];                 // titik terakhir sebelum perjalanan dimulai (supaya jejak mulai dari awal gerak)
+
+// ----- CCTV terdekat + cuaca: keluarga di tab Lokasi, dan CCTV di jalur navigasi -----
+const locNear = {};                 // id anggota -> { lat, lng, at, cams:[{cam,dist}], wx, busy }
+const nbWxCache = {};
+let locNearT = 0;
+(function(){
+  const st = document.createElement('style');
+  st.textContent = '.nb-dock{margin:10px 0;padding:10px;border:1px solid #e3def5;border-radius:16px;background:#fff;box-shadow:0 6px 18px rgba(34,26,61,.08)}.nb-dock.hidden{display:none}.nb-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}.nb-x{border:0;background:#eee;border-radius:50%;width:30px;height:30px;font-size:14px;flex:none}.nb-wx{font-size:13px;margin:2px 0 8px;line-height:1.4}.loc-near{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;font-size:13px}.loc-near span{min-width:0}.nv-ahead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0;padding:8px 10px;border-radius:12px;background:#FEF3C7;color:#78350F;font-size:13px}.nv-ahead.hidden{display:none}';
+  document.head.appendChild(st);
+})();
+function nbCctvOk(){ return !!(window.CctvPublic && CctvPublic.nearby); }
+async function nbWeather(lat, lng){
+  const k = lat.toFixed(2) + ',' + lng.toFixed(2), c = nbWxCache[k];
+  if(c && Date.now() - c.t < 20*60*1000) return c.v;
+  try{
+    const ctl = new AbortController(), to = setTimeout(()=>ctl.abort(), 12000);
+    const r = await fetch(`${GPS_WORKER_URL.replace(/\/$/, '')}/api/bmkg?type=weather&lat=${lat.toFixed(4)}&lon=${lng.toFixed(4)}`, { signal:ctl.signal, cache:'no-store' });
+    clearTimeout(to);
+    const j = await r.json().catch(()=>null);
+    if(!r.ok || !j || !j.ok) return null;
+    const cur = j.current || {}, pl = j.place || {};
+    const v = { desc:cur.desc || '', temp:cur.temp, place:[pl.kecamatan || pl.desa, pl.kotkab].filter(Boolean).join(', ') };
+    nbWxCache[k] = { t:Date.now(), v };
+    return v;
+  }catch(e){ return null; }
+}
+function nbWxEmoji(d){ try{ return window.BmkgLayers ? BmkgLayers.wxEmoji(d) : '🌡️'; }catch(e){ return '🌡️'; } }
+function nbWxText(w){ return w ? `${nbWxEmoji(w.desc)} ${w.desc || 'Cuaca'}${typeof w.temp === 'number' ? ' • ' + Math.round(w.temp) + '°C' : ''}${w.place ? ' • ' + w.place : ''}` : ''; }
+// Panel siaran CCTV + cuaca (di luar daftar yang sering digambar ulang, jadi pemutar tidak terputus)
+function nbDockOpen(dock, cam, label, wxLine){
+  if(!dock || !nbCctvOk()) return;
+  dock.classList.remove('hidden');
+  dock.innerHTML = `<div class="nb-head"><b>${escapeHtml(label || 'CCTV')}</b><button type="button" class="nb-x" aria-label="Tutup">✕</button></div>${wxLine ? `<div class="nb-wx">${escapeHtml(wxLine)}</div>` : ''}<div class="nb-wx nb-wxcam">⏳ Memuat cuaca di lokasi CCTV…</div><div class="nb-box"></div>`;
+  const box = dock.querySelector('.nb-box');
+  try{ CctvPublic.mount(cam, box); }catch(e){ box.textContent = 'CCTV tidak bisa dibuka.'; }
+  dock.querySelector('.nb-x').onclick = ()=>nbDockClose(dock);
+  nbWeather(cam.lat, cam.lng).then(w=>{ const e = dock.querySelector('.nb-wxcam'); if(e) e.textContent = w ? 'Cuaca di lokasi CCTV: ' + nbWxText(w) : 'Cuaca di lokasi CCTV belum tersedia.'; });
+  try{ dock.scrollIntoView({ block:'nearest', behavior:'smooth' }); }catch(e){}
+}
+function nbDockClose(dock){ try{ CctvPublic.closePlayer(); }catch(e){} if(dock){ dock.classList.add('hidden'); dock.innerHTML = ''; } }
+function locNearHtml(m){
+  if(!locHasPos(m)) return '';
+  const c = locNear[m.id]; if(!c) return '';
+  let h = '';
+  if(c.wx) h += `<div class="loc-sub">🌦️ Cuaca di sana: ${escapeHtml(nbWxText(c.wx))}</div>`;
+  const n = c.cams && c.cams[0];
+  if(n) h += `<div class="loc-near"><span>📹 Dekat CCTV <b>${escapeHtml(n.cam.title)}</b> • ${escapeHtml(locFmtDist(n.dist))}${c.cams.length > 1 ? ' (+' + (c.cams.length - 1) + ' lagi)' : ''}</span><button type="button" class="link-btn teal" data-locact="nbcam" data-id="${escapeHtml(m.id)}">▶ Lihat live</button></div>`;
+  return h;
+}
+function locNearRefresh(){
+  if(activeTab !== 'lokasi') return;
+  locAll().forEach(m=>{
+    if(!locHasPos(m) || !m.updatedMs || Date.now() - m.updatedMs > 6*3600*1000) return;
+    const c = locNear[m.id];
+    if(c && (c.busy || (Date.now() - c.at < 5*60*1000 && locDistanceM(c, m) < 150))) return;
+    const rec = c || (locNear[m.id] = { cams:[], wx:null, at:0 });
+    rec.busy = true;
+    Promise.all([ nbCctvOk() ? CctvPublic.nearby(m.lat, m.lng, 300, 3).catch(()=>[]) : Promise.resolve([]), nbWeather(m.lat, m.lng) ]).then(([cams, wx])=>{
+      Object.assign(rec, { lat:m.lat, lng:m.lng, at:Date.now(), cams, wx, busy:false });
+      clearTimeout(locNearT); locNearT = setTimeout(()=>{ if(activeTab === 'lokasi') renderLokasi(); }, 300);
+    }).catch(()=>{ Object.assign(rec, { lat:m.lat, lng:m.lng, at:Date.now(), busy:false }); });
+  });
+}
 let locLayerPlaces = null, locLayerTrail = null, locLayerRoute = null, locDraftMarker = null;
 let locWatchId = null, locLastWrite = 0, locLastPos = null, locSelectedId = null;
 let locHandledPing = null, locListenerOn = false, locTick = null, locWake = null;
@@ -3330,12 +3398,14 @@ function attachLokasiListener(){
   }, (err)=>console.warn('Listener kabar gagal', err));
 
   if(locIsSharing() && locMyName()) locStartWatch();
+  else if(locIsSharing()) setTimeout(()=>showToast('Isi nama di tab Lokasi lalu tekan “Bagikan lokasi saya” agar terlacak.', true), 3000);
+  else if(locStore('loc_user_off') !== '1') setTimeout(()=>{ if(!locIsSharing()) showToast('📍 Pelacakan lokasi belum aktif. Buka tab Lokasi → “Bagikan lokasi saya”.', true); }, 5000);
   locTick = setInterval(locTickFn, 20000);
   setTimeout(()=>gpsPoll(true), 3000);
   setInterval(()=>{ if(document.visibilityState === 'visible' && (activeTab === 'lokasi' || activeTab === 'kendaraan')) gpsPoll(false); }, 5000);
   document.addEventListener('visibilitychange', ()=>{
     if(document.visibilityState === 'visible'){
-      if(locIsSharing()) locPushNow(false);
+      if(locIsSharing()){ locPushNow(false); if(locNative()){ locStartWebWatch(); if(locWatchId === null) locStartNativeWatch(); } }
       gpsPoll(false);
       locWakeSet();
       renderLokasi();
@@ -3502,8 +3572,11 @@ function locOnPosition(pos){
   // perjalanan
   const moving = locSpeed >= 1.0;
   if(!locTrip){
-    if(!moving || !locAnchor) locAnchor = cur;
-    else if(locDistanceM(locAnchor, cur) >= 60) locTripStart(locAnchor, cur);
+    if(!moving || !locAnchor){ locAnchor = cur; locRecent = []; }
+    else{
+      locRecent.push(cur); if(locRecent.length > 20) locRecent.shift();       // simpan titik awal gerak supaya jejak tidak terpotong
+      if(locDistanceM(locAnchor, cur) >= Math.max(30, Math.min(acc, 60))) locTripStart(locAnchor, cur);
+    }
   }else{
     locTripAdd(cur, moving);
   }
@@ -3527,10 +3600,13 @@ function locOnError(err){
 }
 function locTripSave(){ try{ locStore('loc_trip', locTrip ? JSON.stringify(locTrip) : null); }catch(e){} }
 function locTripStart(a, cur){
+  const seq = [a].concat(locRecent.filter(p=>p.t > a.t && p.t < cur.t), [cur]);
+  let dist = 0; for(let i = 1; i < seq.length; i++) dist += locDistanceM(seq[i - 1], seq[i]);
+  locRecent = [];
   locTrip = {
     id: 't' + a.t, startAt: a.t,
-    pts: [[a.lat, a.lng, a.t], [cur.lat, cur.lng, cur.t]],
-    dist: locDistanceM(a, cur), maxSpd: locSpeed, modes: {}, lastMoveAt: cur.t,
+    pts: seq.map(p=>[p.lat, p.lng, p.t]),
+    dist, maxSpd: locSpeed, modes: {}, lastMoveAt: cur.t,
     lastPt: { lat:cur.lat, lng:cur.lng, t:cur.t },
     startPlace: (locPlaceAt(a) || {}).id || null
   };
@@ -3743,7 +3819,7 @@ async function locStartSharing(){
   const same = locMembers.find(m=>m.id !== locDeviceId() && !m.sharing && (m.name || '').trim().toLowerCase() === name.toLowerCase());
   if(same && confirm(`Nama “${name}” sudah terdaftar tapi tidak aktif. Pakai data lama itu supaya tidak dobel?`)){ locStore('loc_device_id', same.id); }
   locStore('loc_name', name);
-  locStore('loc_sharing', 'on');
+  locStore('loc_sharing', 'on'); locStore('loc_user_off', null);
   locLastPos = null; locLastWrite = 0; locPrev = null;
   // Tampil langsung ke semua anggota ("mencari lokasi") tanpa menunggu GPS pertama
   if(uid) setDocFast(locDocRef(), { name, color:locColorFor(locDeviceId()), sharing:true, mode:'diam', speedKmh:0, updatedAt:serverTimestamp() }, { merge:true });
@@ -3754,7 +3830,7 @@ async function locStartSharing(){
 }
 async function locStopSharing(silent){
   await locEndTrip();
-  locStore('loc_sharing', 'off');
+  locStore('loc_sharing', 'off'); if(!silent) locStore('loc_user_off', '1');
   locClearWatch();
   locLastPos = null; locPrev = null; locSpeed = 0; locMode = 'diam'; locAnchor = null;
   locWakeSet();
@@ -3952,6 +4028,7 @@ function renderLokasi(){
               <div class="loc-sub${fresh?' live':''}">${escapeHtml(l1)}</div>
               ${l2 ? `<div class="loc-sub">${escapeHtml(l2)}</div>` : ''}
               ${extra.length ? `<div class="loc-sub">${escapeHtml(extra.join(' • '))}</div>` : ''}
+              ${locNearHtml(m)}
             </div>
           </div>
           <div class="loc-acts">
@@ -3965,6 +4042,7 @@ function renderLokasi(){
   }
 
   renderLocDiag();
+  locNearRefresh();
   renderLokasiHistory();
   renderLokasiPlaces();
   renderLokasiFeed();
@@ -4118,6 +4196,10 @@ document.getElementById('viewLokasi').addEventListener('click', async (e)=>{
   if(!b) return;
   const act = b.dataset.locact, id = b.dataset.id;
   if(act === 'focus') locFocus(id);
+  else if(act === 'nbcam'){
+    const c = locNear[id], n = c && c.cams && c.cams[0], mem = locAll().find(x=>x.id === id);
+    if(n) nbDockOpen(document.getElementById('locCamDock'), n.cam, `📹 ${n.cam.title} — dekat ${mem ? (mem.id === locDeviceId() ? 'kamu' : mem.name) : 'anggota'}`, c.wx ? `🌦️ Cuaca di lokasi ${mem ? (mem.id === locDeviceId() ? 'kamu' : mem.name) : 'anggota'}: ${nbWxText(c.wx)}` : '');
+  }
   else if(act === 'ping') locPing(id);
   else if(act === 'remove') locRemoveMe();
   else if(act === 'admindel') adminDeleteMember(id);
@@ -6825,6 +6907,7 @@ function locToolExtra(k){ if(k === 'add') locCctvOpen(); }
 const nv = { route:null, steps:[], pts:[], cum:[], stepEnd:[], total:0, dur:0, seg:0, idx:0, said:{}, follow:true, voice:true, offN:0, lastReroute:0,
              planning:false, arrived:false, pos:null, prev:null, head:null, map:null, mk:null, layer:null, userMk:null, tollFree:false };
 try{ nv.voice = locStore('nv_voice') !== 'off'; }catch(e){}
+nv.mode = (locStore('nv_mode') === 'mobil') ? 'mobil' : 'motor'; nv.motorOk = false; nv.camList = [];
 const NV_DIR = { left:'kiri', right:'kanan', 'slight left':'agak ke kiri', 'slight right':'agak ke kanan', 'sharp left':'tajam ke kiri', 'sharp right':'tajam ke kanan', straight:'lurus' };
 function nvArrowFor(type, mod){
   if(type === 'arrive') return '🏁';
@@ -6903,14 +6986,64 @@ function nvGetPos(){
     navigator.geolocation.getCurrentPosition(p=>res({ lat:p.coords.latitude, lng:p.coords.longitude, t:p.timestamp }), ()=>res(null), { enableHighAccuracy:true, timeout:15000, maximumAge:10000 });
   });
 }
+// Mesin rute motor: Valhalla (costing "motorcycle", menghindari tol & jalan bebas hambatan) -> diubah ke bentuk OSRM
+// supaya seluruh logika petunjuk/suara/rute ulang yang ada tetap dipakai. Gagal = jatuh ke OSRM (tanpa tol & motorway).
+function nvDecodePoly6(str){
+  let i = 0, lat = 0, lng = 0; const out = [];
+  while(i < str.length){
+    let b, sh = 0, res = 0;
+    do{ b = str.charCodeAt(i++) - 63; res |= (b & 31) << sh; sh += 5; }while(b >= 32);
+    lat += (res & 1) ? ~(res >> 1) : (res >> 1);
+    sh = 0; res = 0;
+    do{ b = str.charCodeAt(i++) - 63; res |= (b & 31) << sh; sh += 5; }while(b >= 32);
+    lng += (res & 1) ? ~(res >> 1) : (res >> 1);
+    out.push([lng/1e6, lat/1e6]);
+  }
+  return out;
+}
+const NV_VTYPE = { 1:['depart',''], 2:['depart','right'], 3:['depart','left'], 4:['arrive',''], 5:['arrive','right'], 6:['arrive','left'],
+  7:['new name','straight'], 8:['continue','straight'], 9:['turn','slight right'], 10:['turn','right'], 11:['turn','sharp right'],
+  12:['turn','uturn'], 13:['turn','uturn'], 14:['turn','sharp left'], 15:['turn','left'], 16:['turn','slight left'],
+  17:['on ramp','straight'], 18:['on ramp','right'], 19:['on ramp','left'], 20:['off ramp','right'], 21:['off ramp','left'],
+  22:['continue','straight'], 23:['fork','right'], 24:['fork','left'], 25:['merge',''], 26:['roundabout',''], 27:['exit roundabout',''] };
+function nvValhallaToRoute(trip){
+  if(!trip || !trip.legs || !trip.legs.length) return null;
+  const coords = [], steps = [];
+  trip.legs.forEach(leg=>{
+    const sh = nvDecodePoly6(leg.shape || ''), off = coords.length ? coords.length - 1 : 0;
+    sh.forEach((p, i)=>{ if(!(off && i === 0)) coords.push(p); });
+    (leg.maneuvers || []).forEach(m=>{
+      const t = NV_VTYPE[m.type] || ['continue', 'straight'], p = sh[m.begin_shape_index] || sh[0];
+      steps.push({ distance:(m.length || 0)*1000, duration:m.time || 0, name:(m.street_names && m.street_names[0]) || '',
+        maneuver:{ type:t[0], modifier:t[1] || undefined, location:p, exit:m.roundabout_exit_count } });
+    });
+  });
+  if(coords.length < 2 || !steps.length) return null;
+  const sm = trip.summary || {};
+  return { geometry:{ type:'LineString', coordinates:coords }, distance:(sm.length || 0)*1000, duration:sm.time || 0, legs:[{ steps }] };
+}
+async function nvFetchValhalla(from, dest){
+  const body = { locations:[{ lat:from.lat, lon:from.lng }, { lat:dest.lat, lon:dest.lng }], costing:'motorcycle',
+    costing_options:{ motorcycle:{ use_highways:0, use_tolls:0 } }, alternates:2, directions_options:{ units:'kilometers' } };
+  const ctl = new AbortController(), to = setTimeout(()=>ctl.abort(), 15000);
+  try{
+    const r = await fetch('https://valhalla1.openstreetmap.de/route?json=' + encodeURIComponent(JSON.stringify(body)), { signal:ctl.signal });
+    const j = await r.json().catch(()=>null);
+    if(!r.ok || !j || !j.trip || j.trip.status !== 0) return null;
+    const routes = [j.trip].concat((j.alternates || []).map(a=>a.trip)).map(nvValhallaToRoute).filter(Boolean);
+    return routes.length ? { route:routes[0], routes:routes.slice(0, 3), tollFree:true, motor:true } : null;
+  }catch(e){ return null; }
+  finally{ clearTimeout(to); }
+}
 async function nvFetchRoute(from, dest){
+  if(nv.mode === 'motor'){ const v = await nvFetchValhalla(from, dest); if(v) return v; }
   const base = `https://router.project-osrm.org/route/v1/driving/${from.lng.toFixed(6)},${from.lat.toFixed(6)};${dest.lng.toFixed(6)},${dest.lat.toFixed(6)}?overview=full&geometries=geojson&steps=true&alternatives=true`;
-  for(const extra of ['&exclude=toll', '']){
+  for(const extra of (nv.mode === 'motor' ? ['&exclude=toll,motorway', '&exclude=toll', ''] : ['&exclude=toll', ''])){
     try{
       const ctl = new AbortController(), to = setTimeout(()=>ctl.abort(), 15000);
       const r = await fetch(base + extra, { signal:ctl.signal }); clearTimeout(to);
       const j = await r.json().catch(()=>null);
-      if(r.ok && j && j.code === 'Ok' && j.routes && j.routes[0]) return { route:j.routes[0], routes:j.routes.slice(0, 3), tollFree:extra !== '' };
+      if(r.ok && j && j.code === 'Ok' && j.routes && j.routes[0]) return { route:j.routes[0], routes:j.routes.slice(0, 3), tollFree:extra !== '', motor:false };
     }catch(e){}
   }
   throw new Error('Rute belum bisa dihitung. Periksa internet lalu coba lagi.');
@@ -6930,7 +7063,8 @@ async function nvReplan(from){
   if(!d){ nvStatus('Isi & simpan tujuan dulu.', 'warn'); return; }
   nv.planning = true; nvStatus('Menghitung rute…');
   try{
-    const { route, routes, tollFree } = await nvFetchRoute(from, d);
+    const rr = await nvFetchRoute(from, d), { route, routes, tollFree } = rr;
+    nv.motorOk = !!rr.motor;
     nv.alts = routes || [route]; nv.altI = 0; if(!rideOn) nv.infoAt = 0;
     nvSetRoute(route, tollFree);
     nvShow();
@@ -7052,11 +7186,21 @@ async function nvRouteInfo(){
         const t = it.tags; cams.push({ it, along:pos.along, name:t.name || t.description || (t.highway === 'speed_camera' ? 'Kamera kecepatan' : 'Kamera pengawas'), op:t.operator || '', url:safeHttps(t.website || t['contact:website']) });
       });
     }catch(e){ camNote = 'Data CCTV OpenStreetMap gagal dimuat (' + ((e && e.message) || 'jaringan') + ').'; }
+    try{                                                      // CCTV publik (dataset ~23 ribu titik) sepanjang jalur, bisa ditonton langsung
+      if(window.CctvPublic && CctvPublic.alongRoute){
+        const pr = await wxTimeout(CctvPublic.alongRoute(nv.pts, 150, 80), 10000);
+        pr.forEach(x=>{
+          const c0 = nv.cum[x.idx], c1 = nv.cum[x.idx + 1] != null ? nv.cum[x.idx + 1] : c0;
+          cams.push({ pub:true, cam:x.cam, lat:x.cam.lat, lng:x.cam.lng, along:c0 + x.t*(c1 - c0), name:x.cam.title, op:x.cam.provider || '', url:null });
+        });
+      }
+    }catch(e){}
     (locCctv || []).forEach(x=>{ const pos = nvAlongOf(x); if(pos.off <= 200) cams.push({ own:true, along:pos.along, lat:x.lat, lng:x.lng, name:x.name || 'CCTV', op:x.by ? 'oleh ' + x.by : '', url:safeHttps(x.url) }); });
     cams.sort((a, z)=>a.along - z.along);
   }else camNote = 'Rute terlalu panjang untuk pemeriksaan CCTV otomatis.';
   if(tok !== nv.infoTok || route !== nv.route) return;
-  cams.forEach(x=>{ const ll = x.own ? [x.lat, x.lng] : [x.it.lat, x.it.lng]; L.marker(ll, { icon:mkIcon(x.own ? 'cctv' : 'cam'), zIndexOffset:50 }).addTo(nv.infoLayer).bindPopup(x.own ? `<b>🎥 ${escapeHtml(x.name)}</b>${x.url ? `<br><a href="${escapeHtml(x.url)}" target="_blank" rel="noopener noreferrer">Buka siaran ↗</a>` : ''}` : mkCamPopup(x.it)); });
+  nv.camList = cams;
+  cams.forEach((x, k)=>{ if(x.pub){ if(k < 60 && window.CctvPublic && CctvPublic.marker){ try{ CctvPublic.marker(x.cam).addTo(nv.infoLayer); }catch(e){} } return; } const ll = x.own ? [x.lat, x.lng] : [x.it.lat, x.it.lng]; L.marker(ll, { icon:mkIcon(x.own ? 'cctv' : 'cam'), zIndexOffset:50 }).addTo(nv.infoLayer).bindPopup(x.own ? `<b>🎥 ${escapeHtml(x.name)}</b>${x.url ? `<br><a href="${escapeHtml(x.url)}" target="_blank" rel="noopener noreferrer">Buka siaran ↗</a>` : ''}` : mkCamPopup(x.it)); });
   // render
   const em = BmkgLayers.wxEmoji;
   let h = '';
@@ -7076,7 +7220,7 @@ async function nvRouteInfo(){
   h += `<div style="margin:10px 0 4px;font-weight:700;font-size:13px;">📹 CCTV di sepanjang jalur (${cams.length})</div>`;
   if(camNote) h += `<div class="rd-muted">${escapeHtml(camNote)}</div>`;
   else if(!cams.length) h += '<div class="rd-muted">Tidak ada CCTV tercatat di jalur ini (data OpenStreetMap bisa belum lengkap).</div>';
-  h += cams.slice(0, 12).map(x=>`<div class="nv-ri"><span class="e">${x.own ? '🎥' : '📹'}</span><div><b>${escapeHtml(x.name)}</b><small>km ${(x.along/1000).toFixed(1).replace('.', ',')} dari awal${x.op ? ' • ' + escapeHtml(x.op) : ''}</small></div><span class="go"><button type="button" data-fly="${x.own ? x.lat : x.it.lat},${x.own ? x.lng : x.it.lng}">Lihat</button>${x.url ? `<a href="${escapeHtml(x.url)}" target="_blank" rel="noopener noreferrer">Siaran</a>` : ''}</span></div>`).join('');
+  h += cams.slice(0, 12).map((x, k)=>`<div class="nv-ri"><span class="e">${x.pub ? '🔴' : x.own ? '🎥' : '📹'}</span><div><b>${escapeHtml(x.name)}</b><small>km ${(x.along/1000).toFixed(1).replace('.', ',')} dari awal${x.op ? ' • ' + escapeHtml(x.op) : ''}</small></div><span class="go">${x.pub ? `<button type="button" data-nvcam="${k}">▶ Live</button>` : ''}<button type="button" data-fly="${x.pub || x.own ? x.lat : x.it.lat},${x.pub || x.own ? x.lng : x.it.lng}">Lihat</button>${x.url ? `<a href="${escapeHtml(x.url)}" target="_blank" rel="noopener noreferrer">Siaran</a>` : ''}</span></div>`).join('');
   if(cams.length > 12) h += `<div class="rd-muted">+${cams.length - 12} CCTV lain tampil sebagai ikon di peta.</div>`;
   const city = (rows.find(r=>r.place && r.place.kotkab) || { place:{} }).place.kotkab;
   if(city) h += `<a class="link-btn teal" style="display:inline-block;margin-top:6px;" href="https://www.google.com/search?q=${encodeURIComponent('CCTV ATCS live ' + city)}" target="_blank" rel="noopener noreferrer">🔎 Cari siaran CCTV live ${escapeHtml(city)} ↗</a>`;
@@ -7113,11 +7257,15 @@ function nvShow(){
   nvRenderSteps(); nvSyncFollowBtn(); nvRenderAlts(); nvSyncGo(); nvSheetSize();
   if(!(nv.infoAt && Date.now() - nv.infoAt < 180000)) nvRouteInfo();
   rideEl('nvVoice').textContent = nv.voice ? '🔊 Suara: hidup' : '🔇 Suara: mati';
-  rideEl('nvNote').textContent = nv.tollFree
-    ? 'Rute untuk roda empat tanpa tol (OSRM). Motor bisa lewat jalan lain; ikuti rambu & kondisi jalan.'
-    : '⚠️ Rute untuk roda empat (OSRM) dan mungkin melewati tol yang dilarang untuk motor. Periksa sebelum berangkat.';
+  rideEl('nvNote').textContent = nv.motorOk
+    ? '🏍️ Rute khusus motor: menghindari tol & jalan bebas hambatan. Tetap ikuti rambu & kondisi jalan.'
+    : nv.mode === 'motor'
+      ? (nv.tollFree ? '🏍️ Rute tanpa tol & jalan bebas hambatan (mesin cadangan, hitungan mobil). Jalan kecil bisa berbeda; ikuti rambu.' : '⚠️ Rute mobil dan mungkin melewati tol yang dilarang untuk motor. Periksa sebelum berangkat.')
+      : (nv.tollFree ? 'Rute mobil tanpa tol. Ikuti rambu & kondisi jalan.' : 'Rute mobil, mungkin melewati tol.');
+  rideEl('nvMode').textContent = nv.mode === 'motor' ? '🏍️ Motor' : '🚗 Mobil';
 }
 function nvClose(){
+  try{ nbDockClose(rideEl('nvCamDock')); }catch(e){}
   nv.route = null; nv.steps = []; nv.pts = []; nv.arrived = false;
   try{ speechSynthesis.cancel(); }catch(e){}
   nvWakeSet(false);
@@ -7148,6 +7296,7 @@ function nvProgress(along){
   }
   const etaMs = Date.now() + (nv.dur*(remain/nv.total))*1000;
   rideEl('nvMeta').innerHTML = `<span class="big">${Math.max(1, Math.round(nv.dur*(remain/nv.total)/60))} mnt</span><span>📏 ${nvFmt(remain)}</span><span>🕒 tiba ${locClock(etaMs)}</span>`;
+  try{ nvCamAhead(along); }catch(e){}
   nvRenderSteps();
   if(nv.arrived || !rideOn) return;
   if(remain <= 25 || (!nv.steps[i + 1] && dist <= 25)){ nv.arrived = true; nvSay('Anda telah tiba di tujuan'); showToast('🏁 Anda telah tiba di tujuan'); nvProgress(along); return; }
@@ -7156,6 +7305,19 @@ function nvProgress(along){
     if(dist <= 60 && !nv.said[key + 'n']){ nv.said[key + 'n'] = 1; nv.said[key + 'f'] = 1; nvSay(ins.text); }
     else if(dist <= 250 && nv.steps[i].distance >= 300 && !nv.said[key + 'f']){ nv.said[key + 'f'] = 1; nvSay(`Dalam ${Math.round(dist/50)*50} meter, ${ins.text}`); }
   }
+}
+// CCTV publik yang akan dilewati (≤700 m di depan): tampil sebagai banner, ketuk untuk menonton + cuaca di sana
+function nvCamAhead(along){
+  const box = rideEl('nvAhead'); if(!box) return;
+  const list = nv.camList || [], nx = rideOn && !nv.arrived ? list.find(c=>c.pub && c.along > along - 20 && c.along - along <= 700) : null;
+  if(!nx){ box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+  box.innerHTML = `<span>🔴 CCTV di depan: <b>${escapeHtml(nx.name)}</b> • ${nvFmt(Math.max(0, nx.along - along))}</span><button type="button" class="link-btn teal" data-nvahead="${list.indexOf(nx)}">▶ Lihat</button>`;
+}
+function nvOpenCam(k){
+  const x = (nv.camList || [])[k]; if(!x || !x.pub) return;
+  const sh = rideEl('nvSheet'); if(sh) sh.classList.add('open');
+  nbDockOpen(rideEl('nvCamDock'), x.cam, '🔴 ' + x.name, '');
 }
 function nvRenderSteps(){
   const box = rideEl('nvSteps'); if(!box) return;
@@ -7680,7 +7842,15 @@ function rideInit(){
   rideEl('nvGrip').addEventListener('click', ()=>{ rideEl('nvSheet').classList.toggle('open'); setTimeout(nvSheetSize, 30); });
   rideEl('nvMeta').addEventListener('click', ()=>{ if(window.MapPro && nv.map && MapPro.isFull(nv.map)){ rideEl('nvSheet').classList.toggle('open'); setTimeout(nvSheetSize, 30); } });
   rideEl('nvAlts').addEventListener('click', (e)=>{ const b = e.target.closest('[data-alt]'); if(b) nvPickAlt(Number(b.dataset.alt)); });
+  rideEl('nvAhead').addEventListener('click', (e)=>{ const b = e.target.closest('[data-nvahead]'); if(b) nvOpenCam(Number(b.dataset.nvahead)); });
+  rideEl('nvMode').addEventListener('click', ()=>{
+    nv.mode = nv.mode === 'motor' ? 'mobil' : 'motor'; locStore('nv_mode', nv.mode);
+    rideEl('nvMode').textContent = nv.mode === 'motor' ? '🏍️ Motor' : '🚗 Mobil';
+    showToast(nv.mode === 'motor' ? 'Mode motor: rute menghindari tol' : 'Mode mobil');
+    if(nv.route && rideSt.dest && !nv.planning) nvPlanFromHere();
+  });
   rideEl('nvRoute').addEventListener('click', (e)=>{
+    const cb = e.target.closest('[data-nvcam]'); if(cb){ nvOpenCam(Number(cb.dataset.nvcam)); return; }
     const b = e.target.closest('[data-fly]'); if(!b || !nv.map) return;
     const ll = b.dataset.fly.split(',').map(Number); nv.follow = false; nvSyncFollowBtn();
     rideEl('nvSheet').classList.remove('open'); nv.map.setView(ll, 18, { animate:true });

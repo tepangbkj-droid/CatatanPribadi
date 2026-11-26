@@ -556,7 +556,75 @@
 
   function detach(map) { var st = states.get(map); if (!st) return; closePlayer(); map.off('moveend', st.onMove); map.removeLayer(st.group); map.removeLayer(st.clusterGroup); st.group.clearLayers(); st.clusterGroup.clearLayers(); st.markers.clear(); states.delete(map); }
 
+  /* ---------- pencarian CCTV terdekat (keluarga di tab Lokasi & jalur navigasi) ---------- */
+  function distM(aLat, aLng, bLat, bLng) {
+    var k = Math.PI / 180, x = (bLng - aLng) * k * Math.cos((aLat + bLat) / 2 * k), y = (bLat - aLat) * k;
+    return Math.sqrt(x * x + y * y) * 6371000;
+  }
+  // Semua titik yang diketahui: daftar Worker (bila sudah dimuat) + dataset statis; yang offline dibuang.
+  function allCams() {
+    return fetchStatic(STATIC_URL).then(function (c) { return c; }, function () { return []; }).then(function (sc) {
+      var out = [], seen = new Set();
+      ((shared.data && shared.data.cameras) || []).forEach(function (c) {
+        if (typeof c.lat !== 'number' || typeof c.lng !== 'number' || c.status === 'offline') return;
+        out.push(c); [c.streamUrl, c.playerUrl].forEach(function (u) { if (u) seen.add(u); });
+      });
+      (sc || []).forEach(function (c) { if (c.status !== 'offline' && !(c.streamUrl && seen.has(c.streamUrl))) out.push(c); });
+      return out;
+    });
+  }
+  // CCTV dalam radius (meter) dari satu titik: [{ cam, dist }] terdekat dulu.
+  function nearby(lat, lng, radiusM, limit) {
+    return allCams().then(function (cams) {
+      var dLat = radiusM / 111000, dLng = radiusM / (111000 * Math.max(0.2, Math.cos(lat * Math.PI / 180))), out = [];
+      for (var i = 0; i < cams.length; i++) {
+        var c = cams[i];
+        if (Math.abs(c.lat - lat) > dLat || Math.abs(c.lng - lng) > dLng) continue;
+        var d = distM(lat, lng, c.lat, c.lng);
+        if (d <= radiusM) out.push({ cam: c, dist: d });
+      }
+      out.sort(function (a, b) { return a.dist - b.dist; });
+      return out.slice(0, limit || 5);
+    });
+  }
+  // CCTV di sepanjang jalur (pts = [{lat,lng}]), selisih maksimal offM meter: [{ cam, off, idx, t }] (idx = ruas terdekat, t = posisi 0..1 di ruas itu).
+  function alongRoute(pts, offM, limit) {
+    return allCams().then(function (cams) {
+      if (!pts || pts.length < 2) return [];
+      var n = pts.length - 1, segs = new Array(n), minLa = 90, maxLa = -90, minLn = 180, maxLn = -180, i, j;
+      var padLa = offM / 111000 * 1.2;
+      for (i = 0; i < n; i++) {
+        var a = pts[i], b = pts[i + 1];
+        segs[i] = { la0: Math.min(a.lat, b.lat) - padLa, la1: Math.max(a.lat, b.lat) + padLa, ln0: Math.min(a.lng, b.lng), ln1: Math.max(a.lng, b.lng) };
+        minLa = Math.min(minLa, segs[i].la0); maxLa = Math.max(maxLa, segs[i].la1); minLn = Math.min(minLn, segs[i].ln0); maxLn = Math.max(maxLn, segs[i].ln1);
+      }
+      var padLn = offM / (111000 * Math.max(0.2, Math.cos((minLa + maxLa) / 2 * Math.PI / 180))) * 1.2;
+      var out = [];
+      for (j = 0; j < cams.length; j++) {
+        var c = cams[j];
+        if (c.lat < minLa || c.lat > maxLa || c.lng < minLn - padLn || c.lng > maxLn + padLn) continue;
+        var kx = 111320 * Math.cos(c.lat * Math.PI / 180), ky = 110540, best = Infinity, bi = -1, bt = 0;
+        for (i = 0; i < n; i++) {
+          var s = segs[i];
+          if (c.lat < s.la0 || c.lat > s.la1 || c.lng < s.ln0 - padLn || c.lng > s.ln1 + padLn) continue;
+          var p = pts[i], q = pts[i + 1];
+          var ax = (p.lng - c.lng) * kx, ay = (p.lat - c.lat) * ky, bx = (q.lng - c.lng) * kx, by = (q.lat - c.lat) * ky;
+          var dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy, t = l2 ? -(ax * dx + ay * dy) / l2 : 0;
+          t = Math.max(0, Math.min(1, t));
+          var d = Math.sqrt(Math.pow(ax + t * dx, 2) + Math.pow(ay + t * dy, 2));
+          if (d < best) { best = d; bi = i; bt = t; }
+        }
+        if (bi >= 0 && best <= offM) out.push({ cam: c, off: best, idx: bi, t: bt });
+      }
+      out.sort(function (x, y) { return (x.idx + x.t) - (y.idx + y.t); });
+      return limit ? out.slice(0, limit) : out;
+    });
+  }
+
   global.CctvPublic = {
+    nearby: nearby, alongRoute: alongRoute, distM: distM,
+    mount: function (cam, box) { injectCss(); return mount(cam, box); },     // pemutar langsung di dalam elemen mana pun (satu pemutar aktif sekaligus)
+    marker: function (cam) { injectCss(); return makeMarker(cam); },         // marker Leaflet dengan popup pemutar
     attach: attach, detach: detach, closePlayer: closePlayer,
     toggle: function (map) { var st = states.get(map); if (st) setOn(map, !st.on); return st ? st.on : false; },
     isOn: function (map) { var st = states.get(map); return !!(st && st.on); },
