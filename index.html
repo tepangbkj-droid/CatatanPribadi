@@ -2056,7 +2056,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.18.3';
+const APP_VERSION = '2.18.4';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -6396,8 +6396,17 @@ function mkBindTools(box, c, extra){
       showToast((k === 'sig' ? 'Lampu lalu lintas: ' : 'CCTV: ') + (c.on[k] ? 'tampil' : 'sembunyi'));
     }
     else if(k === 'pub'){
-      if(!window.CctvPublic){ showToast('Modul CCTV publik belum termuat, muat ulang halaman', true); return; }
-      CctvPublic.toggle(c.map); mkSyncButtons(box, c);
+      if(window.CctvPublic){ CctvPublic.toggle(c.map); mkSyncButtons(box, c); return; }
+      showToast('Memuat modul CCTV publik…');
+      const s = document.createElement('script');
+      s.src = 'cctv-public.js?_=' + Date.now();
+      s.onload = ()=>{
+        if(!window.CctvPublic){ showToast('Modul CCTV publik gagal dijalankan', true); return; }
+        CctvPublic.attach(c.map, { workerUrl: GPS_WORKER_URL, control:false, onStatus:(m, err)=>showToast(m, !!err) });
+        CctvPublic.toggle(c.map); mkSyncButtons(box, c);
+      };
+      s.onerror = ()=>showToast('Gagal mengunduh cctv-public.js, cek koneksi lalu coba lagi', true);
+      document.head.appendChild(s);
     }
     else if(extra) extra(k);
   });
