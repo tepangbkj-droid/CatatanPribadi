@@ -106,7 +106,7 @@ jobs:
             --out buku-kas-native.apk aligned.apk
           "$BT/apksigner" verify buku-kas-native.apk
 
-            - name: Cetak sidik jari (SHA-1 dan SHA-256) untuk Firebase
+      - name: Cetak sidik jari (SHA-1 dan SHA-256) untuk Firebase
         env:
           KS_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
