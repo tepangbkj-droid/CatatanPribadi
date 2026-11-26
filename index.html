@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https: https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://cdnjs.cloudflare.com; media-src 'self' blob: data: https: https://*.workers.dev https://jakcctv.jakarta.go.id https://cctv-jsc.balitower.co.id:8011 https://dki-jkt.balitower.co.id:7028 https://cctv.balitower.co.id; connect-src 'self' https: https://jakcctv.jakarta.go.id https://cctv-jsc.balitower.co.id:8011 https://dki-jkt.balitower.co.id:7028 https://cctv.balitower.co.id https://*.googleapis.com wss://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://api.telegram.org https://nominatim.openstreetmap.org https://router.project-osrm.org https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://api.gold-api.com https://open.er-api.com https://api.frankfurter.app https://cdn.jsdelivr.net https://*.workers.dev https://script.google.com https://script.googleusercontent.com https://api.anthropic.com https://api.groq.com https://openrouter.ai; frame-src https: https://*.firebaseapp.com https://accounts.google.com https://*.windy.com https://jakcctv.jakarta.go.id https://dki-jkt.balitower.co.id:7028 https://cctv.balitower.co.id; worker-src 'self' blob:; object-src 'none'; manifest-src 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https: https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://cdnjs.cloudflare.com; media-src 'self' blob: data: https: https://*.workers.dev https://jakcctv.jakarta.go.id https://cctv-jsc.balitower.co.id:8011 https://dki-jkt.balitower.co.id:7028 https://cctv.balitower.co.id; connect-src 'self' https: https://jakcctv.jakarta.go.id https://cctv-jsc.balitower.co.id:8011 https://dki-jkt.balitower.co.id:7028 https://cctv.balitower.co.id https://*.googleapis.com wss://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://api.telegram.org https://nominatim.openstreetmap.org https://router.project-osrm.org https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://api.gold-api.com https://open.er-api.com https://api.frankfurter.app https://cdn.jsdelivr.net https://*.workers.dev https://script.google.com https://script.googleusercontent.com https://api.anthropic.com https://api.groq.com https://openrouter.ai; frame-src https: https://*.firebaseapp.com https://accounts.google.com https://*.windy.com https://jakcctv.jakarta.go.id https://dki-jkt.balitower.co.id:7028 https://cctv.balitower.co.id; worker-src 'self' blob:; object-src 'none'; manifest-src 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <script>if(window.top!==window.self){document.documentElement.style.display="none";try{window.top.location=window.self.location;}catch(e){}}</script>
 <title>Buku Kas — Catatan Keuangan &amp; Tabungan Emas</title>
@@ -1039,6 +1039,28 @@
   </div>
 </div>
 
+<div id="authGate" class="onboard-wrap hidden" style="z-index:99000;" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+  <div class="onboard-card" style="text-align:center;">
+    <div id="authStepLogin">
+      <h1 id="authTitle">Buku Kas &amp; Peta Keluarga</h1>
+      <p>Masuk dengan akun Google. Setelah masuk dan bergabung ke satu peta keluarga, lokasi semua anggota saling terlihat otomatis, juga saat aplikasi ditutup atau digeser dari layar.</p>
+      <button class="btn btn-primary" id="btnGoogle" style="width:100%;min-height:48px;">Masuk dengan Google</button>
+      <p style="font-size:12px;margin-top:14px;">Dengan masuk, lokasimu otomatis dibagikan ke anggota peta yang sama. Bisa dijeda kapan saja di tab Lokasi.</p>
+    </div>
+    <div id="authStepFamily" class="hidden" style="text-align:left;">
+      <h1 id="authHello">Halo</h1>
+      <p>Pilih peta keluarga: buat baru, atau gabung dengan kode dari anggota lain.</p>
+      <div class="field"><label>Gabung dengan kode</label><input type="text" id="authJoinCode" maxlength="12" placeholder="Kode undangan" autocomplete="off" inputmode="text" aria-label="Kode undangan" autocapitalize="characters"></div>
+      <button class="btn btn-primary" id="btnJoinFam" style="width:100%;margin-bottom:16px;">Gabung</button>
+      <div class="field"><label>Atau buat peta keluarga baru</label><input type="text" id="authFamName" maxlength="30" placeholder="mis. Keluarga Budi"></div>
+      <button class="btn btn-ghost" id="btnNewFam" style="width:100%;margin-bottom:10px;">Buat peta baru</button>
+      <button class="btn btn-ghost hidden" id="btnLegacyFam" style="width:100%;margin-bottom:10px;">Pakai data lama (main)</button>
+      <button class="tiny-btn" id="btnAuthOut" style="display:block;margin:6px auto 0;min-height:44px;min-width:44px;font-size:14px;">Ganti akun</button>
+    </div>
+    <div id="authStatus" class="status-line" role="status" aria-live="polite"></div>
+  </div>
+</div>
+
 <div id="appRoot" class="hidden">
   <div class="topbar">
     <div class="topbar-inner">
@@ -1888,7 +1910,17 @@
     </div>
 
     <div class="settings-pane" id="paneInfo">
-      <div class="field-hint" style="margin-bottom:12px;">🔗 Data bersama — proyek Firebase: <strong id="fbProjectLabel">-</strong>. Semua orang yang membuka link aplikasi ini melihat &amp; mengubah data keuangan dan tabungan emas yang sama.</div>
+      <div class="loc-card" style="margin-bottom:12px;">
+        <div class="field-hint">👤 Akun: <strong id="accName">-</strong><br><span id="accEmail"></span></div>
+        <div class="field-hint">👨‍👩‍👧 Peta keluarga: <strong id="famName">-</strong></div>
+        <div class="field-hint">🔑 Kode undangan: <strong id="famCode" style="letter-spacing:2px;">-</strong></div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="btnShareCode">Bagikan kode</button>
+          <button class="btn btn-ghost hidden" id="btnNewCode">Ganti kode</button>
+          <button class="btn btn-danger" id="btnLogout">Keluar akun</button>
+        </div>
+      </div>
+      <div class="field-hint" style="margin-bottom:12px;">🔗 Data bersama — proyek Firebase: <strong id="fbProjectLabel">-</strong>. Hanya anggota peta keluarga yang sama yang melihat &amp; mengubah data keuangan, tabungan emas, dan lokasi.</div>
       <div class="field-hint" style="margin-bottom:12px;">📨 Notifikasi Telegram: <strong id="tgStatusLabel">-</strong>. Setiap transaksi baru otomatis terkirim ke chat Telegram yang sama untuk semua orang, tanpa perlu diatur ulang.</div>
       <div class="divider-note">Konfigurasi Firebase &amp; Telegram diatur sekali oleh pemilik aplikasi langsung di dalam kode (bagian KONFIGURASI BERSAMA), bukan per-perangkat.</div>
       <div class="divider-note">📲 Versi aplikasi: <strong id="appVersionLabel">-</strong>. Pembaruan dimuat otomatis dari server — tidak perlu install ulang APK. Saat ada versi baru, muncul banner "Perbarui".</div>
@@ -1997,7 +2029,7 @@ import {
   getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, getDoc, addDoc, deleteDoc, updateDoc,
   collection, onSnapshot, query, orderBy, serverTimestamp, limit, getDocs
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+import { getAuth, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithCredential, signOut } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
 // ---------- State ----------
 // =====================================================================
@@ -2015,12 +2047,15 @@ const FIREBASE_CONFIG = {
   appId: "1:377825654328:web:2ef78f046b800e8fced8cd"
 };
 const TELEGRAM_CONFIG = {
-  token: "8769536722:AAGb4LcABqUbfOxf4-JlBmpTZIQq9IXhKiI",   // dari @BotFather
+  token: "",   // dari @BotFather
   chatId: "-1004297338375"     // chat/group tujuan notifikasi
 };
 // ID ruang data bersama. Biarkan "main" kecuali sengaja ingin memisah data
 // (mis. jadi beberapa "buku kas" berbeda) dengan mengganti ID ini.
-const SHARED_SPACE_ID = "main";
+let SHARED_SPACE_ID = null;          // diisi setelah login Google + bergabung ke peta keluarga
+const LEGACY_SPACE_ID = "main";      // ruang data lama (kas, emas, lokasi) sebelum ada login
+// Email Google pemilik data lama. Isi SAMA dengan yang ada di firestore.rules agar bisa memakai ulang data "main".
+const LEGACY_OWNER_EMAIL = "";
 
 // ---- (Opsional, disarankan) Proxy Telegram agar token bot tidak ada di kode web ----
 // Isi dengan URL Cloudflare Worker (lihat telegram-proxy-worker.js & KEAMANAN.md). Kosong = langsung ke Telegram.
@@ -2030,13 +2065,13 @@ const TELEGRAM_PROXY_KEY = "";
 // ---- Notifikasi push SOS (HP anggota berbunyi & bergetar walau app tertutup) ----
 // Isi dengan URL Google Apps Script (sos-push-appsscript.gs) atau Cloudflare Worker (lihat PANDUAN-PUSH.md). Kosong = fitur push mati.
 const SOS_PUSH_URL = "https://script.google.com/macros/s/AKfycby_C572ajKQGw_vGQZd0-J9axNt0Q1Pc1EGLhS-xcmB6NULbEIw9ZJM0duq1A7TXCRP/exec";
-const SOS_PUSH_KEY = "Tepangbkjaja305";
+const SOS_PUSH_KEY = "";   // isi lewat build/secret, JANGAN commit nilai asli
 
 // ---- GPS Tracker (Cantrack) lewat Cloudflare Worker (folder gps-worker/) ----
 // GPS_WORKER_URL = alamat worker, mis. https://gps-worker.NAMAKAMU.workers.dev
 // GPS_WORKER_KEY = sama persis dengan secret GPS_APP_KEY di GitHub. Kosong = fitur mati.
 const GPS_WORKER_URL = "https://gps-worker.tepangbkj8.workers.dev";
-const GPS_WORKER_KEY = "KANJUT123";
+const GPS_WORKER_KEY = "";   // fitur kunci-lama mati; pakai login Google (sesi)
 const GPS_TRACKER_NAME = "Kendaraan";   // nama yang tampil di peta & daftar
 const GPS_MOVING_KMH = 5;               // di atas ini dianggap "bergerak"
 const GPS_AUTO_RIDE = true;             // tab Motor: mode berkendara mulai/berhenti otomatis dari GPS tracker
@@ -2060,7 +2095,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.18.6';
+const APP_VERSION = '2.19.0';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -2363,6 +2398,144 @@ async function ensureAccess(){
   });
 }
 
+
+// ---------- Login Google + Peta Keluarga ----------
+const $a = id => document.getElementById(id);
+function authShow(step, msg){
+  $a('appRoot').classList.add('hidden');
+  $a('authGate').classList.remove('hidden');
+  $a('authStepLogin').classList.toggle('hidden', step !== 'login');
+  $a('authStepFamily').classList.toggle('hidden', step !== 'family');
+  const st = $a('authStatus'); st.textContent = msg || ''; st.className = 'status-line' + (msg ? ' err' : '');
+}
+function authMakeCode(n){
+  const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', b = new Uint8Array(n || 8); crypto.getRandomValues(b);
+  return Array.from(b, x=>A[x % A.length]).join('');
+}
+function authProfile(user){
+  return { name:(user.displayName || user.email || 'Aku').slice(0, 40), email:user.email || '', photo:user.photoURL || '' };
+}
+async function authGoogle(){
+  const btn = $a('btnGoogle'); btn.disabled = true; const lbl = btn.textContent; btn.textContent = 'Membuka Google…'; $a('authStatus').textContent = '';
+  try{
+    if(locNative()){
+      const P = capPlugin('FirebaseAuthentication');
+      if(!P) throw new Error('Plugin login Google belum ada di APK ini. Pasang APK versi terbaru.');
+      const r = await P.signInWithGoogle();
+      const idToken = r && r.credential && r.credential.idToken;
+      if(!idToken) throw new Error('Token Google tidak diterima.');
+      await signInWithCredential(auth, GoogleAuthProvider.credential(idToken));
+    }else{
+      const prov = new GoogleAuthProvider(); prov.setCustomParameters({ prompt:'select_account' });
+      await signInWithPopup(auth, prov);
+    }
+  }catch(e){
+    const c = String((e && (e.code || e.message)) || e);
+    if(!/popup-closed|cancel/i.test(c)) authShow('login', /unauthorized-domain/.test(c) ? 'Domain belum diizinkan di Firebase Auth (Authorized domains).' : 'Gagal masuk Google: ' + c);
+  }finally{ btn.disabled = false; btn.textContent = lbl; }
+}
+async function authAfterLogin(user){
+  let fid = null;
+  try{
+    const s = await getDoc(doc(db, 'users', user.uid));
+    fid = s.exists() ? s.data().familyId : null;
+    if(fid){ const m = await getDoc(doc(db, 'families', fid, 'members', user.uid)); if(!m.exists()) fid = null; }
+  }catch(e){ console.warn('cek keluarga', e); fid = null; }
+  if(fid){ await authEnter(user, fid); return; }
+  $a('globalLoading').classList.add('hidden');
+  $a('authHello').textContent = 'Halo, ' + (user.displayName || user.email || '');
+  $a('btnLegacyFam').classList.toggle('hidden', !(LEGACY_OWNER_EMAIL && user.email && user.email.toLowerCase() === LEGACY_OWNER_EMAIL.toLowerCase()));
+  authShow('family');
+}
+async function authSaveUser(user, fid){
+  const pr = authProfile(user);
+  await setDoc(doc(db, 'users', user.uid), { familyId:fid, name:pr.name, email:pr.email, photo:pr.photo, updatedAt:serverTimestamp() });
+}
+async function authCreateFamily(user, name, legacy){
+  const fid = legacy ? LEGACY_SPACE_ID : 'f_' + authMakeCode(10).toLowerCase();
+  const code = authMakeCode(10), pr = authProfile(user);
+  await setDoc(doc(db, 'families', fid), { name:name || 'Keluarga', ownerUid:user.uid, inviteCode:code, createdAt:serverTimestamp() });
+  await setDoc(doc(db, 'families', fid, 'members', user.uid), { role:'owner', name:pr.name, email:pr.email, photo:pr.photo, joinedAt:serverTimestamp() });
+  await setDoc(doc(db, 'invites', code), { familyId:fid });
+  await authSaveUser(user, fid);
+  return fid;
+}
+async function authJoinFamily(user, raw){
+  const code = String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if(code.length < 6) throw new Error('Kode undangan tidak valid.');
+  const inv = await getDoc(doc(db, 'invites', code));
+  if(!inv.exists()) throw new Error('Kode tidak ditemukan.');
+  const fid = inv.data().familyId, pr = authProfile(user);
+  await setDoc(doc(db, 'families', fid, 'members', user.uid), { role:'member', name:pr.name, email:pr.email, photo:pr.photo, code, joinedAt:serverTimestamp() });
+  await authSaveUser(user, fid);
+  return fid;
+}
+async function authEnter(user, fid){
+  SHARED_SPACE_ID = fid;
+  if(!locMyName()) locStore('loc_name', (user.displayName || user.email || 'Aku').split(' ')[0].slice(0, 20));
+  if(locStore('loc_user_off') !== '1') locStore('loc_sharing', 'on');      // otomatis berbagi, kecuali sengaja dijeda
+  $a('authGate').classList.add('hidden');
+  $a('appRoot').classList.remove('hidden');
+  $a('globalLoading').classList.remove('hidden');
+  appUnlocked = true;
+  $a('fbProjectLabel').textContent = FIREBASE_CONFIG.projectId || '-';
+  $a('tgStatusLabel').textContent = isTelegramConfigValid() ? 'Aktif' : 'Belum diisi';
+  $a('accName').textContent = user.displayName || '-'; $a('accEmail').textContent = user.email || '';
+  attachListeners();
+  $a('globalLoading').classList.add('hidden');
+  authLoadFamilyInfo(user);
+}
+let authFam = null;
+async function authLoadFamilyInfo(user){
+  try{
+    const f = await getDoc(doc(db, 'families', SHARED_SPACE_ID));
+    if(!f.exists()) return;
+    authFam = f.data();
+    $a('famName').textContent = authFam.name || '-';
+    $a('famCode').textContent = authFam.inviteCode || '-';
+    $a('btnNewCode').classList.toggle('hidden', authFam.ownerUid !== user.uid);
+  }catch(e){ console.warn('info keluarga', e); }
+}
+async function authNewCode(){
+  if(!authFam || !confirm('Ganti kode undangan? Kode lama tidak bisa dipakai lagi.')) return;
+  const old = authFam.inviteCode, code = authMakeCode(10);
+  try{
+    await setDoc(doc(db, 'families', SHARED_SPACE_ID), { ...authFam, inviteCode:code });
+    await setDoc(doc(db, 'invites', code), { familyId:SHARED_SPACE_ID });
+    try{ await deleteDoc(doc(db, 'invites', old)); }catch(e){}
+    authFam.inviteCode = code; $a('famCode').textContent = code; showToast('Kode undangan diganti');
+  }catch(e){ showToast(errorMessage(e), true); }
+}
+async function authShareCode(){
+  if(!authFam) return;
+  const t = `Gabung peta keluarga "${authFam.name}" di Buku Kas. Masuk dengan Google lalu pakai kode: ${authFam.inviteCode}`;
+  try{ if(navigator.share){ await navigator.share({ text:t }); return; } }catch(e){}
+  try{ await navigator.clipboard.writeText(t); showToast('Kode disalin'); }catch(e){ showToast(t); }
+}
+async function authLogout(){
+  if(!confirm('Keluar dari akun Google? Berbagi lokasi di HP ini akan berhenti.')) return;
+  try{ await locStopSharing(true); }catch(e){}
+  try{ await locSvcStop(); }catch(e){}
+  locStore('loc_sharing', null); locStore('loc_name', null); locStore('loc_user_off', null);
+  try{ if(locNative()){ const P = capPlugin('FirebaseAuthentication'); if(P) await P.signOut(); } }catch(e){}
+  try{ await signOut(auth); }catch(e){}
+  location.reload();
+}
+async function authRun(fn){
+  const u = auth.currentUser; if(!u) return;
+  $a('authStatus').textContent = ''; $a('authStatus').className = 'status-line';
+  try{ const fid = await fn(u); await authEnter(u, fid); }
+  catch(e){ authShow('family', (e && e.message && !/permission|insufficient/i.test(e.message)) ? e.message : 'Ditolak server. Kode salah atau aturan Firestore belum dipasang.'); }
+}
+$a('btnGoogle').addEventListener('click', authGoogle);
+$a('btnJoinFam').addEventListener('click', ()=>authRun(u=>authJoinFamily(u, $a('authJoinCode').value)));
+$a('btnNewFam').addEventListener('click', ()=>authRun(u=>authCreateFamily(u, $a('authFamName').value.trim(), false)));
+$a('btnLegacyFam').addEventListener('click', ()=>authRun(u=>authCreateFamily(u, 'Keluarga', true)));
+$a('btnAuthOut').addEventListener('click', async ()=>{ try{ await signOut(auth); }catch(e){} });
+$a('btnLogout').addEventListener('click', authLogout);
+$a('btnShareCode').addEventListener('click', authShareCode);
+$a('btnNewCode').addEventListener('click', authNewCode);
+
 // ---------- Firebase bootstrap ----------
 function showOnboardError(msg){
   document.getElementById('appRoot').classList.add('hidden');
@@ -2378,7 +2551,6 @@ async function startApp(){
     return;
   }
   document.getElementById('onboard').classList.add('hidden');
-  document.getElementById('appRoot').classList.remove('hidden');
   document.getElementById('globalLoading').classList.remove('hidden');
   try{
     app = initializeApp(FIREBASE_CONFIG);
@@ -2386,21 +2558,16 @@ async function startApp(){
       db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
     }catch(e){ console.warn('cache offline tidak aktif', e); db = getFirestore(app); }
     auth = getAuth(app);
-    let accessChecked = false;
+    let booted = false;
     onAuthStateChanged(auth, async (user)=>{
-      if(user){
-        uid = user.uid;
-        if(accessChecked) return;
-        accessChecked = true;
-        await ensureAccess();
-        appUnlocked = true;
-        document.getElementById('fbProjectLabel').textContent = FIREBASE_CONFIG.projectId || '-';
-        document.getElementById('tgStatusLabel').textContent = isTelegramConfigValid() ? 'Aktif' : 'Belum diisi';
-        attachListeners();
-        document.getElementById('globalLoading').classList.add('hidden');
-      }
+      if(!user){ booted = false; uid = null; document.getElementById('globalLoading').classList.add('hidden'); authShow('login'); return; }
+      if(user.isAnonymous){ try{ await signOut(auth); }catch(e){} return; }   // sesi anonim lama: wajib login Google
+      uid = user.uid;
+      if(booted) return;
+      booted = true;
+      try{ await authAfterLogin(user); }
+      catch(e){ console.error(e); booted = false; document.getElementById('globalLoading').classList.add('hidden'); authShow('login', errorMessage(e)); }
     });
-    await signInAnonymously(auth);
   }catch(e){
     console.error(e);
     showOnboardError('Gagal terhubung ke Firebase: ' + (e.message||e) + '. Periksa nilai FIREBASE_CONFIG dan Firestore Rules proyekmu.');
@@ -2624,6 +2791,7 @@ function locStore(key, val){
   return null;
 }
 function locDeviceId(){
+  if(uid) return uid;
   let id = locStore('loc_device_id');
   if(!id){ id = 'dev_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36); locStore('loc_device_id', id); }
   return id;
@@ -3358,7 +3526,9 @@ function attachLokasiListener(){
   onSnapshot(locColRef(), (snap)=>{
     locMembers = snap.docs.map(d=>{
       const x = d.data({ serverTimestamps:'estimate' });
-      return { id:d.id, ...x, updatedMs: x.updatedAt && x.updatedAt.toMillis ? x.updatedAt.toMillis() : null };
+      const col = /^#[0-9a-fA-F]{3,8}$/.test(String(x.color || '')) ? x.color : '#14B8A6';
+      const num = v => (typeof v === 'number' && isFinite(v)) ? v : null;
+      return { id:d.id, ...x, color:col, lat:num(x.lat), lng:num(x.lng), updatedMs: x.updatedAt && x.updatedAt.toMillis ? x.updatedAt.toMillis() : null };
     });
     const me = locMembers.find(m=>m.id===locDeviceId());
     if(me){
@@ -3526,7 +3696,7 @@ async function locWrite(cur){
     };
     const bg = LOC_NATIVE_HTTP && locNative() && document.visibilityState !== 'visible';
     if(!(bg && await locWriteNativeHttp(data))) await setDoc(locDocRef(), { ...data, updatedAt: serverTimestamp() }, { merge:true });
-    locLastWrite = Date.now();
+    locLastWrite = Date.now(); locSvcMark();
     locLastPos = { lat:cur.lat, lng:cur.lng, acc:cur.acc };
     locCheckBattery(bat);
   }catch(e){ console.error('locWrite', e); showToast(errorMessage(e), true); }
@@ -3740,11 +3910,45 @@ function locRestartGps(){
 function locClearWatch(){
   const id = locWatchId; locWatchId = null;
   if(id === null) return;
-  if(locNative()){ if(id !== 'pending') locBG().removeWatcher({ id }).catch(()=>{}); }
+  if(id === 'svc'){ locSvcStop(); }
+  else if(locNative()){ if(id !== 'pending') locBG().removeWatcher({ id }).catch(()=>{}); }
   else navigator.geolocation.clearWatch(id);
   locClearWebWatch();
 }
+// --- Layanan lokasi native FamilyLoc: tetap jalan walau app digeser dari layar (APK baru) ---
+let locSvcP = null, locSvcOn = false, locSvcLn = null;
+function locSvc(){ if(!locNative()) return null; if(!locSvcP) locSvcP = capPlugin('FamilyLoc'); return locSvcP; }
+async function locSvcStart(){
+  const P = locSvc(); if(!P || !auth || !auth.currentUser) return false;
+  try{
+    const u = auth.currentUser;
+    if(!locSvcLn){
+      locSvcLn = await P.addListener('location', (l)=>{
+        if(!l || !locIsSharing()) return;
+        locOnPosition({ coords:{ latitude:l.latitude, longitude:l.longitude, accuracy:l.accuracy, speed:(typeof l.speed === 'number' && l.speed >= 0 ? l.speed : null) }, timestamp: l.time || Date.now() });
+      });
+    }
+    await P.start({ apiKey:FIREBASE_CONFIG.apiKey, projectId:FIREBASE_CONFIG.projectId, spaceId:SHARED_SPACE_ID, uid:u.uid, name:locMyName() || 'Aku', color:locColorFor(locDeviceId()), refreshToken:u.refreshToken });
+    locSvcOn = true;
+    if(!locStore('loc_batt_asked')){ locStore('loc_batt_asked', '1'); P.requestBatteryExemption().catch(()=>{}); }
+    return true;
+  }catch(e){
+    locSvcOn = false; locLastErr = 'FamilyLoc: ' + ((e && (e.message || e.code)) || e);
+    if(e && e.code === 'NOT_AUTHORIZED') showToast('Izinkan lokasi “Sepanjang waktu” agar tetap berbagi saat app ditutup.', true);
+    return false;
+  }
+}
+async function locSvcStop(){ const P = locSvc(); locSvcOn = false; if(P){ try{ await P.stop(); }catch(e){} } }
+function locSvcMark(){ if(locSvcOn){ const P = locSvc(); if(P){ try{ P.markWritten().catch(()=>{}); }catch(e){} } } }
 function locStartNativeWatch(){
+  if(locSvc()){
+    locWatchId = 'svc';
+    locSvcStart().then(ok=>{ if(!ok && locWatchId === 'svc'){ locWatchId = null; locStartBgPluginWatch(); } });
+    return;
+  }
+  locStartBgPluginWatch();
+}
+function locStartBgPluginWatch(){
   locWatchId = 'pending'; locPendingAt = Date.now();
   let BG;
   try{ BG = locBG(); }catch(e){ locWatchId = null; locLastErr = String(e && e.message || e); return; }
@@ -3841,7 +4045,7 @@ async function locStopSharing(silent){
       mode:'diam', speedKmh:0, trail:[], tripSince:null, updatedAt: serverTimestamp()
     }, { merge:true });
   }catch(e){ console.error('locStop', e); }
-  if(!silent) showToast('Berbagi lokasi dimatikan');
+  if(!silent) showToast('Berbagi lokasi dijeda');
   renderLokasi();
 }
 async function locPing(id){
@@ -3966,11 +4170,11 @@ function renderLokasi(){
   if(document.activeElement !== nameInput && !nameInput.value) nameInput.value = locMyName();
   nameInput.disabled = sharing;
   const tgl = document.getElementById('btnLocToggle');
-  tgl.textContent = sharing ? (locAcquiring ? '⏳ Mencari lokasi… (ketuk untuk berhenti)' : '⏹️ Hentikan berbagi lokasi') : '📍 Bagikan lokasi saya';
+  tgl.textContent = sharing ? (locAcquiring ? '⏳ Mencari lokasi… (ketuk untuk jeda)' : '⏸️ Jeda berbagi lokasi') : '▶️ Lanjutkan berbagi lokasi';
   tgl.className = 'btn ' + (sharing ? 'btn-danger' : 'btn-teal');
   document.getElementById('locMyStatus').textContent = sharing
     ? (locAcquiring ? '📡 Mencari sinyal GPS… keluar ke tempat terbuka bila lama.' : locNative() ? '🟢 Lokasimu dibagikan ke semua anggota, termasuk saat app ditutup atau layar terkunci.' : '🟢 Lokasimu dibagikan ke semua anggota selama aplikasi terbuka.')
-    : 'Lokasi hanya dibagikan setelah kamu menekan tombol di atas, dan bisa dimatikan kapan saja.';
+    : 'Berbagi lokasi sedang dijeda. Anggota peta tidak melihat posisimu sampai kamu melanjutkan.';
 
   const live = locAll().filter(locHasPos);
   document.getElementById('locHeroTitle').textContent = (n=>n ? `${n} orang berbagi lokasi` : 'Belum ada yang berbagi')(locAll().filter(m=>m.sharing && !m.isTracker).length);
@@ -3978,7 +4182,7 @@ function renderLokasi(){
   document.getElementById('locHeroAct').textContent = sharing ? mi.ic : '📍';
   document.getElementById('locHeroSub').textContent = sharing
     ? `Kamu: ${mi.label}${locMode !== 'diam' ? ' • ' + Math.round(locSpeed*3.6) + ' km/j' : ''}${locTrip ? ' • perjalanan berjalan' : ''}`
-    : 'Masing-masing bebas memilih mau berbagi atau tidak.';
+    : 'Lokasi otomatis dibagikan setelah masuk dengan Google.';
 
   const me = locAll().find(m=>m.id===myId);
   const myPos = locHasPos(me) ? { lat:me.lat, lng:me.lng } : null;
