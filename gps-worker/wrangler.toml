@@ -32,8 +32,11 @@ IMEI = "868720062744036"
 # Disusun dari 151 domain stream di data CCTV (jasamarga.com, atcsindonesia.com, balitower.co.id, *.go.id, dst).
 # Termasuk pelindung.bandung.go.id (Bandung, port 3443), transcode.baliprov.go.id (Bali), cctv.asahankab.go.id (Asahan).
 # Segmen/CDN di host lain akan ditolak dengan pesan "host tidak ada di daftar CCTV_PROXY_HOSTS: <host>" -> tambahkan host itu di sini.
-# Proxy juga hanya melayani permintaan yang Origin/Referer-nya sama dengan ALLOW_ORIGIN (di atas).
+# Entri berawalan "*." (wildcard subdomain) setara dengan domainnya; entry.js juga selalu menyertakan lima wildcard di baris pertama.
+# Proxy juga hanya melayani permintaan yang Origin/Referer-nya sama dengan ALLOW_ORIGIN (di atas), ditambah otomatis origin
+# APK/WebView Capacitor (https://localhost, http://localhost, capacitor://localhost, ionic://localhost) yang ditulis di entry.js.
 CCTV_PROXY_HOSTS = """\
+  *.atcsindonesia.com,*.binamarga.pu.go.id,*.jasamarga.com,*.balitower.co.id,*.jakarta.go.id,\
   atcsindonesia.com,atcsindonesia.info,pelindung.bandung.go.id,transcode.baliprov.go.id,cctv.asahankab.go.id,balitower.co.id,jasamarga.com,acehtengahkab.go.id,app-intracs.co.id,\
   badilag.net,balangankab.go.id,bandaacehkota.info,bandung.go.id,bandungkab.go.id,\
   banggaikab.go.id,bangkalankab.go.id,banjarbarukota.go.id,banjarkota.go.id,\
@@ -64,6 +67,8 @@ CCTV_PROXY_HOSTS = """\
   tulungagung.go.id,ub.ac.id,unnes.ac.id,unpak.ac.id,urbanaccess.net,villabs.id,\
   waskitabumiwira.com,wikaserangpanimbang.com,wiraraja.ac.id,wonogirikab.go.id,103.161.206.164,\
   103.87.16.55,103.87.19.7"""
+# Upstream cadangan untuk alamat relatif /api/proxy/cctv/<prefix>/... (urut dicoba).
+CCTV_DEFAULT_UPSTREAMS = "https://atcsindonesia.com,https://atcsindonesia.info"
 # Alarm pemicu notifikasi: SOS_TYPE_IDS = SOS prioritas tertinggi; ALERT_TYPE_IDS = peringatan biasa
 # (5 listrik terputus, 23 diderek, 38 perangkat dilepas, 48 cabut-colok). Kosongkan ALERT_TYPE_IDS untuk mematikan.
 SOS_TYPE_IDS = "1"
