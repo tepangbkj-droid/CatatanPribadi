@@ -2056,7 +2056,7 @@ function isTelegramConfigValid(){
 
 let app, db, auth, uid = null;
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '2.18.4';
+const APP_VERSION = '2.18.5';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -3399,11 +3399,34 @@ function fsVal(v){
   if(Array.isArray(v)) return { arrayValue: v.length ? { values:v.map(fsVal) } : {} };
   return { stringValue:String(v) };
 }
+// Token ID Firebase hanya berlaku 1 jam. Di latar belakang WebView tidak boleh memakai jaringan, jadi penyegaran lewat SDK macet
+// dan pembaruan lokasi berhenti setelah ±1 jam. Solusi: segarkan token lewat HTTP native memakai refresh token.
+let locTok = { v:'', exp:0 };
+function locJwtExp(t){ try{ const p = JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); return (p.exp || 0)*1000; }catch(e){ return 0; } }
+async function locNativeToken(http){
+  if(locTok.v && locTok.exp - Date.now() > 120000) return locTok.v;
+  const u = auth.currentUser;
+  try{                                                           // jalur SDK (cepat saat app terbuka)
+    const t = await Promise.race([ u.getIdToken(), new Promise((_, rej)=>setTimeout(()=>rej(new Error('token timeout')), 4000)) ]);
+    if(t){ locTok = { v:t, exp:locJwtExp(t) }; if(locTok.exp - Date.now() > 120000) return t; }
+  }catch(e){}
+  const rt = u && u.refreshToken;                                // jalur native (latar belakang)
+  if(!rt) throw new Error('refresh token tidak ada');
+  const r = await http.request({
+    url: 'https://securetoken.googleapis.com/v1/token?key=' + encodeURIComponent(FIREBASE_CONFIG.apiKey), method:'POST',
+    headers:{ 'Content-Type':'application/json' }, data:{ grant_type:'refresh_token', refresh_token:rt }, connectTimeout:10000, readTimeout:15000
+  });
+  let d = r && r.data; if(typeof d === 'string'){ try{ d = JSON.parse(d); }catch(e){ d = null; } }
+  const t = d && (d.id_token || d.idToken);
+  if(!r || r.status < 200 || r.status >= 300 || !t) throw new Error('refresh token gagal (HTTP ' + (r && r.status) + ')');
+  locTok = { v:t, exp:Date.now() + Number(d.expires_in || 3600)*1000 };
+  return t;
+}
 async function locWriteNativeHttp(data){
   try{
     const http = capPlugin('CapacitorHttp');
     if(!http || !auth || !auth.currentUser) return false;
-    const token = await Promise.race([ auth.currentUser.getIdToken(), new Promise((_, rej)=>setTimeout(()=>rej(new Error('token timeout')), 8000)) ]);
+    const token = await locNativeToken(http);
     const pid = FIREBASE_CONFIG.projectId;
     const name = 'projects/' + pid + '/databases/(default)/documents/' + locBase().join('/') + '/locations/' + locDeviceId();
     const fields = {}; Object.keys(data).forEach(k=>{ fields[k] = fsVal(data[k]); });
@@ -3414,8 +3437,9 @@ async function locWriteNativeHttp(data){
       data: { writes:[{ update:{ name, fields }, updateMask:{ fieldPaths:Object.keys(data) }, updateTransforms:[{ fieldPath:'updatedAt', setToServerValue:'REQUEST_TIME' }] }] },
       connectTimeout: 10000, readTimeout: 15000
     });
+    if(res && (res.status === 401 || res.status === 403)) locTok = { v:'', exp:0 };      // token ditolak: paksa segarkan
     return !!res && res.status >= 200 && res.status < 300;
-  }catch(e){ console.warn('locWriteNativeHttp', e); return false; }
+  }catch(e){ locLastErr = 'tulis native: ' + ((e && e.message) || e); console.warn('locWriteNativeHttp', e); return false; }
 }
 async function locWrite(cur){
   if(!uid || !cur) return;
@@ -4318,7 +4342,15 @@ async function sosSendItem(it){
     const isGas = /script\.google\.com/.test(SOS_PUSH_URL);
     const url = isGas ? SOS_PUSH_URL : SOS_PUSH_URL.replace(/\/$/, '') + '/sos';
     const payload = JSON.stringify({ ...JSON.parse(it.body), key:SOS_PUSH_KEY });
-    const r = await sosFetch(url, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body:payload }, 20000);
+    let r;
+    try{ r = await sosFetch(url, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body:payload }, 20000); }
+    catch(e){                                    // WebView di latar belakang/jaringan lemah: coba lewat HTTP native
+      const http = locNative() ? capPlugin('CapacitorHttp') : null;
+      if(!http) throw e;
+      const nr = await http.request({ url, method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, data:payload, connectTimeout:15000, readTimeout:20000 });
+      if(nr && nr.status >= 200 && nr.status < 300) return 'ok';
+      sosLastErr = 'push native HTTP ' + (nr && nr.status); return 'retry';
+    }
     if(!r.ok) sosLastErr = 'push HTTP ' + r.status;
     return r.ok ? 'ok' : ((r.status === 429 || r.status >= 500) ? 'retry' : 'drop');
   }
@@ -4363,7 +4395,7 @@ async function sosFlush(){
       if(r === 'retry'){
         // satu item gagal (mis. push) tidak boleh menahan video/pesan lain di belakangnya
         const n = (sosTries.get(it.id) || 0) + 1; sosTries.set(it.id, n);
-        if(it.kind === 'push' || n >= 8){ await sosQDel([it.id]); sosTries.delete(it.id); }
+        if((it.kind === 'push' && n >= 4) || n >= 8){ await sosQDel([it.id]); sosTries.delete(it.id); }
         continue;
       }
       await sosQDel([it.id]); sosTries.delete(it.id);
@@ -6991,16 +7023,15 @@ async function nvRouteInfo(){
   box.innerHTML = '<div class="rd-muted">⏳ Memuat cuaca &amp; CCTV di sepanjang rute…</div>';
   const N = total > 40000 ? 6 : total > 12000 ? 5 : total > 3000 ? 4 : 3;
   const samples = []; for(let i = 0; i < N; i++){ const d = total*i/(N - 1), p = nvPointAt(d); if(p) samples.push({ lat:p.lat, lng:p.lng, d }); }
-  const rows = [];
-  for(const sp of samples){
-    if(tok !== nv.infoTok) return;
+  const wxTimeout = (p, ms)=>Promise.race([p, new Promise((_, rej)=>setTimeout(()=>rej(new Error('waktu habis')), ms))]);
+  const rows = await Promise.all(samples.map(async (sp)=>{          // paralel + batas 15 dtk per titik (sebelumnya berurutan, bisa macet)
     try{
-      const j = await BmkgLayers.weatherAt(nv.map, sp.lat, sp.lng);
+      const j = await wxTimeout(BmkgLayers.weatherAt(nv.map, sp.lat, sp.lng), 15000);
       const eta = Date.now() + dur*1000*(sp.d/total), slots = [j.current].concat(j.next || []);
       let best = slots[0], bd = Infinity; slots.forEach(s=>{ if(s && s.utc != null){ const dd = Math.abs(s.utc - eta); if(dd < bd){ bd = dd; best = s; } } });
-      rows.push({ sp, place:j.place || {}, w:best });
-    }catch(e){ rows.push({ sp, err:true }); }
-  }
+      return { sp, place:j.place || {}, w:best };
+    }catch(e){ return { sp, err:true }; }
+  }));
   if(tok !== nv.infoTok) return;
   // peringatan dini BMKG
   let alerts = []; try{ alerts = BmkgLayers.alertsAlong(nv.map, samples) || []; }catch(e){}
@@ -7013,7 +7044,7 @@ async function nvRouteInfo(){
       for(let i = 0; i < nv.pts.length; i += step) poly.push(nv.pts[i].lat.toFixed(5) + ',' + nv.pts[i].lng.toFixed(5));
       const last = nv.pts[nv.pts.length - 1]; poly.push(last.lat.toFixed(5) + ',' + last.lng.toFixed(5));
       const ar = `(around:180,${poly.join(',')})`;
-      const j = await ovpQuery(`[out:json][timeout:25];(node["man_made"="surveillance"]${ar};node["highway"="speed_camera"]${ar};);out body 300;`);
+      const j = await wxTimeout(ovpQuery(`[out:json][timeout:25];(node["man_made"="surveillance"]${ar};node["highway"="speed_camera"]${ar};);out body 300;`), 30000);
       j.elements.forEach(el=>{
         if(el.type !== 'node') return;
         const it = { id:el.id, lat:el.lat, lng:el.lon, tags:el.tags || {} }; if(ovpKind(it) !== 'cam') return;
