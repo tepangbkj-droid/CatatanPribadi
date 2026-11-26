@@ -106,6 +106,12 @@ jobs:
             --out buku-kas-native.apk aligned.apk
           "$BT/apksigner" verify buku-kas-native.apk
 
+      - name: Cetak sidik jari (SHA-1 dan SHA-256) untuk Firebase
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          echo "=== Salin SHA-1 dan SHA-256 di bawah ke Firebase ==="
+          "$BT/apksigner" verify --print-certs buku-kas-native.apk | grep -i "digest"
+
       - uses: actions/upload-artifact@v4
         with:
           name: buku-kas-native-apk
