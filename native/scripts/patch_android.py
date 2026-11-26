@@ -21,11 +21,48 @@ perms = [
     'android.permission.VIBRATE',
     'android.permission.WAKE_LOCK',
     'android.permission.ACCESS_NETWORK_STATE',
+    'android.permission.RECEIVE_BOOT_COMPLETED',
+    'android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS',
 ]
 add = ''.join(f'    <uses-permission android:name="{p}" />\n' for p in perms if p not in x)
 add += '    <uses-feature android:name="android.hardware.camera" android:required="false" />\n'
 x = x.replace('<application', add + '    <application', 1)
+# Hardening: refresh token tidak ikut backup cloud/adb, tanpa cleartext
+x = re.sub(r'android:allowBackup="true"', 'android:allowBackup="false"', x)
+if 'android:usesCleartextTraffic' not in x:
+    x = x.replace('<application', '<application android:usesCleartextTraffic="false"', 1)
+comp = '''
+        <service android:name="id.bukukas.app.LocationShareService" android:exported="false" android:foregroundServiceType="location" />
+        <receiver android:name="id.bukukas.app.BootReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+    '''
+assert '</application>' in x
+x = x.replace('</application>', comp + '</application>', 1)
 mf.write_text(x, encoding='utf-8')
+
+# --- Plugin lokasi native (tetap jalan setelah app digeser dari layar) ---
+import shutil
+jdir = root / 'java' / 'id' / 'bukukas' / 'app'
+jdir.mkdir(parents=True, exist_ok=True)
+for f in pathlib.Path('android-src').glob('*.java'):
+    shutil.copy(f, jdir / f.name)
+(jdir / 'MainActivity.java').write_text('''package id.bukukas.app;
+
+import android.os.Bundle;
+import com.getcapacitor.BridgeActivity;
+
+public class MainActivity extends BridgeActivity {
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(FamilyLocPlugin.class);
+        super.onCreate(savedInstanceState);
+    }
+}
+''', encoding='utf-8')
 
 # --- Versi ---
 bg = pathlib.Path('android/app/build.gradle')
