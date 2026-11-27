@@ -22,53 +22,43 @@ perms = [
     'android.permission.WAKE_LOCK',
     'android.permission.ACCESS_NETWORK_STATE',
     'android.permission.RECEIVE_BOOT_COMPLETED',
-    'android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS',
 ]
 add = ''.join(f'    <uses-permission android:name="{p}" />\n' for p in perms if p not in x)
 add += '    <uses-feature android:name="android.hardware.camera" android:required="false" />\n'
 x = x.replace('<application', add + '    <application', 1)
-# Hardening: refresh token tidak ikut backup cloud/adb, tanpa cleartext
-x = re.sub(r'android:allowBackup="true"', 'android:allowBackup="false"', x)
-if 'android:usesCleartextTraffic' not in x:
-    x = x.replace('<application', '<application android:usesCleartextTraffic="false"', 1)
-comp = '''
-        <service android:name="id.bukukas.app.LocationShareService" android:exported="false" android:foregroundServiceType="location" />
-        <receiver android:name="id.bukukas.app.BootReceiver" android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-            </intent-filter>
-        </receiver>
-    '''
-assert '</application>' in x
-x = x.replace('</application>', comp + '</application>', 1)
+# Layanan lokasi native + penerima boot
+if 'FamilyLocationService' not in x:
+    comp = ('        <service android:name=".FamilyLocationService" android:exported="false" '
+            'android:foregroundServiceType="location" android:stopWithTask="false" />\n'
+            '        <receiver android:name=".BootReceiver" android:exported="false">\n'
+            '            <intent-filter><action android:name="android.intent.action.BOOT_COMPLETED" /></intent-filter>\n'
+            '        </receiver>\n')
+    x = x.replace('</application>', comp + '    </application>', 1)
 mf.write_text(x, encoding='utf-8')
 
-# --- Plugin lokasi native (tetap jalan setelah app digeser dari layar) ---
-import shutil
+# Kode Java native (MainActivity + layanan lokasi)
+import shutil, glob
 jdir = root / 'java' / 'id' / 'bukukas' / 'app'
 jdir.mkdir(parents=True, exist_ok=True)
-for f in pathlib.Path('android-src').glob('*.java'):
-    shutil.copy(f, jdir / f.name)
-(jdir / 'MainActivity.java').write_text('''package id.bukukas.app;
+for f in glob.glob('java/*.java'):
+    shutil.copy(f, jdir / pathlib.Path(f).name)
+print('java disalin ke', jdir)
 
-import android.os.Bundle;
-import com.getcapacitor.BridgeActivity;
+# minSdk 23 (butuh androidx.security-crypto) + dependensi
+vg = pathlib.Path('android/variables.gradle')
+if vg.exists():
+    v = vg.read_text(encoding='utf-8')
+    v = re.sub(r'minSdkVersion\s*=\s*\d+', 'minSdkVersion = 23', v)
+    vg.write_text(v, encoding='utf-8')
 
-public class MainActivity extends BridgeActivity {
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        registerPlugin(FamilyLocPlugin.class);
-        super.onCreate(savedInstanceState);
-    }
-}
-''', encoding='utf-8')
 
 # --- Versi ---
 bg = pathlib.Path('android/app/build.gradle')
 g = bg.read_text(encoding='utf-8')
 g = re.sub(r'versionCode\s+\d+', 'versionCode ' + os.environ.get('VERSION_CODE', '101'), g, count=1)
 g = re.sub(r'versionName\s+"[^"]*"', 'versionName "' + os.environ.get('VERSION_NAME', '2.0.0') + '"', g, count=1)
+if 'security-crypto' not in g:
+    g = re.sub(r'dependencies\s*\{', 'dependencies {\n    implementation "androidx.security:security-crypto:1.1.0-alpha06"', g, count=1)
 bg.write_text(g, encoding='utf-8')
 
 # --- Nama app ---
