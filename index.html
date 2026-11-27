@@ -894,6 +894,13 @@
   .loc-wrap.pulse .loc-ring{animation:locPulse 1.8s ease-out infinite;}
   @keyframes locPulse{0%{transform:scale(.6);opacity:.65;}100%{transform:scale(3.2);opacity:0;}}
   .loc-wrap .loc-pin{position:absolute;inset:0;}
+  .loc-wrap.mv-jalan .loc-pin i{animation:locWalk .5s ease-in-out infinite;}
+  .loc-wrap.mv-sepeda .loc-pin i{animation:locBike .7s ease-in-out infinite;}
+  .loc-wrap.mv-kendara .loc-pin i{animation:locDrive .35s linear infinite;}
+  @keyframes locWalk{0%,100%{transform:rotate(45deg) translateY(0);}50%{transform:rotate(45deg) translateY(-4px);}}
+  @keyframes locBike{0%,100%{transform:rotate(45deg) rotate(-10deg);}50%{transform:rotate(45deg) rotate(10deg);}}
+  @keyframes locDrive{0%,100%{transform:rotate(45deg) translateX(0);}50%{transform:rotate(45deg) translateX(3px);}}
+  @media (prefers-reduced-motion:reduce){.loc-wrap .loc-pin i{animation:none !important;}}
   .me-dot{width:22px;height:22px;border-radius:50%;background:#2E8BFF;border:3px solid #fff;box-shadow:0 0 0 6px rgba(46,139,255,.25),0 3px 10px rgba(0,0,0,.4);position:relative;}
   .me-dot i{position:absolute;left:50%;top:-12px;margin-left:-6px;border:6px solid transparent;border-bottom:11px solid #2E8BFF;}
   /* ===== v3: riwayat & lacak perjalanan ===== */
@@ -1313,6 +1320,7 @@
         </div>
         <div class="btn-row">
           <button class="btn btn-teal" id="btnFamInvite" style="min-height:44px;">🔗 Undang anggota</button>
+          <button class="btn btn-teal" id="btnTrackLink" style="min-height:44px;">📍 Link pelacakan</button>
           <button class="btn" id="btnSignOut" style="min-height:44px;">Keluar</button>
         </div>
         <div class="btn-row">
@@ -2027,7 +2035,7 @@ import {
   getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, getDoc, addDoc, deleteDoc, updateDoc,
   collection, onSnapshot, query, orderBy, serverTimestamp, limit, getDocs, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
-import { getAuth, GoogleAuthProvider, signInWithCredential, signOut, onAuthStateChanged, onIdTokenChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInAnonymously, signInWithCredential, signOut, onAuthStateChanged, onIdTokenChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
 // ---------- State ----------
 // =====================================================================
@@ -2547,6 +2555,115 @@ function renderFamilyCard(){
   const el = $id('famInfo'); if(!el || !familyId) return;
   el.innerHTML = `<b>${escapeHtml(userProfile.name)}</b> · ${escapeHtml(userProfile.email)}<br>Keluarga: <b>${escapeHtml((familyInfo && familyInfo.name) || 'Keluarga')}</b>`;
 }
+// ===== Link pelacakan: penerima membuka tautan, membagikan lokasi selama durasi yang kamu tentukan =====
+// Perlu aturan Firestore untuk bukukas_shared/{fid}/trackLinks (lihat panduan) dan Auth Anonymous aktif.
+let locTrackPeople = [], locTrackLinks = [], trackRender = null;
+function trackColRef(){ return collection(db, 'bukukas_shared', familyId, 'trackLinks'); }
+function trackEnd(l){ return l.startedMs ? l.startedMs + l.durMin*60000 : 0; }
+function trackDurTxt(m){ return m >= 60 ? (m % 60 ? Math.floor(m/60) + ' jam ' + (m % 60) + ' mnt' : (m/60) + ' jam') : m + ' menit'; }
+function attachTrackListener(){
+  onSnapshot(trackColRef(), (snap)=>{
+    const ms = (t)=>t && t.toMillis ? t.toMillis() : null;
+    locTrackLinks = snap.docs.map(d=>{ const x = d.data({ serverTimestamps:'estimate' }); return { id:d.id, ...x, startedMs:ms(x.startedAt), updatedMs:ms(x.at), createdMs:ms(x.createdAt) }; });
+    locTrackPeople = locTrackLinks.filter(l=>!l.revoked && l.startedMs && Date.now() < trackEnd(l) && typeof l.lat === 'number')
+      .map(l=>({ id:'trk-'+l.id, name:(l.name || l.label || 'Tamu'), color:'#F59E0B', sharing:true, lat:l.lat, lng:l.lng, accuracy:l.acc || 0, updatedMs:l.updatedMs, mode:'diam', speedKmh:l.spd || 0 }));
+    renderLokasi(); if(trackRender) trackRender();
+  }, (e)=>console.warn('Listener link pelacakan gagal', e));
+}
+async function trackShare(tok, label, mins){
+  const link = location.origin + location.pathname + '?track=' + familyId + '.' + tok;
+  const text = 'Tolong bagikan lokasimu selama ' + trackDurTxt(mins) + ' dengan membuka tautan ini lalu tekan tombol Bagikan:\n' + link;
+  try{ if(navigator.share){ await navigator.share({ text }); return; } }catch(e){ if(e && e.name === 'AbortError') return; }
+  try{ await navigator.clipboard.writeText(text); showToast('Tautan disalin.'); }catch(e){ prompt('Salin tautan:', text); }
+}
+async function trackCreate(){
+  if(!familyReady) return;
+  const lab = prompt('Nama penerima (mis. Ibu):', ''); if(lab === null) return;
+  const mins = parseInt(prompt('Berapa menit lokasi dibagikan setelah tautan dibuka? (1–1440, mis. 60)', '60'), 10);
+  if(!(mins >= 1 && mins <= 1440)){ showToast('Durasi harus 1–1440 menit.', true); return; }
+  const tok = rndStr(16, B32), label = lab.trim().slice(0,30);
+  try{ await setDoc(doc(trackColRef(), tok), { label, durMin:mins, createdAt:serverTimestamp(), createdBy:uid, revoked:false, startedAt:null, active:false, lat:null, lng:null }); }
+  catch(e){ showToast('Gagal membuat link: ' + ((e && e.code) || e), true); return; }
+  trackShare(tok, label, mins);
+}
+function trackManage(){
+  if(!familyReady) return;
+  const box = document.createElement('div');
+  box.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center';
+  const close = ()=>{ trackRender = null; box.remove(); };
+  const render = ()=>{
+    const rows = locTrackLinks.slice().sort((a,b)=>(b.createdMs||0)-(a.createdMs||0)).map(l=>{
+      const end = trackEnd(l), live = !l.revoked && l.startedMs && Date.now() < end;
+      const st = l.revoked ? 'Dicabut' : !l.startedMs ? 'Menunggu dibuka' : live ? 'Aktif • sisa ' + Math.ceil((end-Date.now())/60000) + ' mnt' : 'Berakhir';
+      return `<div style="padding:10px 0;border-bottom:1px solid rgba(128,128,128,.3)"><b>${escapeHtml(l.label || 'Tanpa nama')}</b> · ${l.durMin} mnt<br><small>${st}</small><br>
+        <button class="btn" data-s="${l.id}" style="min-height:40px">Bagikan lagi</button> <button class="btn" data-r="${l.id}" style="min-height:40px">Cabut</button> <button class="btn" data-d="${l.id}" style="min-height:40px">Hapus</button></div>`;
+    }).join('') || '<p>Belum ada link.</p>';
+    box.innerHTML = `<div style="background:var(--card,#fff);color:inherit;width:100%;max-width:480px;max-height:80vh;overflow:auto;border-radius:16px 16px 0 0;padding:16px"><div style="display:flex;justify-content:space-between;align-items:center"><b>📍 Link pelacakan</b><button class="btn" data-x="1" style="min-height:44px">Tutup</button></div>
+      <button class="btn btn-teal" data-n="1" style="min-height:44px;width:100%;margin:10px 0">+ Buat link baru</button>${rows}</div>`;
+  };
+  box.addEventListener('click', async (e)=>{
+    const t = e.target.closest('button,div'); if(e.target === box || (t && t.dataset.x)) return close();
+    const b = e.target.closest('button'); if(!b) return;
+    const d = b.dataset; const l = locTrackLinks.find(x=>x.id === (d.s || d.r || d.d));
+    try{
+      if(d.n) trackCreate();
+      else if(d.s && l) trackShare(l.id, l.label, l.durMin);
+      else if(d.r && l) await updateDoc(doc(trackColRef(), l.id), { revoked:true, active:false });
+      else if(d.d && l && confirm('Hapus link ini?')) await deleteDoc(doc(trackColRef(), l.id));
+    }catch(err){ showToast('Gagal: ' + ((err && err.code) || err), true); }
+  });
+  trackRender = render; render(); document.body.appendChild(box);
+}
+
+// Halaman penerima (?track=<keluarga>.<kode>): tanpa login Google, hanya mengirim posisi selama durasi yang ditentukan pemilik.
+async function runTrackVisitor(raw){
+  $id('globalLoading').classList.add('hidden');
+  const box = document.createElement('div');
+  box.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#0f172a;color:#fff;display:flex;align-items:center;justify-content:center;padding:24px;font-family:system-ui,sans-serif;text-align:center';
+  document.body.appendChild(box);
+  const say = (h)=>{ box.innerHTML = '<div style="max-width:380px;width:100%">' + h + '</div>'; };
+  const m = /^([a-z0-9]{3,40})\.([A-Z0-9]{12,24})$/.exec(String(raw).trim());
+  if(!m){ say('<h2>Tautan tidak valid</h2>'); return; }
+  const ref = doc(db, 'bukukas_shared', m[1], 'trackLinks', m[2]);
+  let d;
+  try{ await signInAnonymously(auth); const sn = await getDoc(ref); if(!sn.exists()) throw 0; d = sn.data(); }
+  catch(e){ say('<h2>Tautan tidak berlaku</h2><p>Minta tautan baru ke pengirimnya.</p>'); return; }
+  const tms = (t)=>t && t.toMillis ? t.toMillis() : null;
+  let started = !!d.startedAt, endMs = started ? tms(d.startedAt) + d.durMin*60000 : 0;
+  if(d.revoked || (started && Date.now() >= endMs)){ say('<h2>Tautan sudah berakhir</h2><p>Waktu berbagi selesai atau tautan dicabut.</p>'); return; }
+  const btn = 'style="width:100%;padding:14px;border:0;border-radius:12px;font-size:16px;font-weight:700;margin-top:12px;background:#14B8A6;color:#042f2e"';
+  say(`<h2>📍 ${escapeHtml(d.label || 'Seseorang')} meminta lokasimu</h2><p>Lokasimu akan dibagikan selama <b>${trackDurTxt(d.durMin)}</b> setelah kamu menekan tombol. Hanya posisi yang dikirim, dan kamu bisa berhenti kapan saja.</p>
+    <input id="tkName" maxlength="30" placeholder="Namamu (opsional)" style="width:100%;padding:12px;border-radius:10px;border:0;font-size:16px;box-sizing:border-box"><button id="tkGo" ${btn}>${started ? 'Lanjutkan berbagi' : 'Bagikan lokasi saya'}</button>`);
+  let wid = null, last = 0, tick = null, wl = null;
+  const stop = async (why)=>{
+    if(wid !== null) navigator.geolocation.clearWatch(wid); wid = null; clearInterval(tick);
+    try{ if(wl) wl.release(); }catch(e){}
+    try{ await updateDoc(ref, { active:false }); }catch(e){}
+    say('<h2>Selesai</h2><p>' + why + '</p>');
+  };
+  const push = async (pos)=>{
+    const now = Date.now(); if(now - last < 10000) return; last = now;
+    const c = pos.coords, base = { lat:c.latitude, lng:c.longitude, acc:Math.round(c.accuracy || 0), spd:c.speed > 0 ? Math.round(c.speed*3.6) : 0, at:serverTimestamp(), active:true };
+    try{
+      if(!started){ await updateDoc(ref, { ...base, startedAt:serverTimestamp(), vuid:auth.currentUser.uid, name:(($id('tkName') || {}).value || '').trim().slice(0,30) }); started = true; endMs = now + d.durMin*60000; }
+      else await updateDoc(ref, base);
+      const st = $id('tkSt'); if(st) st.textContent = 'Terkirim ' + new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
+    }catch(e){ if(/permission/i.test((e && (e.code || e.message)) || '')) stop('Waktu berbagi habis atau tautan dicabut.'); }
+  };
+  $id('tkGo').onclick = ()=>{
+    const nm = (($id('tkName') || {}).value || '').trim().slice(0,30);
+    if(!navigator.geolocation){ say('<h2>Perangkat tidak mendukung lokasi</h2>'); return; }
+    say(`<h2>🟢 Berbagi lokasi aktif</h2><p id="tkSt">Mencari posisi…</p><p id="tkLeft"></p><p><small>Biarkan halaman ini tetap terbuka dan layar menyala.</small></p><button id="tkStop" ${btn.replace('#14B8A6', '#ef4444').replace('#042f2e', '#fff')}>Berhenti</button>`);
+    $id('tkStop').onclick = ()=>stop('Kamu sudah berhenti membagikan lokasi.');
+    wid = navigator.geolocation.watchPosition(push, (e)=>{ const st = $id('tkSt'); if(st) st.textContent = e.code === 1 ? 'Izin lokasi ditolak. Aktifkan izin lokasi di browser.' : 'Gagal membaca lokasi, mencoba lagi…'; }, { enableHighAccuracy:true, maximumAge:5000, timeout:20000 });
+    try{ if(navigator.wakeLock) navigator.wakeLock.request('screen').then(x=>{ wl = x; }).catch(()=>{}); }catch(e){}
+    tick = setInterval(()=>{
+      if(started && Date.now() >= endMs) return stop('Waktu berbagi selesai. Terima kasih!');
+      const el = $id('tkLeft'); if(el && started) el.textContent = 'Sisa waktu ' + Math.ceil((endMs - Date.now())/60000) + ' menit';
+    }, 1000);
+  };
+}
+
 async function inviteShare(){
   const code = familyInfo && familyInfo.inviteCode;
   if(!code){ showToast('Kode undangan belum tersedia.', true); return; }
@@ -2581,6 +2698,7 @@ async function startApp(){
       db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
     }catch(e){ console.warn('cache offline tidak aktif', e); db = getFirestore(app); }
     auth = getAuth(app);
+    { const tk = new URLSearchParams(location.search).get('track'); if(tk){ runTrackVisitor(tk); return; } }
     onIdTokenChanged(auth, async (u)=>{ try{ authTok = u ? await u.getIdToken() : ''; }catch(e){ authTok = ''; } });
     let booted = false;
     onAuthStateChanged(auth, (user)=>{
@@ -2873,6 +2991,7 @@ function locMembersEff(){
   const myId = locDeviceId();
   const list = locMembers.map(m=>({ ...m }));
   const trk = gpsMember(); if(trk) list.push(trk);
+  locTrackPeople.forEach(p=>list.push(p));
   if(!locIsSharing()) return list;
   let me = list.find(m=>m.id === myId);
   if(!me){ me = { id:myId }; list.push(me); }
@@ -3539,6 +3658,7 @@ function gpsFeedRide(){
 function attachLokasiListener(){
   if(locListenerOn) return;
   locListenerOn = true;
+  attachTrackListener();
   onSnapshot(locColRef(), (snap)=>{
     locMembers = snap.docs.map(d=>{
       const x = d.data({ serverTimestamps:'estimate' });
@@ -4185,7 +4305,7 @@ function renderLokasi(){
           ? (fresh ? (m.mode === 'diam' ? '🅿️ Berhenti' : `🚗 Bergerak • ${m.speedKmh} km/j`) : '🕒 Terakhir terlihat')
           : fresh ? `${info.ic} ${info.label}${m.speedKmh && m.mode !== 'diam' ? ' • ' + m.speedKmh + ' km/j' : ''}` : '🕒 Terakhir terlihat';
         if(pl) l1 += ` • di ${pl.icon || '📍'} ${pl.name}`;
-        if(fresh && m.mode === 'diam' && m.modeSince) l1 += ` • sejak ${locClock(m.modeSince)}`;
+        if(fresh && m.mode === 'diam' && m.modeSince) l1 += ` • sejak ${locClock(m.modeSince)} (${locSpan(Date.now() - m.modeSince)})`;
         l2 = `${fresh ? '📍 Diperbarui' : '⏱️'} ${locRel(m.updatedMs)}${m.accuracy ? ' • ±' + m.accuracy + ' m' : ''}`;
       }else{
         if(m.sharing){ l1 = '📡 Mencari sinyal GPS…'; l2 = ''; }
@@ -4317,6 +4437,7 @@ function locSetSeg(seg){
 
 // ----- Event handler -----
 document.getElementById('btnFamInvite').addEventListener('click', inviteShare);
+document.getElementById('btnTrackLink').addEventListener('click', trackManage);
 document.getElementById('btnSignOut').addEventListener('click', doSignOut);
 document.getElementById('btnLocToggle').addEventListener('click', ()=>{ if(locIsSharing()) locStopSharing(); else locStartSharing(); });
 document.getElementById('btnLocFit').addEventListener('click', locFitAll);
@@ -6937,8 +7058,18 @@ function locPinIcon(m){
   const col = escapeHtml(m.color || '#14B8A6');
   return L.divIcon({
     className:'', iconSize:[36,36], iconAnchor:[18,36],
-    html:`<div class="loc-wrap${moving ? ' pulse' : ''}" style="--c:${col}"><i class="loc-ring"></i><div class="loc-pin" style="background:${col}"><span>${locMark(m)}</span>${badge}</div></div>`
+    html:`<div class="loc-wrap${moving ? ' pulse' : ''}${moving && m.mode ? ' mv-' + m.mode : ''}" style="--c:${col}"><i class="loc-ring"></i><div class="loc-pin" style="background:${col}"><span>${locMark(m)}</span>${badge}</div></div>`
   });
+}
+function locSpan(ms){ const m = Math.max(0, Math.round(ms/60000)); return m < 1 ? 'baru saja' : m < 60 ? m + ' mnt' : Math.floor(m/60) + ' jam' + (m % 60 ? ' ' + (m % 60) + ' mnt' : ''); }
+function locGlide(mk, to){
+  const from = mk.getLatLng(); if(from.lat === to[0] && from.lng === to[1]) return;
+  if(mk._raf) cancelAnimationFrame(mk._raf);
+  if(from.distanceTo(L.latLng(to)) > 3000 || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)){ mk.setLatLng(to); return; }
+  const t0 = performance.now(), D = 1500;
+  const step = (t)=>{ const k = Math.min(1, (t - t0)/D), e = k < .5 ? 2*k*k : 1 - Math.pow(-2*k + 2, 2)/2;
+    mk.setLatLng([from.lat + (to[0] - from.lat)*e, from.lng + (to[1] - from.lng)*e]); mk._raf = k < 1 ? requestAnimationFrame(step) : null; };
+  mk._raf = requestAnimationFrame(step);
 }
 function locUpdateMap(){
   if(!locMap) return;
@@ -6948,8 +7079,8 @@ function locUpdateMap(){
   live.forEach(m=>{
     const ll = [m.lat, m.lng];
     const mi = MODE_INFO[m.mode] || MODE_INFO.diam;
-    const tip = escapeHtml(`${m.name || 'Tanpa nama'} • ${mi.label}${m.speedKmh ? ' ' + m.speedKmh + ' km/j' : ''} • ${locRel(m.updatedMs)}`);  // bindTooltip merender HTML: wajib di-escape
-    if(locMarkers[m.id]) locMarkers[m.id].setLatLng(ll).setIcon(locPinIcon(m)).setTooltipContent(tip);
+    const tip = escapeHtml(`${m.name || 'Tanpa nama'} • ${mi.label}${m.speedKmh ? ' ' + m.speedKmh + ' km/j' : ''} • ${locRel(m.updatedMs)}${m.mode === 'diam' && m.modeSince ? ' • ' + locSpan(Date.now() - m.modeSince) + ' di sini' : ''}`);  // bindTooltip merender HTML: wajib di-escape
+    if(locMarkers[m.id]){ locGlide(locMarkers[m.id], ll); locMarkers[m.id].setIcon(locPinIcon(m)).setTooltipContent(tip); }
     else{
       locMarkers[m.id] = L.marker(ll, { icon:locPinIcon(m) }).addTo(locMap).bindTooltip(tip, { direction:'top', offset:[0,-34] });
       locMarkers[m.id].on('click', ()=>locFocus(m.id));
