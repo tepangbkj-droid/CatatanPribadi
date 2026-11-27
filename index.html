@@ -2051,7 +2051,7 @@ let SHARED_SPACE_ID = "main";   // diisi otomatis = ID keluarga setelah login Go
 
 // ---- (Opsional, disarankan) Proxy Telegram agar token bot tidak ada di kode web ----
 // Isi dengan URL Cloudflare Worker (lihat telegram-proxy-worker.js & KEAMANAN.md). Kosong = langsung ke Telegram.
-const TELEGRAM_PROXY_URL = "";   // isi URL telegram-proxy-worker.js (https://xxx.workers.dev). Otorisasi memakai token login Google, bukan kunci statis.
+const TELEGRAM_PROXY_URL = "https://telegram-proxy.tepangbkj8.workers.dev";   // isi URL telegram-proxy-worker.js (https://xxx.workers.dev). Otorisasi memakai token login Google, bukan kunci statis.
 
 // ---- Notifikasi push SOS (HP anggota berbunyi & bergetar walau app tertutup) ----
 // Isi dengan URL Google Apps Script (sos-push-appsscript.gs) atau Cloudflare Worker (lihat PANDUAN-PUSH.md). Kosong = fitur push mati.
@@ -2061,7 +2061,7 @@ const SOS_PUSH_URL = "https://script.google.com/macros/s/AKfycby_C572ajKQGw_vGQZ
 // GPS_WORKER_URL = alamat worker, mis. https://gps-worker.NAMAKAMU.workers.dev
 // Kunci statis dihapus: akses worker memakai sesi/token login Google.
 const GPS_WORKER_URL = "https://gps-worker.tepangbkj8.workers.dev";
-const GOOGLE_CLIENT_ID = "GANTI_DENGAN_WEB_CLIENT_ID.apps.googleusercontent.com";   // Web client ID OAuth (publik, bukan rahasia). Sama dengan GPS_GOOGLE_CLIENT_ID di worker.
+const GOOGLE_CLIENT_ID = "377825654328-cci16h3or0flfmi1ktjp96uvov00pjfe.apps.googleusercontent.com";   // Web client ID OAuth (publik, bukan rahasia). Sama dengan GPS_GOOGLE_CLIENT_ID di worker.
 const GPS_TRACKER_NAME = "Kendaraan";   // nama yang tampil di peta & daftar
 const GPS_MOVING_KMH = 5;               // di atas ini dianggap "bergerak"
 const GPS_AUTO_RIDE = true;             // tab Motor: mode berkendara mulai/berhenti otomatis dari GPS tracker
