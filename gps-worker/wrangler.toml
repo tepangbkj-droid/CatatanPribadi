@@ -26,7 +26,7 @@ bucket_name = "gps-audio"
 # Asal (origin) yang boleh memanggil Worker. Harus persis origin GitHub Pages (tanpa path, tanpa garis miring akhir).
 ALLOW_ORIGIN = "https://tepangbkj-droid.github.io"
 TIMEZONE = "7"
-IMEI = "868720062744036"
+# IMEI sekarang SECRET (GPS_IMEI di GitHub) - jangan taruh di sini.
 # ---- Proxy CCTV (/api/proxy-cctv, lihat entry.js) ----
 # Daftar host yang BOLEH diproxy: akhiran domain (subdomain & CDN-nya ikut), IP ditulis persis. Kosong = proxy menolak semua.
 # Disusun dari 151 domain stream di data CCTV (jasamarga.com, atcsindonesia.com, balitower.co.id, *.go.id, dst).
@@ -84,7 +84,7 @@ FAMILY_CAN_COMMAND = "1"
 VAPID_SUBJECT = "mailto:GANTI@email.kamu"
 # Aplikasi Buku Kas lama membaca posisi memakai kunci x-api-key (hanya /pos /alarms /info, TIDAK untuk perintah).
 # Setelah Anda masuk Google di halaman Pelacak Motor (sesi tersimpan), ubah ke "0" lalu deploy ulang. Lihat PANDUAN-GPS.md.
-LEGACY_READ = "1"
+LEGACY_READ = "0"
 # Templat perintah suara (sintaks beda antar firmware; cek buku manual CY06/GT06):
 # CMD_RECORD_TEMPLATE  = "RECORD,{pw},{sec}#"
 # CMD_MONITOR_TEMPLATE = "MONITOR,{pw}#"
@@ -99,7 +99,7 @@ LEGACY_READ = "1"
 #   SIM_NUMBER                                nomor SIM di tracker (tombol telepon)
 #   TOTP_SECRET                               (opsional) kunci Authenticator manual. Bila kosong, kunci dibuat dari aplikasi (tab Kendaraan) dan disimpan di D1
 #   CMD_PASSWORD                              (opsional) sandi perintah tracker; bawaan 123456. GANTI di tracker lalu isi di sini
-#   APP_KEY                                   hanya untuk LEGACY_READ = "1"
+#   APP_KEY                                   hanya untuk LEGACY_READ = "0"
 #   WINDY_API_KEY                             (opsional) kunci Windy Webcams API v3 untuk GET /api/cctv (https://api.windy.com/keys). Tanpa ini hanya titik statis yang tampil
 #   CCTV_EXTRA                                (opsional) JSON array titik CCTV tambahan (hls/portal), tanpa ubah kode
 #   SOS_PUSH_URL, SOS_PUSH_KEY                (opsional) layanan FCM yang sudah ada (sos-push-gas.gs / sos-push-worker.js) agar SOS juga masuk ke APK

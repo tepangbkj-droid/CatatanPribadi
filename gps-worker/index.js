@@ -492,7 +492,7 @@ async function fetchOfficial(env) {
 }
 
 // ===== Perintah ke tracker (GT06/CY06) lewat CantrackPortal =====
-const DEFAULT_IMEI = "868720062744036";
+const DEFAULT_IMEI = "";   // IMEI wajib lewat secret IMEI (jangan taruh di repo)
 const INTERVAL_MIN = 5, INTERVAL_MAX = 18000; // detik
 
 // action -> string perintah. Mengembalikan { cmd } atau { error }. {pw} = CMD_PASSWORD.
