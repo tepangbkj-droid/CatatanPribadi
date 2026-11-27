@@ -2512,6 +2512,27 @@ async function onSignedIn(user){
     try{ const m = await getDoc(doc(db, 'bukukas_shared', fid, 'members', uid)); if(!m.exists()) fid = null; }
     catch(e){ if(locStore('family_id') !== fid) fid = null; }
   }
+  // Muat otomatis data lama (ruang "main"), HANYA untuk akun yang berhak: anggota/pemilik ruang "main".
+  // Otorisasi tetap diputuskan Firestore Rules; bila ditolak, alur normal berjalan seperti biasa.
+  if(fid !== 'main'){
+    try{
+      let ok = false, isMember = false;
+      const mm = await getDoc(doc(db, 'bukukas_shared', 'main', 'members', uid));
+      if(mm.exists()){ ok = true; isMember = true; }
+      else{
+        const md = await getDoc(doc(db, 'bukukas_shared', 'main'));
+        const d = md.exists() ? md.data() : null;
+        const mail = String(user.email || '').toLowerCase();
+        if(d && ((d.ownerUid && d.ownerUid === uid) || (d.ownerEmail && String(d.ownerEmail).toLowerCase() === mail))){
+          await claimLegacy(); ok = true;
+        }
+      }
+      if(ok){
+        if(isMember) await setDoc(doc(db, 'users', uid), { familyId:'main', at:serverTimestamp() });
+        fid = 'main';
+      }
+    }catch(e){ console.warn('data lama tidak dimuat otomatis', e); }
+  }
   if(!fid){ showFamilyGate(); return; }
   await enterFamily(fid);
 }
