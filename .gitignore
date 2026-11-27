@@ -4,3 +4,8 @@ __pycache__/
 android.keystore
 SIMPAN-SEBAGAI-SECRET-*.txt
 .env
+
+*.jks
+google-services.json
+*.pem
+SA-*.json
