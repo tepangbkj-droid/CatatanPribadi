@@ -99,7 +99,8 @@ public class FamilyLocationService extends Service implements LocationListener {
     // ---- Riwayat perjalanan saat aplikasi mati (aturan sama dengan index.html: >=150 m, >=90 dtk, diam 3 mnt = selesai) ----
     private static final long TRIP_END_MS = 3 * 60_000, TRIP_GAP_MS = 8 * 60_000;
     private final android.os.Handler mh = new android.os.Handler(Looper.getMainLooper());
-    private final Runnable endCheck = () -> { if (tpts != null && System.currentTimeMillis() - tMove >= TRIP_END_MS) endTrip(); };
+    private final Runnable endCheck = () -> checkTripEnd();
+    private void checkTripEnd() { if (tpts != null && System.currentTimeMillis() - tMove >= TRIP_END_MS) endTrip(); }
     private double[] anchor;                        // {lat, lng, t} titik diam terakhir
     private java.util.ArrayList<double[]> tpts;     // {lat, lng, t}
     private double tDist, tMax; private long tStart, tMove;
