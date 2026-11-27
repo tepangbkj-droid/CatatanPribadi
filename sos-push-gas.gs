@@ -8,7 +8,7 @@
  *      FIREBASE_PROJECT_ID = catatanpribadi-e0aca
  *      SA_CLIENT_EMAIL     = client_email dari file service account (JSON)
  *      SA_PRIVATE_KEY      = private_key dari file yang sama (seluruh isi, termasuk BEGIN/END)
- *      APP_KEY             = sama persis dengan SOS_PUSH_KEY di index.html
+ *      APP_KEY             = (opsional) kunci server-ke-server untuk worker GPS. JANGAN ditaruh di index.html
  *    (Service account: Firebase Console > Project settings > Service accounts > Generate new private key.
  *     Pastikan perannya boleh Firebase Cloud Messaging & baca Firestore, mis. "Firebase Admin SDK".)
  * 3. Deploy > New deployment > jenis "Web app" > Execute as: Me, Who has access: Anyone > Deploy.
@@ -37,13 +37,23 @@ function accessToken_() {
   return j.access_token;
 }
 
-function kirimSos_(body) {
+function kirimSos_(body, serverCall) {
   var pid = prop_('FIREBASE_PROJECT_ID');
   var token = accessToken_();
   var auth = { Authorization: 'Bearer ' + token };
   var name = String(body.name || 'Anggota').slice(0, 30);
+  var fid = String(body.familyId || (serverCall ? 'main' : ''));
+  if (!/^[a-z0-9]{3,40}$/.test(fid)) return { error: 'bad family' };
   var senderId = String(body.senderId || '');
-  var base = 'https://firestore.googleapis.com/v1/projects/' + pid + '/databases/(default)/documents/bukukas_shared/main/fcm';
+  if (!serverCall) {   // pengirim harus anggota: baca dokumen anggotanya dengan token pengguna sendiri
+    var tok = String(body.idToken || ''), uid = '';
+    try { uid = JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(tok.split('.')[1] + '==')).getDataAsString()).user_id || ''; } catch (e) {}
+    if (!tok || !/^[A-Za-z0-9]{10,64}$/.test(uid)) return { error: 'unauthorized' };
+    var mr = UrlFetchApp.fetch('https://firestore.googleapis.com/v1/projects/' + pid + '/databases/(default)/documents/bukukas_shared/' + fid + '/members/' + uid, { headers: { Authorization: 'Bearer ' + tok }, muteHttpExceptions: true });
+    if (mr.getResponseCode() !== 200) return { error: 'unauthorized' };
+    senderId = uid;
+  }
+  var base = 'https://firestore.googleapis.com/v1/projects/' + pid + '/databases/(default)/documents/bukukas_shared/' + fid + '/fcm';
   var lr = UrlFetchApp.fetch(base + '?pageSize=300', { headers: auth, muteHttpExceptions: true });
   var lj = JSON.parse(lr.getContentText());
   var targets = (lj.documents || []).map(function (d) {
@@ -83,15 +93,15 @@ function json_(o) { return ContentService.createTextOutput(JSON.stringify(o)).se
 function doPost(e) {
   try {
     var body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
-    if (!prop_('APP_KEY') || body.key !== prop_('APP_KEY')) return json_({ error: 'unauthorized' });
-    return json_(kirimSos_(body));
+    var serverCall = !!prop_('APP_KEY') && body.key === prop_('APP_KEY');
+    return json_(kirimSos_(body, serverCall));
   } catch (err) { return json_({ error: String(err && err.message || err) }); }
 }
 
 // Buka URL /exec di browser: harus tampil {"ok":true,"service":"sos-push"}
-function doGet() { return json_({ ok: true, service: 'sos-push', configured: !!(prop_('SA_CLIENT_EMAIL') && prop_('SA_PRIVATE_KEY') && prop_('FIREBASE_PROJECT_ID') && prop_('APP_KEY')) }); }
+function doGet() { return json_({ ok: true, service: 'sos-push', configured: !!(prop_('SA_CLIENT_EMAIL') && prop_('SA_PRIVATE_KEY') && prop_('FIREBASE_PROJECT_ID')) }); }
 
 // Jalankan manual dari editor untuk tes (tidak butuh app)
 function tesPush() {
-  Logger.log(JSON.stringify(kirimSos_({ name: 'Tes', senderId: 'tes-manual', lat: null, lng: null, repeat: false })));
+  Logger.log(JSON.stringify(kirimSos_({ name: 'Tes', senderId: 'tes-manual', familyId: 'main', lat: null, lng: null, repeat: false }, true)));
 }
