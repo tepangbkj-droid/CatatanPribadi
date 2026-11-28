@@ -3968,7 +3968,7 @@ function locOpenPantau(id){
 document.getElementById('ptStop').addEventListener('click', ()=>locPantauStop());
 
 // ----- Kabari keluarga: mulai/selesai perjalanan -----
-const PUSH_TRIP_READY = false;     // ganti true SETELAH sos-push-gas.gs versi baru di-deploy ulang (kalau belum, push perjalanan akan terbaca sebagai SOS!)
+const PUSH_TRIP_READY = true;     // ganti true SETELAH sos-push-gas.gs versi baru di-deploy ulang (kalau belum, push perjalanan akan terbaca sebagai SOS!)
 function locTripAnnounce(kind, tr, dur){
   if(locStore('loc_tripnotif') === 'off') return;
   const sp = locPlaceAt({ lat:tr.pts[0][0], lng:tr.pts[0][1] });
