@@ -162,7 +162,7 @@ dialog::backdrop{background:#000a}
     <div id="map" aria-label="Peta posisi motor"></div>
     <div id="fix">
       <div class="spd"><span id="spdV">–</span><small>km/j</small></div>
-      <div class="meta"><b id="fixWhen">Menunggu data…</b><span id="fixAddr"></span><div style="margin-top:4px"><span class="chip" id="relayChip">BBM: ?</span></div></div>
+      <div class="meta"><b id="fixWhen">Menunggu data…</b><span id="fixAddr"></span><div style="margin-top:4px"><span class="chip" id="relayChip">BBM: ?</span> <span class="chip trf-chip trf-hide" id="trfChip" hidden></span></div></div>
     </div>
     <button id="follow" aria-pressed="true" aria-label="Ikuti motor" title="Ikuti motor">◎</button>
     <details id="hist">
@@ -279,6 +279,7 @@ dialog::backdrop{background:#000a}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="../bmkg-layers.js"></script>
 <script src="../map-pro.js"></script>
+<script src="../traffic-layer.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="app.js"></script>
 </body>

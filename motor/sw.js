@@ -1,9 +1,9 @@
 // Service worker: PWA shell offline, Web Push SOS (prioritas tinggi), Background Sync & Periodic Sync.
 // Naikkan VERSION setiap rilis supaya cache lama dibuang.
-const VERSION = '1.3.0';
+const VERSION = '1.3.1';
 const SHELL_CACHE = 'motor-shell-' + VERSION;
 const CDN_CACHE = 'motor-cdn-v1';
-const SHELL = ['./', './index.html', './app.js', './manifest.json', '../bmkg-layers.js', '../map-pro.js', '../icon-192.png', '../icon-512.png'];
+const SHELL = ['./', './index.html', './app.js', './manifest.json', '../bmkg-layers.js', '../map-pro.js', '../traffic-layer.js', '../icon-192.png', '../icon-512.png'];
 const SOS_VIBRATE = [700, 200, 700, 200, 700, 200, 1400, 300, 700, 200, 700, 200, 1400];
 
 // ---- IndexedDB kecil (dibagi dengan app.js: DB 'motor-pwa', store 'kv') ----
