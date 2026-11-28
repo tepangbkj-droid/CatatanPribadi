@@ -54,8 +54,8 @@ public class FamilyLocationService extends Service implements LocationListener {
         try {
             if (lm == null) lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
             lm.removeUpdates(this);
-            if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 15_000, 10f, this, Looper.getMainLooper());
-            if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 30_000, 25f, this, Looper.getMainLooper());
+            if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3_000, 5f, this, Looper.getMainLooper());
+            if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 20_000, 20f, this, Looper.getMainLooper());
         } catch (SecurityException e) { stopSelf(); }
         return START_STICKY;
     }
@@ -83,12 +83,27 @@ public class FamilyLocationService extends Service implements LocationListener {
     @Override
     public void onLocationChanged(Location loc) {
         long now = System.currentTimeMillis();
-        if (now - lastWrite < MIN_WRITE_MS) return;
+        boolean moving = loc.hasSpeed() && loc.getSpeed() > 1.0f;
+        if (now - lastWrite < (moving ? 5_000 : MIN_WRITE_MS)) return;
+        // titik basi (cache lama) dibuang
+        if (now - loc.getTime() > 60_000) return;
+        boolean isGps = LocationManager.GPS_PROVIDER.equals(loc.getProvider());
+        if (isGps) lastGpsAt = now;
+        else if (now - lastGpsAt < 60_000) return;            // jaringan hanya cadangan bila GPS diam >60 dtk
         try {
             long hb = Store.prefs(this).getLong("hb", 0);
             if (now - hb < JS_ALIVE_MS) return;          // aplikasi (JS) masih hidup dan menulis sendiri
         } catch (Exception ignored) {}
-        if (loc.getAccuracy() > 150f) return;
+        if (loc.getAccuracy() > (isGps ? 50f : 100f)) return;
+        // tolak lonjakan mustahil (>70 m/s & >300 m) kecuali dikonfirmasi titik berikutnya
+        if (lastLoc != null) {
+            double dj = dist(lastLoc.getLatitude(), lastLoc.getLongitude(), loc.getLatitude(), loc.getLongitude());
+            double dts = Math.max(1, (now - lastFixAt) / 1000.0);
+            if (dj > 300 && dj / dts > 70) {
+                if (jumpCand != null && dist(jumpCand.getLatitude(), jumpCand.getLongitude(), loc.getLatitude(), loc.getLongitude()) < Math.max(100, loc.getAccuracy() * 2)) { jumpCand = null; anchor = null; }
+                else { jumpCand = loc; return; }
+            } else jumpCand = null;
+        }
         lastLoc = loc; lastFixAt = now; modeStep(loc.hasSpeed() ? loc.getSpeed() * 3.6 : 0, now);
         tripStep(loc, now);
         lastWrite = now;
@@ -110,7 +125,7 @@ public class FamilyLocationService extends Service implements LocationListener {
     }
 
     private void tripStep(Location l, long now) {
-        if (l.getAccuracy() > 80f) return;
+        if (l.getAccuracy() > 50f) return;
         double la = l.getLatitude(), lo = l.getLongitude(), v = l.hasSpeed() ? l.getSpeed() : 0;
         if (tpts != null) {
             double[] last = tpts.get(tpts.size() - 1);
@@ -179,7 +194,7 @@ public class FamilyLocationService extends Service implements LocationListener {
     // ---- Mode gerak & lama di tempat (benar walau aplikasi mati) ----
     private volatile String curMode = "diam"; private volatile long modeSince = 0;
     private String candMode = ""; private int candN = 0;
-    private Location lastLoc; private long lastFixAt = 0;
+    private Location lastLoc, jumpCand; private long lastFixAt = 0, lastGpsAt = 0;
     private final Runnable idleTick = new Runnable() { @Override public void run() { try { idle(); } catch (Exception ignored) {} mh.postDelayed(this, 60_000); } };
 
     private static String classify(double kmh) { return kmh < 3 ? "diam" : kmh < 8 ? "jalan" : kmh < 22 ? "sepeda" : "kendara"; }
