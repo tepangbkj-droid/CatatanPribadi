@@ -1021,6 +1021,87 @@
   .kd-aud-sub{font-size:12px;color:var(--ink-soft);margin-top:2px;word-break:break-word;}
   .kd-ctl-row .btn{flex:1.2;}
   .kd-reply{margin-top:10px;font-size:11.5px;white-space:pre-wrap;word-break:break-word;background:rgba(127,127,127,.12);border-radius:10px;padding:8px 10px;max-height:160px;overflow:auto;}
+
+  /* ===== Lokasi: tampilan baru ===== */
+  .ic{width:20px;height:20px;flex:0 0 auto;display:inline-block;vertical-align:middle;}
+  .loc-hero-top{display:flex;align-items:center;justify-content:space-between;gap:10px;position:relative;margin-bottom:12px;}
+  .loc-pill{display:inline-flex;align-items:center;gap:7px;padding:5px 12px 5px 10px;border-radius:99px;background:rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:600;white-space:nowrap;backdrop-filter:blur(6px);}
+  .loc-pill i{width:8px;height:8px;border-radius:50%;background:#8CF7CF;animation:locLive 2s ease-out infinite;}
+  .hero-loc.is-paused .loc-pill i{background:#FFD08A;animation:none;}
+  @keyframes locLive{0%{box-shadow:0 0 0 0 rgba(140,247,207,.75);}70%,100%{box-shadow:0 0 0 8px rgba(140,247,207,0);}}
+  .hero-loc .hero-number{font-size:24px;line-height:1.2;}
+  .lc-profile{display:flex;align-items:center;gap:12px;}
+  .lc-avatar{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--violet),var(--blue));color:#fff;font:700 18px var(--font-head);display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  .lc-who{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px;}
+  .lc-who b{font:600 15px var(--font-head);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .lc-who span{font-size:12.5px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .lc-who em{font-style:normal;align-self:flex-start;margin-top:5px;padding:2px 9px;border-radius:99px;background:var(--teal-soft);color:#0B7A6E;font-size:11.5px;font-weight:600;}
+  .lc-signout{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--ink-soft);display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;flex:0 0 auto;}
+  .lc-signout:active{background:var(--violet-soft);}
+  .lc-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+  .lc-act{width:100%;min-height:52px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:#F8F6FF;color:var(--ink);font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:10px;text-align:left;line-height:1.25;}
+  .lc-act .ic{color:var(--violet);}
+  .lc-act:active{transform:scale(.98);background:var(--violet-soft);}
+  .lc-act:disabled{opacity:.6;}
+  .lc-hl-tech .lc-act,.hl-tech .lc-act{grid-column:1/-1;}
+  .lc-share{margin-top:14px;padding:12px;border-radius:16px;background:var(--emerald-soft);}
+  .lc-share.paused{background:#F1EFF8;}
+  .lc-share.acq{background:var(--amber-soft);}
+  .loc-status{display:flex;gap:9px;align-items:flex-start;margin:0 0 12px;font-size:13px;line-height:1.45;color:var(--ink);}
+  .loc-status::before{content:'';flex:0 0 auto;width:9px;height:9px;border-radius:50%;margin-top:5px;background:var(--emerald);}
+  .lc-share.paused .loc-status::before{background:#A8A3C2;}
+  .lc-share.acq .loc-status::before{background:var(--amber);}
+  .lc-toggle{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border-radius:14px;font-size:14.5px;}
+  .lc-toggle.pause{background:#fff;color:#C21F43;border:1.5px solid #F7B9C6;}
+  .lc-toggle.go{background:linear-gradient(135deg,var(--teal),var(--blue));color:#fff;box-shadow:0 10px 22px -12px rgba(20,184,166,.7);}
+  .lc-sec{margin:20px 4px 8px;font:600 13px var(--font-head);color:var(--ink-soft);}
+  .loc-card.lc-sets{padding:2px 14px;margin-top:0;}
+  .lc-set{display:flex;align-items:center;gap:12px;min-height:62px;padding:10px 0;font-size:14px;font-weight:600;}
+  .lc-set + .lc-set{border-top:1px solid var(--line);}
+  .lc-set-ic{width:36px;height:36px;border-radius:11px;background:var(--violet-soft);color:var(--violet);display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  .lc-set-t{flex:1;min-width:0;}
+  .lc-set-t small{display:block;font-weight:400;font-size:12px;color:var(--ink-soft);margin-top:2px;line-height:1.35;}
+  .loc-switch input:focus-visible,.lc-act:focus-visible,.lc-signout:focus-visible,.lc-toggle:focus-visible,.lc-health>summary:focus-visible,.hl-tech>summary:focus-visible{outline:2px solid var(--violet);outline-offset:2px;}
+  details.lc-health{padding:0;margin-top:16px;overflow:hidden;}
+  .lc-health>summary,.hl-tech>summary{list-style:none;cursor:pointer;}
+  .lc-health>summary::-webkit-details-marker,.hl-tech>summary::-webkit-details-marker{display:none;}
+  .lc-health>summary{display:flex;align-items:center;gap:12px;padding:12px 16px;min-height:64px;}
+  .lc-health-ic{background:var(--blue-soft);color:var(--blue);}
+  .lc-health-t{flex:1;min-width:0;font:600 14px var(--font-head);}
+  .lc-health-t small{display:block;font:400 12px var(--font-sans);color:var(--ink-soft);margin-top:1px;}
+  .hl-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px 4px 7px;border-radius:99px;font-size:12px;font-weight:700;white-space:nowrap;}
+  .hl-badge .ic{width:15px;height:15px;}
+  .hl-badge.ok{background:var(--emerald-soft);color:#087A50;}
+  .hl-badge.warn{background:var(--amber-soft);color:#9A5B00;}
+  .hl-badge.bad{background:var(--rose-soft);color:#C21F43;}
+  .lc-chev{color:var(--ink-soft);transition:transform .2s;}
+  details[open]>summary .lc-chev{transform:rotate(180deg);}
+  .lc-health-body{padding:0 16px 16px;border-top:1px solid var(--line);}
+  .hl-list{list-style:none;margin:0;padding:0;}
+  .hl-row{display:flex;gap:10px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line);}
+  .hl-row .ic{width:18px;height:18px;margin-top:1px;}
+  .hl-row.ok .ic{color:var(--emerald);} .hl-row.warn .ic{color:var(--amber-dark);} .hl-row.bad .ic{color:var(--rose);} .hl-row.idle .ic{color:#A8A3C2;}
+  .hl-t{flex:1;min-width:0;font-size:13.5px;font-weight:600;}
+  .hl-t small{display:block;font-weight:400;color:var(--ink-soft);font-size:12px;margin-top:1px;line-height:1.35;}
+  .hl-v{font-size:13px;font-weight:600;text-align:right;max-width:46%;}
+  .hl-row.ok .hl-v{color:#087A50;} .hl-row.warn .hl-v{color:#9A5B00;} .hl-row.bad .hl-v{color:#C21F43;} .hl-row.idle .hl-v{color:var(--ink-soft);}
+  .hl-err{margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--rose-soft);color:#9B1535;font-size:12.5px;line-height:1.45;word-break:break-word;white-space:pre-wrap;}
+  .hl-tech{margin-top:12px;}
+  .hl-tech>summary{display:flex;align-items:center;justify-content:space-between;min-height:44px;font-size:13px;font-weight:600;color:var(--ink-soft);}
+  .hl-tech pre{white-space:pre-wrap;word-break:break-word;font:11.5px/1.6 ui-monospace,Menlo,Consolas,monospace;background:#F8F6FF;border-radius:12px;padding:12px;margin:6px 0 10px;color:var(--ink-soft);}
+  @media (prefers-reduced-motion:reduce){.loc-pill i{animation:none;}.lc-chev{transition:none;}}
+  .hl-tip{margin-top:14px;padding:12px;border-radius:14px;background:var(--amber-soft);color:#6B4200;font-size:12.5px;line-height:1.45;}
+  .hl-tip b{display:block;font-size:13px;margin-bottom:2px;}
+  .hl-tip .lc-actions{margin-top:10px;}
+  .hl-tip .lc-act{background:#fff;}
+  .lsu-back{position:fixed;inset:0;z-index:10000;background:rgba(20,15,50,.55);display:flex;align-items:flex-end;justify-content:center;}
+  .lsu-card{width:100%;max-width:480px;background:#fff;border-radius:24px 24px 0 0;padding:22px 20px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -20px 50px -20px rgba(20,15,50,.5);}
+  .lsu-ic{width:48px;height:48px;border-radius:15px;background:var(--violet-soft);color:var(--violet);display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+  .lsu-ic .ic{width:26px;height:26px;}
+  .lsu-step{font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;}
+  .lsu-card h3{font:600 18px var(--font-head);margin:0 0 8px;color:var(--ink);}
+  .lsu-card p{font-size:13.5px;line-height:1.55;color:var(--ink-soft);margin:0 0 16px;}
+  .lsu-later{width:100%;min-height:46px;margin-top:6px;background:transparent;border:0;color:var(--ink-soft);font-size:13.5px;font-weight:600;}
 </style>
 </head>
 <body class="nav-sidebar">
@@ -1302,11 +1383,36 @@
     <!-- ===== VIEW: SARAN AI ===== -->
     <!-- ===== VIEW: LOKASI ===== -->
     <div id="viewLokasi" class="view-pane">
+      <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+        <symbol id="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+        <symbol id="ic-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></symbol>
+        <symbol id="ic-userplus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></symbol>
+        <symbol id="ic-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></symbol>
+        <symbol id="ic-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></symbol>
+        <symbol id="ic-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l14 9-14 9z"/></symbol>
+        <symbol id="ic-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+        <symbol id="ic-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol>
+        <symbol id="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+        <symbol id="ic-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></symbol>
+        <symbol id="ic-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
+        <symbol id="ic-radio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></symbol>
+        <symbol id="ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+        <symbol id="ic-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol>
+        <symbol id="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+        <symbol id="ic-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/></symbol>
+        <symbol id="ic-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></symbol>
+        <symbol id="ic-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></symbol>
+        <symbol id="ic-activity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+      </defs></svg>
+
       <div class="hero hero-loc fade-up">
+        <div class="loc-hero-top">
+          <span class="hero-label">Lokasi keluarga</span>
+          <span class="loc-pill" id="locHeroPill" role="status"><i aria-hidden="true"></i><b>Berbagi aktif</b></span>
+        </div>
         <div class="loc-hero-row">
           <div style="min-width:0;">
-            <div class="hero-label">📍 Lokasi keluarga</div>
-            <div class="hero-number" style="font-size:23px;" id="locHeroTitle">Belum ada yang berbagi</div>
+            <div class="hero-number" id="locHeroTitle">Belum ada yang berbagi</div>
             <div class="hero-sub" id="locHeroSub">Masing-masing bebas memilih mau berbagi atau tidak.</div>
           </div>
           <div class="loc-hero-act" id="locHeroAct">📍</div>
@@ -1314,31 +1420,53 @@
       </div>
 
       <div class="loc-card">
-        <div class="field">
-          <label>Akun &amp; keluarga</label>
-          <div id="famInfo" style="font-size:13.5px;line-height:1.55;word-break:break-word;"></div>
+        <div class="lc-profile">
+          <div class="lc-avatar" id="famAvatar" aria-hidden="true">?</div>
+          <div class="lc-who" id="famInfo"></div>
+          <button class="lc-signout" id="btnSignOut" type="button"><svg class="ic" aria-hidden="true"><use href="#ic-logout"/></svg>Keluar</button>
         </div>
-        <div class="btn-row">
-          <button class="btn btn-teal" id="btnFamInvite" style="min-height:44px;">🔗 Undang anggota</button>
-          <button class="btn btn-teal" id="btnTrackLink" style="min-height:44px;">📍 Link pelacakan</button>
-          <button class="btn" id="btnSignOut" style="min-height:44px;">Keluar</button>
+        <div class="lc-actions">
+          <button class="lc-act" id="btnFamInvite" type="button"><svg class="ic" aria-hidden="true"><use href="#ic-userplus"/></svg><span>Undang anggota</span></button>
+          <button class="lc-act" id="btnTrackLink" type="button"><svg class="ic" aria-hidden="true"><use href="#ic-link"/></svg><span>Link pelacakan</span></button>
         </div>
-        <div class="btn-row">
-          <button class="btn btn-danger" id="btnLocToggle" style="min-height:44px;">⏸️ Jeda berbagi lokasi</button>
-        </div>
-        <div class="loc-status" id="locMyStatus"></div>
-        <div class="loc-opts">
-          <label class="loc-switch"><span>Jaga layar tetap menyala<small>Lebih akurat saat berjalan/berkendara, tapi boros baterai.</small></span><input type="checkbox" id="optWake"></label>
-          <label class="loc-switch"><span>Kirim notifikasi Telegram<small>Saat tiba/meninggalkan tempat, check-in &amp; baterai lemah.</small></span><input type="checkbox" id="optTg" checked></label>
-          <label class="loc-switch"><span>Notifikasi di HP ini<small>Kabar tiba/pergi anggota lain saat app terbuka.</small></span><input type="checkbox" id="optNotif"></label>
+        <div class="lc-share on" id="locShare">
+          <div class="loc-status" id="locMyStatus"></div>
+          <button class="btn lc-toggle pause" id="btnLocToggle" type="button"></button>
         </div>
       </div>
 
-      <details class="loc-card" style="margin-top:12px;padding:12px 16px;">
-        <summary style="font-weight:700;font-size:13.5px;cursor:pointer;">🛠️ Diagnostik GPS &amp; notifikasi</summary>
-        <pre id="locDiag" style="white-space:pre-wrap;font-size:12px;line-height:1.55;margin:10px 0;color:var(--ink-soft);"></pre>
-        <button class="btn btn-ghost" id="btnLocRestart" style="width:100%;">🔁 Coba ulang GPS</button>
-        <button class="btn btn-ghost" id="btnGpsTest" style="width:100%;margin-top:8px;">🛰️ Tes GPS tracker</button>
+      <div class="lc-sec">Pengaturan berbagi</div>
+      <div class="loc-card lc-sets">
+        <label class="loc-switch lc-set"><span class="lc-set-ic"><svg class="ic" aria-hidden="true"><use href="#ic-sun"/></svg></span><span class="lc-set-t">Jaga layar tetap menyala<small>Lebih akurat saat berjalan/berkendara, tapi boros baterai.</small></span><input type="checkbox" id="optWake" role="switch"></label>
+        <label class="loc-switch lc-set"><span class="lc-set-ic"><svg class="ic" aria-hidden="true"><use href="#ic-send"/></svg></span><span class="lc-set-t">Notifikasi Telegram<small>Saat tiba/meninggalkan tempat, check-in &amp; baterai lemah.</small></span><input type="checkbox" id="optTg" role="switch" checked></label>
+        <label class="loc-switch lc-set"><span class="lc-set-ic"><svg class="ic" aria-hidden="true"><use href="#ic-phone"/></svg></span><span class="lc-set-t">Notifikasi di HP ini<small>Kabar tiba/pergi anggota lain saat app terbuka.</small></span><input type="checkbox" id="optNotif" role="switch"></label>
+      </div>
+
+      <details class="loc-card lc-health" id="locHealth">
+        <summary>
+          <span class="lc-set-ic lc-health-ic"><svg class="ic" aria-hidden="true"><use href="#ic-activity"/></svg></span>
+          <span class="lc-health-t">Kesehatan pelacakan<small>Status GPS &amp; notifikasi</small></span>
+          <span class="hl-badge ok" id="hlBadge"><svg class="ic" aria-hidden="true"><use href="#ic-check"/></svg><b>Memeriksa…</b></span>
+          <svg class="ic lc-chev" aria-hidden="true"><use href="#ic-chev"/></svg>
+        </summary>
+        <div class="lc-health-body">
+          <ul class="hl-list" id="hlList"></ul>
+          <div class="hl-err hidden" id="hlErr" role="alert"></div>
+          <div class="lc-actions">
+            <button class="lc-act" id="btnLocRestart" type="button"><svg class="ic" aria-hidden="true"><use href="#ic-refresh"/></svg><span>Coba ulang GPS</span></button>
+            <button class="lc-act" id="btnGpsTest" type="button"><svg class="ic" aria-hidden="true"><use href="#ic-radio"/></svg><span>Tes GPS tracker</span></button>
+          </div>
+          <div class="hl-tip" id="hlTip"><b>Agar tetap jalan di belakang layar</b><span>Izin lokasi “Sepanjang waktu” dan baterai “Tanpa batasan” (tidak dihemat).</span>
+            <div class="lc-actions">
+              <button class="lc-act" id="btnLocPerm" type="button"><svg class="ic" aria-hidden="true"><use href="#ic-pin"/></svg><span>Izin lokasi</span></button>
+              <button class="lc-act" id="btnLocBatt" type="button"><svg class="ic" aria-hidden="true"><use href="#ic-phone"/></svg><span>Atur baterai</span></button>
+            </div></div>
+          <details class="hl-tech">
+            <summary>Detail teknis<svg class="ic lc-chev" aria-hidden="true"><use href="#ic-chev"/></svg></summary>
+            <pre id="locDiag"></pre>
+            <button class="lc-act" id="btnDiagCopy" type="button"><svg class="ic" aria-hidden="true"><use href="#ic-copy"/></svg><span>Salin detail</span></button>
+          </details>
+        </div>
       </details>
       <div class="loc-card" id="gpsBar" style="margin-top:12px;padding:12px 16px;display:none;">
         <div id="gpsBarTxt" style="font-size:13px;font-weight:600;line-height:1.5;"></div>
@@ -2096,7 +2224,7 @@ let authTok = '', familyId = null, familyInfo = {}, familyReady = false, listene
 let userProfile = { name:'', email:'', photo:'' };
 const FID_ALPHA = 'abcdefghijklmnopqrstuvwxyz0123456789', B32 = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '3.0.0';
+const APP_VERSION = '3.0.3';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -2553,7 +2681,8 @@ async function doSignOut(){
 }
 function renderFamilyCard(){
   const el = $id('famInfo'); if(!el || !familyId) return;
-  el.innerHTML = `<b>${escapeHtml(userProfile.name)}</b> · ${escapeHtml(userProfile.email)}<br>Keluarga: <b>${escapeHtml((familyInfo && familyInfo.name) || 'Keluarga')}</b>`;
+  el.innerHTML = `<b>${escapeHtml(userProfile.name)}</b><span>${escapeHtml(userProfile.email)}</span><em>Keluarga · ${escapeHtml((familyInfo && familyInfo.name) || 'Keluarga')}</em>`;
+  const av = $id('famAvatar'); if(av) av.textContent = String(userProfile.name || userProfile.email || '?').trim().charAt(0).toUpperCase() || '?';
 }
 // ===== Link pelacakan: penerima membuka tautan, membagikan lokasi selama durasi yang kamu tentukan =====
 // Perlu aturan Firestore untuk bukukas_shared/{fid}/trackLinks (lihat panduan) dan Auth Anonymous aktif.
@@ -2830,10 +2959,12 @@ function attachListeners(){
 // menyalakan "Bagikan lokasi saya". Pelacakan berjalan selama app terbuka (batasan web app).
 const LOC_COLORS = ['#6D4AFF','#0FAE73','#F0355A','#F5A324','#2E8BFF','#EC4899','#14B8A6'];
 const LOC_STALE_MS = 10 * 60 * 1000;
-const LOC_HEARTBEAT = 3 * 60 * 1000;
+const LOC_HEARTBEAT = 60 * 1000;
 const LOC_GAP_MS = 8 * 60 * 1000;          // jeda data > 8 menit = perjalanan dipotong
 const LOC_TRIP_END_MS = 3 * 60 * 1000;     // diam >3 menit = perjalanan selesai
-const LOC_MAX_ACC = 150;                   // abaikan titik GPS yang terlalu kasar (m)
+const LOC_MAX_ACC = 60;                    // titik dengan akurasi lebih kasar dari ini (m) dibuang
+const LOC_COARSE_MAX = 200;                // ...kecuali tidak ada titik bagus >60 dtk: dipakai hanya untuk tampilan
+let locLastNativeAt = 0, locJumpCand = null;
 const MODE_INFO = {
   diam:    { ic:'🧍', label:'Diam' },
   jalan:   { ic:'🚶', label:'Berjalan' },
@@ -3701,7 +3832,7 @@ function attachLokasiListener(){
     renderLokasi();
   }, (err)=>console.warn('Listener kabar gagal', err));
 
-  if(locIsSharing()) locStartWatch();
+  if(locIsSharing()) { locStartWatch(); setTimeout(()=>locEnsureSetup(false), 5000); }
   else setTimeout(()=>showToast('⏸️ Berbagi lokasi sedang dijeda. Buka tab Lokasi untuk melanjutkan.', true), 3000);
   locTick = setInterval(locTickFn, 20000);
   setTimeout(()=>gpsPoll(true), 3000);
@@ -3712,11 +3843,52 @@ function attachLokasiListener(){
       gpsPoll(false);
       locWakeSet();
       renderLokasi();
+      setTimeout(()=>locEnsureSetup(false), 700);
     }
   });
 }
+// ----- Minta pengguna mengaktifkan izin "Sepanjang waktu" & pengecualian baterai -----
+let locSetupSt = null, locSetupOpen = false;
+async function locRefreshPermStatus(){
+  const pl = nativeFamilyPlugin(); if(!pl || !pl.status) return null;
+  try{ locSetupSt = await pl.status(); }catch(e){ locSetupSt = null; }
+  return locSetupSt;
+}
+async function locEnsureSetup(force){
+  if(!locNative() || !locIsSharing() || locSetupOpen) return;
+  const st = await locRefreshPermStatus(); if(!st) return;
+  const step = !st.background ? 'perm' : !st.battery ? 'batt' : null;
+  if(!step) return;
+  if(!force && Date.now() < (+locStore('loc_snz_' + step) || 0)) return;
+  locShowSetup(step);
+}
+function locShowSetup(step){
+  if(locSetupOpen) return; locSetupOpen = true;
+  const perm = step === 'perm';
+  const wrap = document.createElement('div');
+  wrap.className = 'lsu-back'; wrap.setAttribute('role', 'dialog'); wrap.setAttribute('aria-modal', 'true');
+  wrap.innerHTML = `<div class="lsu-card">
+    <div class="lsu-ic"><svg class="ic" aria-hidden="true"><use href="#${perm ? 'ic-pin' : 'ic-phone'}"/></svg></div>
+    <div class="lsu-step">Langkah ${perm ? 1 : 2} dari 2</div>
+    <h3>${perm ? 'Izinkan lokasi “Sepanjang waktu”' : 'Matikan penghematan baterai'}</h3>
+    <p>${perm ? 'Supaya lokasimu tetap terbagi saat app ditutup atau layar terkunci. Di halaman berikutnya pilih <b>Izin › Lokasi › Sepanjang waktu</b>.' : 'Supaya HP tidak mematikan pelacakan di belakang layar. Ketuk <b>Izinkan</b> pada kotak yang muncul.'}</p>
+    <button class="btn lc-toggle go" id="lsuGo" type="button">${perm ? 'Buka pengaturan izin' : 'Izinkan'}</button>
+    <button class="lsu-later" id="lsuLater" type="button">Nanti saja</button></div>`;
+  document.body.appendChild(wrap);
+  const close = ()=>{ wrap.remove(); locSetupOpen = false; };
+  wrap.querySelector('#lsuGo').addEventListener('click', ()=>{
+    close(); locStore('loc_snz_' + step, String(Date.now() + 20*60*1000));      // jangan langsung tanya lagi saat kembali dari pengaturan
+    try{
+      if(perm) locBG().openSettings().catch(()=>{});
+      else { const pl = nativeFamilyPlugin(); if(pl && pl.batterySettings) Promise.resolve(pl.batterySettings()).catch(()=>{}); }
+    }catch(e){ showToast('Buka Pengaturan HP › Aplikasi › Buku Kas', true); }
+  });
+  wrap.querySelector('#lsuLater').addEventListener('click', ()=>{ close(); locStore('loc_snz_' + step, String(Date.now() + 12*3600*1000)); });
+  wrap.querySelector('#lsuGo').focus();
+}
 function locTickFn(){
   const now = Date.now();
+  if(locNative() && locIsSharing()) locRefreshPermStatus();
   if(locIsSharing()){
     // tidak ada data baru lama = anggap diam
     if(locMode !== 'diam' && locLastSampleAt && now - locLastSampleAt > 90*1000){
@@ -3842,10 +4014,32 @@ function locCheckBattery(bat){
 }
 
 // ----- Mesin gerak + perjalanan -----
-function locOnPosition(pos){
+function locOnPosition(pos, src){
   const c = pos.coords, t = pos.timestamp || Date.now();
   const acc = c.accuracy || 0;
-  if(acc > LOC_MAX_ACC && locLastFixAt) return;      // titik pertama boleh kasar, berikutnya difilter
+  // 1) satu sumber saja: kalau watcher native sehat, GPS web (yang bisa melompat) diabaikan
+  if(src === 'native') locLastNativeAt = Date.now();
+  else if(locNative() && Date.now() - locLastNativeAt < 45000) return;
+  // 2) urutan waktu terbalik / titik lama
+  if(locPrev && t < locPrev.t - 1000) return;
+  // 3) akurasi: titik kasar tidak masuk mesin gerak / riwayat
+  const noGood = !locLastFixAt || Date.now() - locLastFixAt > 60000;
+  if(acc > LOC_MAX_ACC){
+    if(!(noGood && acc <= LOC_COARSE_MAX)) return;
+    locAcquiring = false; clearTimeout(locAcquireTimer);          // hanya untuk tampilan posisi, tidak dipakai hitung jalur
+    locLastFixAt = Date.now();
+    if(!locLastPos || Date.now() - locLastWrite >= 30000) locWrite({ lat:c.latitude, lng:c.longitude, acc });
+    return;
+  }
+  // 4) tolak lonjakan mustahil (>70 m/s & >300 m); baru diterima bila titik berikutnya mengonfirmasi
+  if(locPrev){
+    const here = { lat:c.latitude, lng:c.longitude };
+    const dtS = Math.max(1, (t - locPrev.t)/1000), dJ = locDistanceM(locPrev, here);
+    if(dJ > 300 && dJ/dtS > 70){
+      if(locJumpCand && locDistanceM(locJumpCand, here) < Math.max(100, acc*2)){ locJumpCand = null; locEndTrip(); locAnchor = null; locPrev = null; }
+      else{ locJumpCand = here; return; }
+    }else locJumpCand = null;
+  }
   locLastFixAt = Date.now();
   locAcquiring = false; clearTimeout(locAcquireTimer);
   const cur = { lat:c.latitude, lng:c.longitude, t, acc };
@@ -3889,7 +4083,7 @@ function locOnPosition(pos){
   // seberapa sering menulis ke server: sering saat bergerak, hemat saat diam
   const now = Date.now(), since = now - locLastWrite;
   const act = locMode !== 'diam';
-  const minInt = act ? 10000 : 30000, minMove = act ? 10 : 25, hb = act ? 60000 : LOC_HEARTBEAT;
+  const minInt = act ? 5000 : 20000, minMove = act ? 5 : 20, hb = act ? 30000 : LOC_HEARTBEAT;
   const moved = locLastPos ? locDistanceM(locLastPos, cur) : Infinity;
   if(modeChanged || !locLastPos || (moved >= minMove && since >= minInt) || since >= hb) locWrite(cur);
   else if(activeTab === 'lokasi') renderLokasi();
@@ -4047,14 +4241,18 @@ function locClearWatch(){
   else navigator.geolocation.clearWatch(id);
   locClearWebWatch();
 }
+// Plugin Capacitor versi lama mengembalikan id (string) langsung, bukan Promise -> bungkus supaya .then selalu ada.
+function bgAddWatcher(BG, opts, cb){
+  try{ return Promise.resolve(BG.addWatcher(opts, cb)); }catch(e){ return Promise.reject(e); }
+}
 function locStartNativeWatch(){
   locWatchId = 'pending'; locPendingAt = Date.now();
   let BG;
   try{ BG = locBG(); }catch(e){ locWatchId = null; locLastErr = String(e && e.message || e); return; }
-  BG.addWatcher({
+  bgAddWatcher(BG, {
     backgroundTitle: 'Buku Kas — berbagi lokasi',
     backgroundMessage: 'Lokasimu sedang dibagikan ke keluarga.',
-    requestPermissions: true, stale: true, distanceFilter: 10
+    requestPermissions: true, stale: false, distanceFilter: 5
   }, (loc, err)=>{
     if(err){
       locLastErr = 'plugin: ' + (err.code || err.message || 'error');
@@ -4065,8 +4263,8 @@ function locStartNativeWatch(){
       return;
     }
     if(!loc) return;
-    if(loc.time && Date.now() - loc.time > 10*60*1000) return;      // abaikan titik basi
-    locOnPosition({ coords:{ latitude:loc.latitude, longitude:loc.longitude, accuracy:loc.accuracy, speed:(typeof loc.speed === 'number' ? loc.speed : null) }, timestamp: loc.time || Date.now() });
+    if(loc.time && Date.now() - loc.time > 2*60*1000) return;       // abaikan titik basi (cache lama)
+    locOnPosition({ coords:{ latitude:loc.latitude, longitude:loc.longitude, accuracy:loc.accuracy, speed:(typeof loc.speed === 'number' ? loc.speed : null) }, timestamp: loc.time || Date.now() }, 'native');
   }).then(id=>{
     locNativeFails = 0;
     if(locWatchId === 'pending') locWatchId = id; else BG.removeWatcher({ id }).catch(()=>{});
@@ -4122,6 +4320,7 @@ async function locStartSharing(){
   locLastPos = null; locLastWrite = 0; locPrev = null;
   if(uid) setDocFast(locDocRef(), { name:locMyName(), color:locColorFor(locDeviceId()), sharing:true, mode:'diam', speedKmh:0, updatedAt:serverTimestamp() }, { merge:true });
   locStartWatch();
+  setTimeout(()=>locEnsureSetup(true), 1500);
   if(!locNative()) locPushNow(true);
   nativeFamilyStart();
   showToast('Berbagi lokasi aktif.');
@@ -4263,11 +4462,17 @@ function renderLokasi(){
   if(!document.getElementById('locList')) return;
   const myId = locDeviceId(), sharing = locIsSharing();
   const tgl = document.getElementById('btnLocToggle');
-  tgl.textContent = sharing ? (locAcquiring ? '⏳ Mencari lokasi… (ketuk untuk jeda)' : '⏸️ Jeda berbagi lokasi') : '▶️ Lanjutkan berbagi lokasi';
-  tgl.className = 'btn ' + (sharing ? 'btn-danger' : 'btn-teal');
+  const ico = (id)=>`<svg class="ic" aria-hidden="true"><use href="#${id}"/></svg>`;
+  tgl.innerHTML = !sharing ? ico('ic-play') + '<span>Lanjutkan berbagi lokasi</span>'
+    : locAcquiring ? ico('ic-pause') + '<span>Mencari lokasi… ketuk untuk jeda</span>'
+    : ico('ic-pause') + '<span>Jeda berbagi lokasi</span>';
+  tgl.className = 'btn lc-toggle ' + (sharing ? 'pause' : 'go');
+  const shBox = document.getElementById('locShare'); if(shBox) shBox.className = 'lc-share ' + (!sharing ? 'paused' : locAcquiring ? 'acq' : 'on');
   document.getElementById('locMyStatus').textContent = sharing
-    ? (locAcquiring ? '📡 Mencari sinyal GPS… keluar ke tempat terbuka bila lama.' : locNative() ? '🟢 Lokasimu dibagikan ke semua anggota, termasuk saat app ditutup atau layar terkunci.' : '🟢 Lokasimu dibagikan ke semua anggota selama aplikasi terbuka.')
-    : '⏸️ Dijeda. Anggota keluarga tidak melihat lokasimu sampai kamu melanjutkan.';
+    ? (locAcquiring ? 'Mencari sinyal GPS… keluar ke tempat terbuka bila lama.' : locNative() ? 'Lokasimu dibagikan ke semua anggota, termasuk saat app ditutup atau layar terkunci.' : 'Lokasimu dibagikan ke semua anggota selama aplikasi terbuka.')
+    : 'Dijeda. Anggota keluarga tidak melihat lokasimu sampai kamu melanjutkan.';
+  const heroEl = document.querySelector('.hero-loc'); if(heroEl) heroEl.classList.toggle('is-paused', !sharing);
+  const pillB = document.querySelector('#locHeroPill b'); if(pillB) pillB.textContent = !sharing ? 'Dijeda' : locAcquiring ? 'Mencari GPS' : 'Berbagi aktif';
 
   const live = locAll().filter(locHasPos);
   document.getElementById('locHeroTitle').textContent = (n=>n ? `${n} orang berbagi lokasi` : 'Belum ada yang berbagi')(locAll().filter(m=>m.sharing && !m.isTracker).length);
@@ -4402,7 +4607,78 @@ function renderLocDiag(){
     `Error start    : ${initErrs.length ? initErrs.join(' | ') : '-'}`,
     `Plugin notif   : ${locStore('notif_plugin') === 'missing' ? 'TIDAK ADA di APK (build ulang)' : locStore('notif_native') === 'on' ? 'aktif' : 'belum diaktifkan'}`
   ].join('\n');
+  try{ renderLocHealth(); }catch(e){ console.warn('health', e); }
 }
+let hlLast = '';
+function renderLocHealth(){
+  const list = document.getElementById('hlList'); if(!list) return;
+  const sharing = locIsSharing(), native = locNative();
+  const ageS = locLastFixAt ? Math.round((Date.now() - locLastFixAt)/1000) : null;
+  const fmtAge = (n)=> n < 60 ? n + ' dtk lalu' : n < 3600 ? Math.round(n/60) + ' mnt lalu' : Math.round(n/3600) + ' jam lalu';
+  const tipEl = document.getElementById('hlTip');
+  if(tipEl) tipEl.classList.toggle('hidden', !native || !!(locSetupSt && locSetupSt.background && locSetupSt.battery));
+  const rows = [];
+  const add = (st, label, val, hint)=> rows.push({ st, label, val, hint: hint || '' });
+  add(sharing ? 'ok' : 'idle', 'Berbagi lokasi', sharing ? (locAcquiring ? 'Mencari GPS' : 'Aktif') : 'Dijeda');
+  const accTxt = locLastPos ? 'Akurasi ±' + Math.round(locLastPos.acc || 0) + ' m' : '';
+  if(ageS === null) add(sharing ? 'warn' : 'idle', 'Titik GPS terakhir', 'Belum ada', sharing ? 'Keluar ke tempat terbuka bila lama.' : '');
+  else add(!sharing ? 'idle' : ageS <= 300 ? 'ok' : ageS <= 900 ? 'warn' : 'bad', 'Titik GPS terakhir', fmtAge(ageS), accTxt);
+  if(native){
+    if(!sharing) add('idle', 'Pelacakan latar belakang', 'Mati');
+    else if(locWatchId === null) add('bad', 'Pelacakan latar belakang', 'Tidak berjalan', 'Ketuk “Coba ulang GPS”.');
+    else if(locWatchId === 'pending') add('warn', 'Pelacakan latar belakang', 'Memulai…');
+    else add('ok', 'Pelacakan latar belakang', 'Aktif', 'Tetap jalan saat layar terkunci.');
+  }else add('idle', 'Pelacakan latar belakang', 'Hanya di APK', 'Versi web melacak saat app terbuka.');
+  if(locStore('notif_plugin') === 'missing') add('bad', 'Notifikasi di HP', 'Plugin tidak ada', 'Build ulang APK.');
+  else if(locStore('notif_native') === 'on') add('ok', 'Notifikasi di HP', 'Aktif');
+  else add('idle', 'Notifikasi di HP', 'Belum aktif');
+  if(native && locSetupSt){
+    add(locSetupSt.background ? 'ok' : 'bad', 'Izin lokasi “Sepanjang waktu”', locSetupSt.background ? 'Diizinkan' : 'Belum', locSetupSt.background ? '' : 'Tanpa ini pelacakan berhenti saat app ditutup.');
+    add(locSetupSt.battery ? 'ok' : 'warn', 'Penghematan baterai', locSetupSt.battery ? 'Dikecualikan' : 'Masih aktif', locSetupSt.battery ? '' : 'HP bisa mematikan pelacakan di belakang layar.');
+  }
+  if(!gpsConfigured()) add('idle', 'GPS tracker kendaraan', 'Belum diatur', 'Masuk dengan akun Google yang terdaftar di worker.');
+  else if(gpsErr) add('bad', 'GPS tracker kendaraan', 'Gagal', gpsErr);
+  else if(gpsTrk) add('ok', 'GPS tracker kendaraan', 'Tersambung', 'Data ' + locRel((gpsMember() || {}).updatedMs));
+  else add('warn', 'GPS tracker kendaraan', 'Menunggu…');
+  const ps = String(pushState);
+  const pst = /^terdaftar/.test(ps) ? 'ok' : /tidak|mati|gagal|error|ditolak/.test(ps) ? 'bad' : 'warn';
+  add(pst, 'Peringatan SOS', pst === 'ok' ? 'Terdaftar' : pst === 'bad' ? 'Tidak aktif' : 'Memproses…', pst === 'ok' ? '' : ps);
+  if(adminErr) add('bad', 'Admin', 'Error', String(adminErr));
+  else if(!adminLoaded) add('idle', 'Admin', 'Memuat…');
+  else if(!adminCfg) add('idle', 'Admin', 'Belum ada admin');
+  else if(isAdmin()) add('ok', 'Admin', 'Kamu admin');
+  else add('idle', 'Admin', 'Belum masuk', 'Sudah ada admin; kamu belum masuk sebagai admin.');
+
+  const errs = [];
+  if(locLastErr) errs.push(locLastErr);
+  initErrs.forEach(e=>errs.push(e));
+  if(sosLastErr) errs.push('SOS: ' + sosLastErr);
+  const nBad = rows.filter(r=>r.st === 'bad').length, nWarn = rows.filter(r=>r.st === 'warn').length;
+  const lvl = (nBad || errs.length) ? 'bad' : nWarn ? 'warn' : 'ok';
+  const lab = lvl === 'bad' ? 'Ada masalah' : lvl === 'warn' ? 'Perlu dicek' : 'Semua normal';
+  const icn = { ok:'ic-check', warn:'ic-alert', bad:'ic-x', idle:'ic-minus' };
+  const sig = JSON.stringify([rows, errs, lvl]);
+  if(sig === hlLast) return;
+  hlLast = sig;
+  list.innerHTML = rows.map(r=>`<li class="hl-row ${r.st}"><svg class="ic" aria-hidden="true"><use href="#${icn[r.st]}"/></svg><div class="hl-t">${escapeHtml(r.label)}${r.hint ? '<small>' + escapeHtml(r.hint) + '</small>' : ''}</div><div class="hl-v">${escapeHtml(r.val)}</div></li>`).join('');
+  const eb = document.getElementById('hlErr');
+  if(eb){ eb.textContent = errs.join('\n'); eb.classList.toggle('hidden', !errs.length); }
+  const bd = document.getElementById('hlBadge');
+  if(bd){ bd.className = 'hl-badge ' + lvl; bd.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#${icn[lvl]}"/></svg><b>${lab}</b>`; }
+}
+document.getElementById('btnLocPerm').addEventListener('click', ()=>{
+  try{ locBG().openSettings().catch(()=>{}); }catch(e){ showToast('Buka Pengaturan HP › Aplikasi › Buku Kas › Izin › Lokasi › Sepanjang waktu', true); }
+});
+document.getElementById('btnLocBatt').addEventListener('click', ()=>{
+  const pl = nativeFamilyPlugin();
+  if(pl && pl.batterySettings){ try{ Promise.resolve(pl.batterySettings()).catch(()=>{}); return; }catch(e){} }
+  showToast('Buka Pengaturan HP › Baterai › Buku Kas › Tanpa batasan / Izinkan aktivitas latar belakang', true);
+});
+document.getElementById('btnDiagCopy').addEventListener('click', async ()=>{
+  const t = (document.getElementById('locDiag') || {}).textContent || '';
+  try{ await navigator.clipboard.writeText(t); showToast('Detail teknis disalin'); }
+  catch(e){ showToast('Tidak bisa menyalin otomatis', true); }
+});
 document.getElementById('btnLocRestart').addEventListener('click', locRestartGps);
 document.getElementById('btnGpsRefresh').addEventListener('click', async ()=>{
   const b = document.getElementById('btnGpsRefresh');
@@ -7866,7 +8142,7 @@ function rideStartGps(){
   }
   if(locNative()){
     try{
-      locBG().addWatcher({
+      bgAddWatcher(locBG(), {
         backgroundTitle:'Buku Kas — mengendara',
         backgroundMessage:'Memantau perjalanan & deteksi berhenti mendadak.',
         requestPermissions:true, stale:false, distanceFilter:0
