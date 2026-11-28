@@ -43,6 +43,7 @@
 // cache memori isolate (lebih pendek umurnya). Pasang Custom Domain/Route agar cache 15 menit penuh bekerja.
 // =====================================================================================
 import base from "./index.js";
+import { handleTrafficTile, handleTrafficStatus } from "./traffic.js";
 
 const REFERER = "https://atcsindonesia.com/";
 const ORIGIN = "https://atcsindonesia.com";
@@ -78,6 +79,13 @@ function corsHeaders(env, req) {
 function originForbidden(env, req) {
   const o = req.headers.get("origin");
   return !!(envOrigins(env).length && o && !allowedOrigins(env).includes(o));
+}
+// Longgar (dipakai /api/traffic-tile): <img> sering tanpa Origin/Referer, jadi hanya tolak bila Origin/Referer ADA tetapi bukan milik aplikasi.
+function sourceForbidden(env, req) {
+  if (!envOrigins(env).length) return false;
+  const o = req.headers.get("origin"), r = req.headers.get("referer");
+  const src = o && o !== "null" ? o.replace(/\/+$/, "") : (r ? originOf(r) : null);
+  return !!(src && !allowedOrigins(env).includes(src));
 }
 // "scheme://host[:port]" dari sebuah URL; skema non-standar (capacitor://) tetap menghasilkan origin yang bisa dibandingkan.
 function originOf(v) {
@@ -532,6 +540,13 @@ export default {
       if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(env, req) });
       if (req.method !== "GET") return jsonRes({ ok: false, error: "method tidak didukung" }, 405, env, req);
       try { return isProxy ? await handleProxy(req, env) : await handlePoints(req, env, ctx); }
+      catch (e) { return jsonRes({ ok: false, error: "gagal: " + ((e && e.message) || e) }, 502, env, req); }
+    }
+    const isTile = path.startsWith("/api/traffic-tile/"), isTStatus = path === "/api/traffic-status";
+    if (isTile || isTStatus) {
+      if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(env, req) });
+      if (req.method !== "GET") return jsonRes({ ok: false, error: "method tidak didukung" }, 405, env, req);
+      try { return await (isTile ? handleTrafficTile : handleTrafficStatus)(req, env, ctx, { corsHeaders, jsonRes, sourceForbidden, appCheck }); }
       catch (e) { return jsonRes({ ok: false, error: "gagal: " + ((e && e.message) || e) }, 502, env, req); }
     }
     return base.fetch(req, env, ctx);
