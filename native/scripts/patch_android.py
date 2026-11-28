@@ -14,6 +14,7 @@ perms = [
     'android.permission.ACCESS_BACKGROUND_LOCATION',
     'android.permission.FOREGROUND_SERVICE',
     'android.permission.FOREGROUND_SERVICE_LOCATION',
+    'android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS',
     'android.permission.POST_NOTIFICATIONS',
     'android.permission.CAMERA',
     'android.permission.RECORD_AUDIO',
