@@ -1102,9 +1102,6 @@
   .lsu-card h3{font:600 18px var(--font-head);margin:0 0 8px;color:var(--ink);}
   .lsu-card p{font-size:13.5px;line-height:1.55;color:var(--ink-soft);margin:0 0 16px;}
   .lsu-later{width:100%;min-height:46px;margin-top:6px;background:transparent;border:0;color:var(--ink-soft);font-size:13.5px;font-weight:600;}
-  .pt-bar{position:absolute;left:10px;right:10px;top:10px;z-index:650;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px;border-radius:16px;background:rgba(34,26,61,.92);color:#fff;font-size:13px;font-weight:600;line-height:1.35;box-shadow:0 10px 24px -10px rgba(0,0,0,.5);backdrop-filter:blur(6px);}
-  .pt-bar span{flex:1;min-width:0;}
-  .pt-bar button{min-height:40px;padding:0 14px;border:0;border-radius:12px;background:#fff;color:#C21F43;font-size:13px;font-weight:700;flex:0 0 auto;}
 </style>
 </head>
 <body class="nav-sidebar">
@@ -1442,7 +1439,6 @@
       <div class="loc-card lc-sets">
         <label class="loc-switch lc-set"><span class="lc-set-ic"><svg class="ic" aria-hidden="true"><use href="#ic-sun"/></svg></span><span class="lc-set-t">Jaga layar tetap menyala<small>Lebih akurat saat berjalan/berkendara, tapi boros baterai.</small></span><input type="checkbox" id="optWake" role="switch"></label>
         <label class="loc-switch lc-set"><span class="lc-set-ic"><svg class="ic" aria-hidden="true"><use href="#ic-send"/></svg></span><span class="lc-set-t">Notifikasi Telegram<small>Saat tiba/meninggalkan tempat, check-in &amp; baterai lemah.</small></span><input type="checkbox" id="optTg" role="switch" checked></label>
-        <label class="loc-switch lc-set"><span class="lc-set-ic"><svg class="ic" aria-hidden="true"><use href="#ic-pin"/></svg></span><span class="lc-set-t">Kabari keluarga saat aku berangkat<small>Anggota lain dapat notifikasi “sedang dalam perjalanan” dan bisa memantau.</small></span><input type="checkbox" id="optTrip" role="switch" checked></label>
         <label class="loc-switch lc-set"><span class="lc-set-ic"><svg class="ic" aria-hidden="true"><use href="#ic-phone"/></svg></span><span class="lc-set-t">Notifikasi di HP ini<small>Kabar tiba/pergi anggota lain saat app terbuka.</small></span><input type="checkbox" id="optNotif" role="switch"></label>
       </div>
 
@@ -1479,7 +1475,6 @@
       <div class="loc-strip" id="locStrip"></div>
       <div class="loc-mapbox">
         <div id="locMap"></div>
-        <div class="pt-bar hidden" id="ptBar" role="status"><span id="ptTxt"></span><button type="button" id="ptStop">Berhenti</button></div>
         <button class="loc-fab" id="btnLocFit" aria-label="Tampilkan semua">🎯</button>
         <div class="mk-tools" id="locTools"></div>
         <div class="td-bar hidden" id="tdBar"><button type="button" id="tdPlay" aria-label="Putar ulang">▶</button><input type="range" id="tdSlider" min="0" max="1000" value="0" aria-label="Posisi perjalanan"><button type="button" id="tdSpeed" aria-label="Kecepatan putar">30×</button><div class="td-clock" id="tdClock">--</div></div>
@@ -2159,6 +2154,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="bmkg-layers.js"></script>
 <script src="map-pro.js"></script>
+<script src="traffic-layer.js"></script>
 <script src="cctv-public.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -2229,7 +2225,7 @@ let authTok = '', familyId = null, familyInfo = {}, familyReady = false, listene
 let userProfile = { name:'', email:'', photo:'' };
 const FID_ALPHA = 'abcdefghijklmnopqrstuvwxyz0123456789', B32 = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 // Naikkan APP_VERSION (dan VERSION di sw.js) setiap kali merilis pembaruan.
-const APP_VERSION = '3.0.5';
+const APP_VERSION = '3.0.4';
 const DEFAULT_META = {
   danaAwal: 0, goldRefPrice: 0, goldRefPriceUpdatedAt: null, goldRefPriceSource: null, currentPeriodStart: null,
   goldAutoUpdate: true, goldSource: 'spot', goldAdjustPct: 0
@@ -2383,11 +2379,11 @@ async function appNotifRequest(){
   const perm = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
   return perm === 'granted';
 }
-async function appNotify(title, body, urgent, extra){
+async function appNotify(title, body, urgent){
   if(locNative()){
     try{
       appLNChannels();
-      await appLN().schedule({ notifications:[{ id: (Math.floor(Date.now()/1000) % 1000000)*10 + (appNotifSeq++ % 10), title, body, channelId: urgent ? 'sos' : 'info', ...(extra ? { extra } : {}) }] });
+      await appLN().schedule({ notifications:[{ id: (Math.floor(Date.now()/1000) % 1000000)*10 + (appNotifSeq++ % 10), title, body, channelId: urgent ? 'sos' : 'info' }] });
     }catch(e){ console.warn('notifikasi native', e); }
     return;
   }
@@ -3648,7 +3644,8 @@ function kdHistAttach(){
     kdHistLayer = L.layerGroup().addTo(kdHistMap);
     // Layer data terbuka BMKG (cuaca, gempa, peringatan dini) — posisi acuan = posisi kendaraan terakhir
     if(window.BmkgLayers) BmkgLayers.attach(kdHistMap, { workerUrl: GPS_WORKER_URL, areaInfo: mapAreaInfo, getPosition: function(){ return gpsTrk ? { lat:Number(gpsTrk.lat), lon:Number(gpsTrk.lon) } : null; } });
-    if(window.MapPro) MapPro.enhance(kdHistMap);
+    if(window.TrafficLayer) TrafficLayer.attach(kdHistMap, { workerUrl: GPS_WORKER_URL, position:'topright', getPosition: function(){ return gpsTrk ? { lat:Number(gpsTrk.lat), lng:Number(gpsTrk.lon), speed:Number(gpsTrk.speed) || 0 } : null; } });
+  if(window.MapPro) MapPro.enhance(kdHistMap);
   } else if(window.BmkgLayers){ BmkgLayers.refresh(kdHistMap); }
   setTimeout(()=>{ try{ kdHistMap.invalidateSize(); }catch(e){} }, 60);
 }
@@ -3800,7 +3797,6 @@ function attachLokasiListener(){
       const x = d.data({ serverTimestamps:'estimate' });
       return { id:d.id, ...x, updatedMs: x.updatedAt && x.updatedAt.toMillis ? x.updatedAt.toMillis() : null };
     });
-    locTrackStay(locMembers); try{ locPantauTick(); }catch(e){}
     const me = locMembers.find(m=>m.id===locDeviceId());
     if(me){
       if(locHandledPing === null){ locHandledPing = me.pingAt || 0; }
@@ -3830,8 +3826,7 @@ function attachLokasiListener(){
         if(ev.deviceId === locDeviceId() || !ev.atMs || Date.now()-ev.atMs > 2*60*1000) return;
         const txt = locEventText(ev);
         showToast(txt);
-        if(ev.type === 'tripstart') locNotify('🚶 Keluarga dalam perjalanan', txt + ' — ketuk untuk memantau', { type:'trip', id:ev.deviceId });
-        else locNotify('Kabar lokasi', txt);
+        locNotify('Kabar lokasi', txt);
       });
     }
     locEvents = snap.docs.map(d=>({ id:d.id, ...d.data() }));
@@ -3863,14 +3858,13 @@ async function locRefreshPermStatus(){
 }
 async function locEnsureSetup(force){
   if(!locNative() || !locIsSharing() || locSetupOpen) return;
-  const st = await locRefreshPermStatus();
-  // APK lama belum punya status(): status izin tak bisa dibaca, tanyakan langkah 1 saja dan jarang (7 hari)
-  const step = !st ? 'perm' : !st.background ? 'perm' : !st.battery ? 'batt' : null;
+  const st = await locRefreshPermStatus(); if(!st) return;
+  const step = !st.background ? 'perm' : !st.battery ? 'batt' : null;
   if(!step) return;
   if(!force && Date.now() < (+locStore('loc_snz_' + step) || 0)) return;
-  locShowSetup(step, !st);
+  locShowSetup(step);
 }
-function locShowSetup(step, unknown){
+function locShowSetup(step){
   if(locSetupOpen) return; locSetupOpen = true;
   const perm = step === 'perm';
   const wrap = document.createElement('div');
@@ -3885,109 +3879,17 @@ function locShowSetup(step, unknown){
   document.body.appendChild(wrap);
   const close = ()=>{ wrap.remove(); locSetupOpen = false; };
   wrap.querySelector('#lsuGo').addEventListener('click', ()=>{
-    close(); locStore('loc_snz_' + step, String(Date.now() + (unknown ? 7*24*3600*1000 : 20*60*1000)));      // jangan langsung tanya lagi saat kembali dari pengaturan
+    close(); locStore('loc_snz_' + step, String(Date.now() + 20*60*1000));      // jangan langsung tanya lagi saat kembali dari pengaturan
     try{
       if(perm) locBG().openSettings().catch(()=>{});
-      else { const pl = nativeFamilyPlugin(); if(pl && pl.batterySettings) Promise.resolve(pl.batterySettings()).catch(()=>showToast('Buka Pengaturan HP › Baterai › Buku Kas › Tanpa batasan', true)); }
+      else { const pl = nativeFamilyPlugin(); if(pl && pl.batterySettings) Promise.resolve(pl.batterySettings()).catch(()=>{}); }
     }catch(e){ showToast('Buka Pengaturan HP › Aplikasi › Buku Kas', true); }
   });
-  wrap.querySelector('#lsuLater').addEventListener('click', ()=>{ close(); locStore('loc_snz_' + step, String(Date.now() + (unknown ? 7*24*3600*1000 : 12*3600*1000))); });
+  wrap.querySelector('#lsuLater').addEventListener('click', ()=>{ close(); locStore('loc_snz_' + step, String(Date.now() + 12*3600*1000)); });
   wrap.querySelector('#lsuGo').focus();
-}
-// ----- Lama berada di satu tempat -----
-let locStay = (()=>{ try{ return JSON.parse(locStore('loc_stay') || 'null'); }catch(e){ return null; } })();
-let locStayCache = (()=>{ try{ return JSON.parse(locStore('loc_stay_r') || '{}') || {}; }catch(e){ return {}; } })();
-function locDur(ms){
-  const m = Math.max(0, Math.round(ms/60000)); if(m < 1) return 'kurang dari semenit';
-  if(m < 60) return m + ' mnt';
-  const h = Math.floor(m/60); if(h < 24) return h + ' jam' + (m % 60 ? ' ' + (m % 60) + ' mnt' : '');
-  const d = Math.floor(h/24); return d + ' hari' + (h % 24 ? ' ' + (h % 24) + ' jam' : '');
-}
-function locTrackStay(list){
-  let ch = false;
-  list.forEach(m=>{ if(!locHasPos(m)) return; const c = locStayCache[m.id];
-    if(!c || locDistanceM(c, m) > 80){ locStayCache[m.id] = { lat:m.lat, lng:m.lng, t:m.updatedMs || Date.now() }; ch = true; } });
-  if(ch) try{ locStore('loc_stay_r', JSON.stringify(locStayCache)); }catch(e){}
-}
-function locStayStart(m){
-  if(!locHasPos(m)) return null;
-  if(m.staySince && typeof m.stayLat === 'number' && locDistanceM({ lat:m.stayLat, lng:m.stayLng }, m) <= 80) return m.staySince;   // dari HP anggota (akurat)
-  const c = locStayCache[m.id]; return c ? c.t : null;                                                                              // cadangan: dihitung dari pantauan di HP ini
-}
-
-// ----- Pantau perjalanan anggota -----
-let locPantauId = null, locPantauAt = 0, locPantauFly = false, locPantauNotifAt = 0;
-function locPantauToggle(id){ if(locPantauId === id) locPantauStop(); else locPantauStart(id); }
-function locPantauStart(id){
-  locPantauId = id; locPantauAt = Date.now(); locPantauNotifAt = 0;
-  const m = locAll().find(x=>x.id === id);
-  if(locNative()){ try{ appLN().createChannel({ id:'pantau', name:'Pantau perjalanan', description:'Status anggota yang sedang dipantau', importance:2, vibration:false }).catch(()=>{}); }catch(e){} }
-  if(m && locMap && locHasPos(m)){ locLayerRoute.clearLayers(); locMap.flyTo([m.lat, m.lng], Math.max(locMap.getZoom(), 16), { duration:.8 }); locScrollToMap(); locPantauFly = false; }
-  else locPantauFly = true;
-  showToast('Memantau ' + ((m && m.name) || 'anggota') + ' 📡');
-  locPantauTick(true); renderLokasi();
-}
-function locPantauStop(silent){
-  locPantauId = null; locPantauFly = false;
-  const bar = document.getElementById('ptBar'); if(bar) bar.classList.add('hidden');
-  if(locNative()){ try{ appLN().cancel({ notifications:[{ id:9001 }] }).catch(()=>{}); }catch(e){} }
-  if(!silent) showToast('Pantau dihentikan');
-  renderLokasi();
-}
-function locPantauTick(force){
-  const bar = document.getElementById('ptBar'), tx = document.getElementById('ptTxt');
-  if(!locPantauId){ if(bar) bar.classList.add('hidden'); return; }
-  const m = locAll().find(x=>x.id === locPantauId);
-  let txt;
-  if(!m || !locHasPos(m)) txt = '📡 Menunggu lokasi anggota…';
-  else{
-    if(locPantauFly && locMap){ locMap.flyTo([m.lat, m.lng], 16, { duration:.8 }); locPantauFly = false; }
-    const info = MODE_INFO[m.mode] || MODE_INFO.diam, fresh = locIsFresh(m), pl = locPlaceAt(m), st = locStayStart(m);
-    txt = `📡 ${m.name || 'Anggota'} • ${fresh ? info.ic + ' ' + info.label + (m.speedKmh && m.mode !== 'diam' ? ' ' + m.speedKmh + ' km/j' : '') : '🕒 terakhir terlihat ' + locRel(m.updatedMs)}`;
-    if(fresh && m.mode === 'diam' && st) txt += ` • ${locDur(Date.now() - st)} di sini`;
-    if(pl) txt += ` • di ${pl.name}`;
-    if(m.mode === 'diam' && fresh && st && Date.now() - st >= 3*60*1000 && Date.now() - locPantauAt > 60000){
-      const msg = `${m.name || 'Anggota'} sudah berhenti${pl ? ' di ' + pl.name : ''} 🏁`;
-      showToast(msg); locNotify('Pantau selesai', msg); locPantauStop(true); return;
-    }
-  }
-  if(bar && tx){ tx.textContent = txt; bar.classList.remove('hidden'); }
-  if(locNative() && (force || Date.now() - locPantauNotifAt >= 20000)){
-    locPantauNotifAt = Date.now();
-    try{ appLN().schedule({ notifications:[{ id:9001, title:'Memantau perjalanan', body:txt.replace(/^📡 /, ''), channelId:'pantau', ongoing:true, autoCancel:false, extra:{ type:'trip', id:locPantauId } }] }).catch(()=>{}); }catch(e){}
-  }
-}
-function locOpenPantau(id){
-  if(!id) return;
-  try{ setActiveTab('lokasi'); }catch(e){}
-  setTimeout(()=>locPantauStart(id), 500);
-}
-(function(){
-  try{ appLN().addListener('localNotificationActionPerformed', (a)=>{ const ex = a && a.notification && a.notification.extra; if(ex && ex.type === 'trip') locOpenPantau(ex.id); }); }catch(e){}
-})();
-document.getElementById('ptStop').addEventListener('click', ()=>locPantauStop());
-
-// ----- Kabari keluarga: mulai/selesai perjalanan -----
-const PUSH_TRIP_READY = true;     // ganti true SETELAH sos-push-gas.gs versi baru di-deploy ulang (kalau belum, push perjalanan akan terbaca sebagai SOS!)
-function locTripAnnounce(kind, tr, dur){
-  if(locStore('loc_tripnotif') === 'off') return;
-  const sp = locPlaceAt({ lat:tr.pts[0][0], lng:tr.pts[0][1] });
-  const ep = kind === 'end' ? locPlaceAt(tr.lastPt) : null;
-  const mode = locMode !== 'diam' ? locMode : 'jalan';
-  locEmit(kind === 'start' ? 'tripstart' : 'tripend', kind === 'start' ? sp : ep, { mode, distM:Math.round(tr.dist), durMin:dur ? Math.round(dur/60000) : null });
-  locTripPush(kind);
-}
-async function locTripPush(kind){
-  if(!PUSH_TRIP_READY || !SOS_PUSH_URL || !authTok) return;
-  const isGas = /script\.google\.com/.test(SOS_PUSH_URL);
-  const url = isGas ? SOS_PUSH_URL : SOS_PUSH_URL.replace(/\/$/, '') + '/sos';
-  const pos = locLastPos || {};
-  const payload = JSON.stringify({ type:'trip', event:kind, name:locMyName() || 'Anggota', senderId:locDeviceId(), lat:pos.lat == null ? null : pos.lat, lng:pos.lng == null ? null : pos.lng, idToken:authTok, familyId:SHARED_SPACE_ID });
-  try{ await sosFetch(url, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body:payload }, 15000); }catch(e){ console.warn('push perjalanan', e); }
 }
 function locTickFn(){
   const now = Date.now();
-  try{ locPantauTick(); }catch(e){}
   if(locNative() && locIsSharing()) locRefreshPermStatus();
   if(locIsSharing()){
     // tidak ada data baru lama = anggap diam
@@ -4006,7 +3908,7 @@ function locTickFn(){
   if(activeTab === 'lokasi') renderLokasi();
 }
 
-function locNotify(title, body, extra){ if(locStore('loc_notif') === 'on') appNotify(title, body, false, extra); }
+function locNotify(title, body){ if(locStore('loc_notif') === 'on') appNotify(title, body, false); }
 
 // ----- Perangkat: baterai & layar -----
 async function locBattery(){
@@ -4097,7 +3999,6 @@ async function locWrite(cur){
       lat: cur.lat, lng: cur.lng, accuracy: Math.round(cur.acc || 0),
       mode: locMode, modeSince: locModeSince, speedKmh: Math.round(locSpeed*3.6),
       trail: locTrailFlat(), tripSince: locTrip ? locTrip.startAt : null,
-      staySince: locStay ? locStay.t : null, stayLat: locStay ? locStay.lat : null, stayLng: locStay ? locStay.lng : null,
       battery: bat.battery, charging: bat.charging
     };
     const bg = LOC_NATIVE_HTTP && locNative() && document.visibilityState !== 'visible';
@@ -4157,7 +4058,6 @@ function locOnPosition(pos, src){
   if(raw === null) raw = 0;
   locSpeed = locPrev ? 0.6*raw + 0.4*locSpeed : raw;
   locPrev = cur;
-  if(!locStay || locDistanceM(locStay, cur) > Math.max(60, Math.min(acc, 100))){ locStay = { lat:cur.lat, lng:cur.lng, t }; try{ locStore('loc_stay', JSON.stringify(locStay)); }catch(e){} }
   try{ rideOnFix({ lat:cur.lat, lng:cur.lng, acc, speed:raw, t }); }catch(e){}
 
   // mode dengan konfirmasi 2 sampel agar tidak berkedip
@@ -4217,7 +4117,6 @@ function locTripAdd(cur, moving){
     tr.pts.push([cur.lat, cur.lng, cur.t]);
     if(d >= 15) tr.dist += d;
     tr.lastPt = { lat:cur.lat, lng:cur.lng, t:cur.t };
-    if(!tr.notified && tr.dist >= 150){ tr.notified = true; try{ locTripAnnounce('start', tr); }catch(e){ console.warn(e); } }
     if(tr.pts.length > 600){ tr.pts = tr.pts.filter((_,i)=> i % 2 === 0 || i === tr.pts.length-1); }
   }
   tr.modes[locMode] = (tr.modes[locMode] || 0) + 1;
@@ -4238,7 +4137,6 @@ async function locEndTrip(){
   const tr = locTrip; locTrip = null; locTripSave();
   if(!tr || !uid) return;
   const endAt = tr.lastPt.t, dur = endAt - tr.startAt;
-  if(tr.notified){ try{ locTripAnnounce('end', tr, dur); }catch(e){ console.warn(e); } }
   if(tr.dist < 150 || dur < 90*1000) return;
   // mode dominan selain 'diam'
   let mode = 'jalan', best = 0;
@@ -4295,8 +4193,6 @@ function locEventText(ev){
   if(ev.type === 'arrive') return `${ev.icon || '📍'} ${who} tiba di ${ev.placeName || 'suatu tempat'}`;
   if(ev.type === 'leave') return `🚪 ${who} meninggalkan ${ev.placeName || 'suatu tempat'}`;
   if(ev.type === 'checkin') return `✅ ${who} check-in${ev.placeName ? ' di ' + ev.placeName : ''}`;
-  if(ev.type === 'tripstart'){ const mi = MODE_INFO[ev.mode] || MODE_INFO.jalan; return `${mi.ic} ${who} sedang dalam perjalanan${ev.placeName ? ' dari ' + ev.placeName : ''}`; }
-  if(ev.type === 'tripend') return `🏁 ${who} selesai perjalanan${ev.placeName ? ' di ' + ev.placeName : ''}${ev.distM ? ' • ' + locFmtDist(ev.distM) : ''}${ev.durMin ? ' • ' + ev.durMin + ' mnt' : ''}`;
   if(ev.type === 'lowbat') return `🪫 Baterai ${who} tinggal ${ev.battery}%`;
   return `${who}: ${ev.type}`;
 }
@@ -4487,6 +4383,7 @@ function locEnsureMap(){
   L.control.zoom({ position:'topleft' }).addTo(locMap);
   locMk = mkAttach(locMap, 'loc');
   if(window.BmkgLayers) BmkgLayers.attach(locMap, { workerUrl: GPS_WORKER_URL, position:'topright', areaInfo: mapAreaInfo });
+  if(window.TrafficLayer) TrafficLayer.attach(locMap, { workerUrl: GPS_WORKER_URL, position:'topright' });
   if(window.MapPro) MapPro.enhance(locMap);
   mkBindTools(document.getElementById('locTools'), locMk, locToolExtra);
   locLayerPlaces = L.layerGroup().addTo(locMap);
@@ -4616,8 +4513,7 @@ function renderLokasi(){
           ? (fresh ? (m.mode === 'diam' ? '🅿️ Berhenti' : `🚗 Bergerak • ${m.speedKmh} km/j`) : '🕒 Terakhir terlihat')
           : fresh ? `${info.ic} ${info.label}${m.speedKmh && m.mode !== 'diam' ? ' • ' + m.speedKmh + ' km/j' : ''}` : '🕒 Terakhir terlihat';
         if(pl) l1 += ` • di ${pl.icon || '📍'} ${pl.name}`;
-        const stSince = locStayStart(m) || (m.mode === 'diam' ? m.modeSince : null);
-        if(fresh && m.mode === 'diam' && stSince && Date.now() - stSince >= 60000) l1 += ` • sudah ${locDur(Date.now() - stSince)} di sini (sejak ${locClock(stSince)})`;
+        if(fresh && m.mode === 'diam' && m.modeSince) l1 += ` • sejak ${locClock(m.modeSince)} (${locSpan(Date.now() - m.modeSince)})`;
         l2 = `${fresh ? '📍 Diperbarui' : '⏱️'} ${locRel(m.updatedMs)}${m.accuracy ? ' • ±' + m.accuracy + ' m' : ''}`;
       }else{
         if(m.sharing){ l1 = '📡 Mencari sinyal GPS…'; l2 = ''; }
@@ -4642,7 +4538,6 @@ function renderLokasi(){
           </div>
           <div class="loc-acts">
             ${has ? `<button class="link-btn teal" data-locact="focus" data-id="${escapeHtml(m.id)}">🗺️ Cek lokasi</button>
-            ${has && !isMe && !m.isTracker ? `<button class="link-btn${locPantauId===m.id?'':' teal'}" data-locact="pantau" data-id="${escapeHtml(m.id)}">${locPantauId===m.id?'⏹ Berhenti pantau':'📡 Pantau'}</button>` : ''}
             <a class="link-btn" href="${maps}" target="_blank" rel="noopener">↗ Maps</a>` : ''}
             ${m.isTracker ? '' : `<button class="link-btn" data-locact="hist" data-id="${escapeHtml(m.id)}">🧭 Riwayat</button>`}
             ${m.isTracker ? '' : !isMe ? `<button class="link-btn amber" data-locact="ping" data-id="${escapeHtml(m.id)}">🔔 Minta update</button>${isAdmin() ? `<button class="link-btn rose" data-locact="admindel" data-id="${escapeHtml(m.id)}">🗑️ Hapus</button>` : ''}` : `<button class="link-btn rose" data-locact="remove" data-id="${escapeHtml(m.id)}">🗑️ Hapus saya</button>`}
@@ -4779,7 +4674,7 @@ document.getElementById('btnLocPerm').addEventListener('click', ()=>{
 });
 document.getElementById('btnLocBatt').addEventListener('click', ()=>{
   const pl = nativeFamilyPlugin();
-  if(pl && pl.batterySettings){ try{ Promise.resolve(pl.batterySettings()).catch(()=>showToast('Buka Pengaturan HP › Baterai › Buku Kas › Tanpa batasan', true)); return; }catch(e){} }
+  if(pl && pl.batterySettings){ try{ Promise.resolve(pl.batterySettings()).catch(()=>{}); return; }catch(e){} }
   showToast('Buka Pengaturan HP › Baterai › Buku Kas › Tanpa batasan / Izinkan aktivitas latar belakang', true);
 });
 document.getElementById('btnDiagCopy').addEventListener('click', async ()=>{
@@ -4864,8 +4759,6 @@ document.getElementById('btnPlaceHere').addEventListener('click', ()=>{
   const wake = document.getElementById('optWake'), tg = document.getElementById('optTg'), nt = document.getElementById('optNotif');
   wake.checked = locStore('loc_wake') === 'on';
   tg.checked = locStore('loc_tg') !== 'off';
-  const trp = document.getElementById('optTrip'); trp.checked = locStore('loc_tripnotif') !== 'off';
-  trp.addEventListener('change', ()=>{ locStore('loc_tripnotif', trp.checked ? 'on' : 'off'); });
   nt.checked = locStore('loc_notif') === 'on' && (locNative() ? locStore('notif_native') === 'on' : ('Notification' in window && Notification.permission === 'granted'));
   wake.addEventListener('change', ()=>{ locStore('loc_wake', wake.checked ? 'on' : 'off'); locWakeSet(); });
   tg.addEventListener('change', ()=>{ locStore('loc_tg', tg.checked ? 'on' : 'off'); });
@@ -4882,7 +4775,6 @@ document.getElementById('viewLokasi').addEventListener('click', async (e)=>{
   if(!b) return;
   const act = b.dataset.locact, id = b.dataset.id;
   if(act === 'focus') locFocus(id);
-  else if(act === 'pantau') locPantauToggle(id);
   else if(act === 'nbcam'){
     const c = locNear[id], n = c && c.cams && c.cams[0], mem = locAll().find(x=>x.id === id);
     if(n) nbDockOpen(document.getElementById('locCamDock'), n.cam, `📹 ${n.cam.title} — dekat ${mem ? (mem.id === locDeviceId() ? 'kamu' : mem.name) : 'anggota'}`, c.wx ? `🌦️ Cuaca di lokasi ${mem ? (mem.id === locDeviceId() ? 'kamu' : mem.name) : 'anggota'}: ${nbWxText(c.wx)}` : '');
@@ -5033,10 +4925,6 @@ async function pushInit(){
       const d = (n && n.data) || {};
       if(d.type !== 'sos') return;
       sosAlertShow({ id:d.senderId || 'push', name:d.name, lat:d.lat ? Number(d.lat) : null, lng:d.lng ? Number(d.lng) : null, startedAt:Date.now(), updatedAt:Date.now() });
-    });
-    await P.addListener('pushNotificationActionPerformed', (a)=>{
-      const d = (a && a.notification && a.notification.data) || {};
-      if(d.type === 'trip' && d.senderId) locOpenPantau(d.senderId);
     });
     pushState = 'mendaftar ke Firebase…';
     await pushTimeout(P.register(), 15000, 'register');
@@ -7453,21 +7341,13 @@ function locPinIcon(m){
   });
 }
 function locSpan(ms){ const m = Math.max(0, Math.round(ms/60000)); return m < 1 ? 'baru saja' : m < 60 ? m + ' mnt' : Math.floor(m/60) + ' jam' + (m % 60 ? ' ' + (m % 60) + ' mnt' : ''); }
-function locGlide(mk, to, ms){
-  const from = mk.getLatLng();
-  const gap = (ms && mk._ms) ? ms - mk._ms : 0; if(ms) mk._ms = ms;
-  if(from.lat === to[0] && from.lng === to[1]) return;
+function locGlide(mk, to){
+  const from = mk.getLatLng(); if(from.lat === to[0] && from.lng === to[1]) return;
   if(mk._raf) cancelAnimationFrame(mk._raf);
-  if(from.distanceTo(L.latLng(to)) > 3000 || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)){
-    mk.setLatLng(to); if(mk._mid && mk._mid === locPantauId && locMap) locMap.panTo(to, { animate:false }); return;
-  }
-  // lama gerak = selang antar pembaruan (1,2–12 dtk), kecepatan tetap -> terlihat seperti live, tidak patah-patah
-  const t0 = performance.now(), D = gap > 0 ? Math.min(12000, Math.max(1200, gap)) : 2500;
-  const step = (t)=>{ const k = Math.min(1, (t - t0)/D);
-    const ll = [from.lat + (to[0] - from.lat)*k, from.lng + (to[1] - from.lng)*k];
-    mk.setLatLng(ll);
-    if(mk._mid && mk._mid === locPantauId && locMap) locMap.panTo(ll, { animate:false });
-    mk._raf = k < 1 ? requestAnimationFrame(step) : null; };
+  if(from.distanceTo(L.latLng(to)) > 3000 || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)){ mk.setLatLng(to); return; }
+  const t0 = performance.now(), D = 1500;
+  const step = (t)=>{ const k = Math.min(1, (t - t0)/D), e = k < .5 ? 2*k*k : 1 - Math.pow(-2*k + 2, 2)/2;
+    mk.setLatLng([from.lat + (to[0] - from.lat)*e, from.lng + (to[1] - from.lng)*e]); mk._raf = k < 1 ? requestAnimationFrame(step) : null; };
   mk._raf = requestAnimationFrame(step);
 }
 function locUpdateMap(){
@@ -7478,11 +7358,10 @@ function locUpdateMap(){
   live.forEach(m=>{
     const ll = [m.lat, m.lng];
     const mi = MODE_INFO[m.mode] || MODE_INFO.diam;
-    const tip = escapeHtml(`${m.name || 'Tanpa nama'} • ${mi.label}${m.speedKmh ? ' ' + m.speedKmh + ' km/j' : ''} • ${locRel(m.updatedMs)}${m.mode === 'diam' && (locStayStart(m) || m.modeSince) ? ' • ' + locDur(Date.now() - (locStayStart(m) || m.modeSince)) + ' di sini' : ''}`);  // bindTooltip merender HTML: wajib di-escape
-    if(locMarkers[m.id]){ locMarkers[m.id]._mid = m.id; locGlide(locMarkers[m.id], ll, m.updatedMs); locMarkers[m.id].setIcon(locPinIcon(m)).setTooltipContent(tip); }
+    const tip = escapeHtml(`${m.name || 'Tanpa nama'} • ${mi.label}${m.speedKmh ? ' ' + m.speedKmh + ' km/j' : ''} • ${locRel(m.updatedMs)}${m.mode === 'diam' && m.modeSince ? ' • ' + locSpan(Date.now() - m.modeSince) + ' di sini' : ''}`);  // bindTooltip merender HTML: wajib di-escape
+    if(locMarkers[m.id]){ locGlide(locMarkers[m.id], ll); locMarkers[m.id].setIcon(locPinIcon(m)).setTooltipContent(tip); }
     else{
       locMarkers[m.id] = L.marker(ll, { icon:locPinIcon(m) }).addTo(locMap).bindTooltip(tip, { direction:'top', offset:[0,-34] });
-      locMarkers[m.id]._mid = m.id; locMarkers[m.id]._ms = m.updatedMs || 0;
       locMarkers[m.id].on('click', ()=>locFocus(m.id));
     }
   });
@@ -7797,6 +7676,7 @@ function nvEnsureMap(){
   L.control.zoom({ position:'topright' }).addTo(nv.map);
   nv.mk = mkAttach(nv.map, 'ride');
   if(window.BmkgLayers) BmkgLayers.attach(nv.map, { workerUrl: GPS_WORKER_URL, position:'topleft', areaInfo: mapAreaInfo, getPosition: ()=> nv.pos ? { lat:nv.pos.lat, lon:nv.pos.lng } : null });
+  if(window.TrafficLayer) TrafficLayer.attach(nv.map, { workerUrl: GPS_WORKER_URL, position:'topright', getPosition: ()=> nv.pos ? { lat:nv.pos.lat, lng:nv.pos.lng } : null });
   mkBindTools(rideEl('rdTools'), nv.mk, null);
   nv.layer = L.layerGroup().addTo(nv.map);
   nv.altLayer = L.layerGroup().addTo(nv.map);
